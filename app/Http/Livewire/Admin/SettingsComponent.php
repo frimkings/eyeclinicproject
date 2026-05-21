@@ -1,0 +1,164 @@
+<?php
+namespace App\Http\Livewire\Admin;
+
+use App\Models\Setting;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+
+class SettingsComponent extends Component
+{
+    use WithFileUploads;
+
+    public $state = [
+        'clinic_name' => '',
+        'clinic_address' => '',
+        'clinic_contact' => '',
+        'clinic_email' => '',
+    ];
+
+    public $newLogo;
+    public $currentLogo;
+    public $uploadInputKey = 0;
+    public $missingSetupFields = [];
+    public string $va_notation = '6m';
+
+    /**
+     * Define validation rules
+     */
+    protected function rules()
+    {
+        return [
+            'state.clinic_name'    => 'required|string|max:100',
+            'state.clinic_address' => 'nullable|string|max:255',
+            'state.clinic_contact' => 'nullable|string|max:50',
+            'state.clinic_email'   => 'nullable|email|max:100',
+            'newLogo'              => 'nullable|image|max:2048',
+        ];
+    }
+
+    public function mount()
+    {
+        abort_if(!Auth::user()->hasRole('Super Admin'), 403);
+
+        $setting = Setting::getSettings();
+        $this->fillFromSetting($setting);
+        $this->missingSetupFields = $setting->missingSetupFields();
+        $this->va_notation = $setting->va_notation ?? '6m';
+    }
+
+    public function updateSettings()
+    {
+        $this->validate();
+
+        $setting = Setting::getSettings();
+
+        $data = [
+            'clinic_name' => trim($this->state['clinic_name']),
+            'clinic_address' => $this->nullableValue($this->state['clinic_address']),
+            'clinic_contact' => $this->nullableValue($this->state['clinic_contact']),
+            'clinic_email' => $this->nullableValue($this->state['clinic_email']),
+            'va_notation' => in_array($this->va_notation, ['6m', '20ft']) ? $this->va_notation : '6m',
+        ];
+
+        if ($this->newLogo) {
+            // Delete old logo file if it exists to save server space
+            if ($setting->clinic_logo) {
+                Storage::disk('public')->delete($setting->clinic_logo);
+            }
+
+            // Store new logo
+            $data['clinic_logo'] = $this->newLogo->store('logos', 'public');
+        }
+
+        $setting->update($data);
+        Cache::forget('pos.settings');
+
+        // Reset the file input after saving
+        $this->newLogo = null;
+        $this->uploadInputKey++;
+        $setting = $setting->fresh();
+        $this->fillFromSetting($setting);
+        $this->missingSetupFields = $setting->missingSetupFields();
+
+        $this->dispatchBrowserEvent('notify', [
+            'type' => 'success', 
+            'message' => $setting->needsSetup()
+                ? 'Settings saved. Please complete the highlighted clinic details.'
+                : 'Branding and contact details updated!'
+        ]);
+    }
+
+    public function removeLogo()
+    {
+        $setting = Setting::getSettings();
+
+        if ($setting->clinic_logo) {
+            Storage::disk('public')->delete($setting->clinic_logo);
+            $setting->update(['clinic_logo' => null]);
+            Cache::forget('pos.settings');
+        }
+
+        $this->newLogo = null;
+        $this->uploadInputKey++;
+        $setting = $setting->fresh();
+        $this->fillFromSetting($setting);
+        $this->missingSetupFields = $setting->missingSetupFields();
+
+        $this->dispatchBrowserEvent('notify', [
+            'type' => 'success',
+            'message' => 'Clinic logo removed.'
+        ]);
+    }
+
+    public function resetToDefaults()
+    {
+        $setting = Setting::getSettings();
+
+        $setting->update([
+            'clinic_name' => 'My Eye Clinic',
+            'clinic_address' => null,
+            'clinic_contact' => null,
+            'clinic_email' => null,
+        ]);
+        Cache::forget('pos.settings');
+
+        $this->newLogo = null;
+        $this->uploadInputKey++;
+        $setting = $setting->fresh();
+        $this->fillFromSetting($setting);
+        $this->missingSetupFields = $setting->missingSetupFields();
+
+        $this->dispatchBrowserEvent('notify', [
+            'type' => 'success',
+            'message' => 'Settings reset to default clinic details.'
+        ]);
+    }
+
+    private function fillFromSetting(Setting $setting): void
+    {
+        $this->state = [
+            'clinic_name' => $setting->clinic_name ?? '',
+            'clinic_address' => $setting->clinic_address ?? '',
+            'clinic_contact' => $setting->clinic_contact ?? '',
+            'clinic_email' => strtolower((string) $setting->clinic_email) === 'n/a' ? '' : ($setting->clinic_email ?? ''),
+        ];
+        $this->currentLogo = $setting->clinic_logo;
+    }
+
+    private function nullableValue($value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+
+    public function render()
+    {
+        return view('livewire.admin.settings-component', [
+            'setting' => Setting::getSettings(),
+        ])->layout('layouts.admin.admin-layout');
+    }
+}
