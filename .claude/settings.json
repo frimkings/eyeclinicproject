@@ -58,7 +58,9 @@
       "Bash(dir \"c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup\")",
       "Bash(powershell -Command \"Get-Item -Path 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' -Force | Get-Member\")",
       "Bash(powershell -Command \"Get-Item -Path 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' | Select-Object -Property FullName, Attributes, Target\")",
-      "Bash(powershell -Command \"if \\(\\(Test-Path 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' -PathType Container\\)\\) { Write-Output 'Is Directory'; Get-ChildItem 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' | Select-Object Name } else { Write-Output 'Is File' }\")"
+      "Bash(powershell -Command \"if \\(\\(Test-Path 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' -PathType Container\\)\\) { Write-Output 'Is Directory'; Get-ChildItem 'c:\\\\xampp\\\\htdocs\\\\eyeclinicproject\\\\Backup' | Select-Object Name } else { Write-Output 'Is File' }\")",
+      "Bash(ls -la c:\\\\\\\\xampp\\\\\\\\htdocs\\\\\\\\eyeclinicproject)",
+      "Bash(grep -E '\\\\.\\(bat|ps1|sh\\)$')"
     ],
     "additionalDirectories": [
       "c:\\Users\\frimk\\.claude\\plans"

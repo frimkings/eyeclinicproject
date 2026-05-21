@@ -10,7 +10,9 @@ use Livewire\Component;
 class BackupManagerComponent extends Component
 {
     public bool   $isRunning   = false;
+    public bool   $isRestoring = false;
     public string $lastResult  = '';
+    public string $lastMessage = '';
     public array  $copyResults = [];
 
     // Extra destination management
@@ -252,11 +254,46 @@ class BackupManagerComponent extends Component
         }
     }
 
+    public function requestDeleteBackup(string $path): void
+    {
+        $this->dispatchBrowserEvent('show-backup-delete-confirmation', ['path' => $path]);
+    }
+
     public function deleteBackup(string $path): void
     {
         if (Storage::disk('backups')->exists($path)) {
             Storage::disk('backups')->delete($path);
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Backup deleted.']);
+        }
+    }
+
+    public function requestRestore(string $path): void
+    {
+        $this->dispatchBrowserEvent('show-backup-restore-confirmation', [
+            'path' => $path,
+            'name' => basename($path),
+        ]);
+    }
+
+    public function restoreBackup(string $path): void
+    {
+        $this->isRestoring = true;
+        $this->lastResult  = '';
+        $this->lastMessage = '';
+
+        $exitCode = Artisan::call('backup:restore', [
+            'file'    => $path,
+            '--force' => true,
+        ]);
+
+        $this->isRestoring = false;
+
+        if ($exitCode === 0) {
+            $this->lastResult  = 'success';
+            $this->lastMessage = 'Backup restored from ' . basename($path) . '. Refresh the page if the UI looks stale.';
+        } else {
+            $this->lastResult  = 'error';
+            $this->lastMessage = 'Restore failed. Output: ' . trim(Artisan::output());
         }
     }
 

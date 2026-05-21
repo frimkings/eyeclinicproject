@@ -206,16 +206,21 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
         $decoded = base64_decode($filename, strict: true);
         abort_if($decoded === false, 400);
 
-        // Reject any path that tries to escape the backup root
-        $safe = basename($decoded);
-        abort_if($safe === '' || $safe !== $decoded || str_contains($decoded, '/') || str_contains($decoded, '\\') || str_contains($decoded, '..'), 403);
+        // Block traversal attempts; allow one subfolder level (e.g. AppName/2026-01-01.zip)
+        abort_if(
+            $decoded === '' ||
+            str_contains($decoded, '..') ||
+            str_starts_with($decoded, '/') ||
+            str_starts_with($decoded, '\\'),
+            403
+        );
 
         $disk = Storage::disk('backups');
-        abort_unless($disk->exists($safe), 404);
+        abort_unless($disk->exists($decoded), 404);
 
         return response()->streamDownload(
-            fn () => print($disk->get($safe)),
-            $safe,
+            fn () => print($disk->get($decoded)),
+            basename($decoded),
             ['Content-Type' => 'application/zip']
         );
     })->name('admin.backup.download');

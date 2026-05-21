@@ -8,7 +8,7 @@ use ZipArchive;
 
 class RestoreBackupCommand extends Command
 {
-    protected $signature   = 'backup:restore {file? : Backup zip filename to restore from}';
+    protected $signature   = 'backup:restore {file? : Backup zip filename to restore from} {--force : Skip the confirmation prompt}';
     protected $description = 'Restore the database and uploaded files from a backup archive.';
 
     public function handle(): int
@@ -57,7 +57,7 @@ class RestoreBackupCommand extends Command
         $this->warn('     Restoring: ' . basename($file));
         $this->warn('');
 
-        if (!$this->confirm('Are you sure you want to continue?', false)) {
+        if (!$this->option('force') && !$this->confirm('Are you sure you want to continue?', false)) {
             $this->info('Restore cancelled.');
             return 0;
         }

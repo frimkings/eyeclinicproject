@@ -3,17 +3,17 @@
     {{-- Result banners (shown after run) --}}
     @if($lastResult === 'success')
         <div class="alert alert-success alert-dismissible fade show">
-            <i class="fas fa-check-circle mr-2"></i>Backup completed successfully. The file appears in the list below.
+            <i class="fas fa-check-circle mr-2"></i>{{ $lastMessage ?: 'Backup completed successfully. The file appears in the list below.' }}
             <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
         </div>
     @elseif($lastResult === 'warning')
         <div class="alert alert-warning alert-dismissible fade show">
-            <i class="fas fa-exclamation-triangle mr-2"></i>Backup finished but the output was unexpected. Check storage manually.
+            <i class="fas fa-exclamation-triangle mr-2"></i>{{ $lastMessage ?: 'Backup finished but the output was unexpected. Check storage manually.' }}
             <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
         </div>
     @elseif($lastResult === 'error')
         <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-times-circle mr-2"></i>Backup failed. Check your database connection and mysqldump configuration.
+            <i class="fas fa-times-circle mr-2"></i>{{ $lastMessage ?: 'Backup failed. Check your database connection and mysqldump configuration.' }}
             <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
         </div>
     @endif
@@ -130,8 +130,18 @@
                                     <i class="fas fa-download"></i>
                                 </a>
                                 <button type="button"
-                                        wire:click="deleteBackup('{{ $backup['path'] }}')"
-                                        wire:confirm="Delete this backup file? This cannot be undone."
+                                        wire:click="requestRestore('{{ $backup['path'] }}')"
+                                        class="btn btn-sm btn-outline-warning ml-1"
+                                        title="Restore"
+                                        {{ $isRestoring ? 'disabled' : '' }}>
+                                    @if($isRestoring)
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    @else
+                                        <i class="fas fa-undo-alt"></i>
+                                    @endif
+                                </button>
+                                <button type="button"
+                                        wire:click="requestDeleteBackup('{{ $backup['path'] }}')"
                                         class="btn btn-sm btn-outline-danger ml-1"
                                         title="Delete">
                                     <i class="fas fa-trash"></i>
@@ -560,6 +570,43 @@
             </div>
         </div>
     </div>
+
+    <script>
+        window.addEventListener('show-backup-restore-confirmation', function(event) {
+            var path = event.detail.path;
+            var name = event.detail.name;
+            Swal.fire({
+                title: 'Restore this backup?',
+                html: 'This will <strong>overwrite</strong> the current database and all uploaded files with:<br><br><code>' + name + '</code>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                confirmButtonText: 'Yes, restore it',
+                cancelButtonText: 'Cancel',
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    @this.call('restoreBackup', path);
+                }
+            });
+        });
+
+        window.addEventListener('show-backup-delete-confirmation', function(event) {
+            var path = event.detail.path;
+            Swal.fire({
+                title: 'Delete this backup?',
+                text: 'This cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    @this.call('deleteBackup', path);
+                }
+            });
+        });
+    </script>
 
 </div>
 
