@@ -10,6 +10,7 @@
 </style>
 </head>
 <body>
+@php($currency = currency())
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 0">
 <tr><td align="center">
 <table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
@@ -44,7 +45,7 @@
               <tr><td>
                 <p style="margin:0;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Gross Revenue</p>
                 <p style="margin:4px 0 0;font-size:22px;font-weight:bold;color:#1e40af">
-                  ₱{{ number_format($report['gross_revenue'], 2) }}
+                  {{ $currency }}{{ number_format($report['gross_revenue'], 2) }}
                 </p>
               </td></tr>
             </table>
@@ -55,7 +56,7 @@
               <tr><td>
                 <p style="margin:0;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Net Revenue</p>
                 <p style="margin:4px 0 0;font-size:22px;font-weight:bold;color:#15803d">
-                  ₱{{ number_format($report['net_revenue'], 2) }}
+                  {{ $currency }}{{ number_format($report['net_revenue'], 2) }}
                 </p>
               </td></tr>
             </table>
@@ -122,7 +123,7 @@
             Outstanding Balance (uncollected)
           </td>
           <td style="padding:12px 16px;border-bottom:1px solid #f3f4f6;text-align:right;color:#b45309">
-            ₱{{ number_format($report['outstanding'], 2) }}
+            {{ $currency }}{{ number_format($report['outstanding'], 2) }}
           </td>
         </tr>
 
@@ -131,7 +132,7 @@
             Discounts Given
           </td>
           <td style="padding:12px 16px;border-bottom:1px solid #f3f4f6;text-align:right;color:#dc2626">
-            &minus;₱{{ number_format($report['total_discounts'], 2) }}
+            &minus;{{ $currency }}{{ number_format($report['total_discounts'], 2) }}
           </td>
         </tr>
 
@@ -140,7 +141,7 @@
             Refunds Processed ({{ $report['refund_count'] }})
           </td>
           <td style="padding:12px 16px;border-bottom:1px solid #f3f4f6;text-align:right;color:#dc2626">
-            &minus;₱{{ number_format($report['refund_total'], 2) }}
+            &minus;{{ $currency }}{{ number_format($report['refund_total'], 2) }}
           </td>
         </tr>
 
@@ -149,7 +150,7 @@
             Net Revenue
           </td>
           <td style="padding:14px 16px;text-align:right;font-weight:bold;color:#15803d;font-size:17px">
-            ₱{{ number_format($report['net_revenue'], 2) }}
+            {{ $currency }}{{ number_format($report['net_revenue'], 2) }}
           </td>
         </tr>
 
