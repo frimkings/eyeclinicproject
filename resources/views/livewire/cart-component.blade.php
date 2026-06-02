@@ -26,7 +26,7 @@
 
                 <!-- Price (auto-fill) -->
                 <div class="col-md-2">
-                    <label class="small font-weight-bold">Price (GH₵)</label>
+                    <label class="small font-weight-bold">Price ({{ currency() }})</label>
                     <input type="text" wire:model="productPrice" class="form-control form-control-sm" readonly>
                 </div>
 
@@ -67,8 +67,8 @@
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item['name'] }}</td>
                                     <td class="text-center">{{ $item['quantity'] }}</td>
-                                    <td class="text-right">GH₵ {{ number_format($item['price'], 2) }}</td>
-                                    <td class="text-right">GH₵ {{ number_format($total, 2) }}</td>
+                                    <td class="text-right">{{ currency() }} {{ number_format($item['price'], 2) }}</td>
+                                    <td class="text-right">{{ currency() }} {{ number_format($total, 2) }}</td>
                                     <td class="text-center">
                                         <button wire:click.prevent="removeFromCart({{ $item['id'] }})" class="btn btn-sm btn-danger">
                                             <i class="fas fa-trash"></i>
@@ -80,7 +80,7 @@
                         <tfoot class="bg-light">
                             <tr>
                                 <th colspan="4" class="text-right">Grand Total:</th>
-                                <th class="text-right">GH₵ {{ number_format($grandTotal, 2) }}</th>
+                                <th class="text-right">{{ currency() }} {{ number_format($grandTotal, 2) }}</th>
                                 <th></th>
                             </tr>
                         </tfoot>

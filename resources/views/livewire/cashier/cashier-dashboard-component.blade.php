@@ -25,7 +25,7 @@
             <div class="kpi-card kpi-card--green h-100">
                 <div class="kpi-card__icon"><i class="fas fa-coins fa-lg"></i></div>
                 <div class="kpi-card__label">Today's Sales</div>
-                <div class="kpi-card__value kpi-card__value--green">GH&#8373; {{ number_format($todaySales, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--green">{{ currency() }} {{ number_format($todaySales, 2) }}</div>
                 <a href="{{ route('cashier.sales-records') }}"
                    class="small font-weight-bold mt-2 d-block" style="color:#28a745;">
                     Sales Records <i class="fas fa-arrow-circle-right ml-1"></i>
@@ -83,7 +83,7 @@
             <div class="kpi-card kpi-card--green h-100">
                 <div class="kpi-card__icon"><i class="fas fa-chart-line fa-lg"></i></div>
                 <div class="kpi-card__label">This Month's Sales</div>
-                <div class="kpi-card__value kpi-card__value--green">GH&#8373; {{ number_format($monthSales, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--green">{{ currency() }} {{ number_format($monthSales, 2) }}</div>
                 <small class="text-muted mt-1 d-block">{{ now()->format('F Y') }}</small>
                 <a href="{{ route('cashier.sales-records') }}"
                    class="small font-weight-bold mt-1 d-block" style="color:#28a745;">
@@ -131,7 +131,7 @@
                         <h6 class="mb-0 font-weight-bold text-dark">
                             <i class="fas fa-chart-bar text-success mr-2"></i>Sales &mdash; Last 7 Days
                         </h6>
-                        <small class="text-muted">Daily collected revenue (GH&#8373;)</small>
+                        <small class="text-muted">Daily collected revenue ({{ currency() }})</small>
                     </div>
                     <a href="{{ route('cashier.sales-records') }}" class="btn btn-sm btn-outline-success">
                         <i class="fas fa-external-link-alt mr-1"></i>All Records
@@ -259,7 +259,7 @@ document.addEventListener('livewire:load', function () {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Sales (GH₵)',
+                label: 'Sales ({{ currency() }})',
                 data: totals,
                 backgroundColor: gradient,
                 borderColor: '#28a745',
@@ -281,7 +281,7 @@ document.addEventListener('livewire:load', function () {
                     cornerRadius: 8,
                     callbacks: {
                         label: function (c) {
-                            return ' GH₵ ' + c.parsed.y.toLocaleString('en-US', {
+                            return ' {{ currency() }} ' + c.parsed.y.toLocaleString('en-US', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2
                             });
@@ -295,7 +295,7 @@ document.addEventListener('livewire:load', function () {
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,.05)', borderDash: [4,4] },
                     ticks: {
-                        callback: function (v) { return 'GH₵ ' + v.toLocaleString(); },
+                        callback: function (v) { return '{{ currency() }} ' + v.toLocaleString(); },
                         font: { size: 11 }
                     }
                 }

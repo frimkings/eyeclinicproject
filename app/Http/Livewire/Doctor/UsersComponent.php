@@ -29,7 +29,7 @@ use WithPagination;
         'name' => 'required|min:3',
         'email' => 'required|email|unique:users,email',
         'role' => 'required|in:0,1,2,3,4,5,6',
-        'password' => 'required|min:6',
+        'password' => 'required|min:8',
     ];
 
     public function render()
@@ -80,7 +80,7 @@ use WithPagination;
         $validationRules = $this->rules;
         if($this->isEdit) {
             $validationRules['email'] = 'required|email|unique:users,email,' . $this->userId;
-            $validationRules['password'] = 'nullable|min:6';
+            $validationRules['password'] = 'nullable|min:8';
         }
 
         $this->validate($validationRules);

@@ -275,14 +275,14 @@ class SalesRecordsComponent extends Component
             
             fputcsv($file, ['Date', 'Transaction ID', 'Patient', 'Cashier', 'Amount', 'Status']);
 
-            $query->orderBy($this->sortColumn, $this->sortDirection)->chunk(100, function($sales) use ($file) {
+            $query->chunkById(500, function($sales) use ($file) {
                 foreach ($sales as $sale) {
                     fputcsv($file, [
                         $sale->created_at->format('Y-m-d H:i'),
                         $sale->transaction_id,
                         $sale->patient->name ?? 'Walk-in',
                         $sale->user->name ?? 'System',
-                        'GH₵ ' . number_format($sale->total_amount, 2),
+                        currency() . ' ' . number_format($sale->total_amount, 2),
                         $sale->is_refunded ? 'Refunded' : 'Paid'
                     ]);
                 }

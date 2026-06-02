@@ -48,6 +48,12 @@
                 <i class="fab fa-whatsapp mr-1" style="color:#25D366;"></i> WhatsApp
             </a>
         </li>
+        <li class="nav-item ml-auto">
+            <a class="nav-link {{ $activeTab === 'license' ? 'active' : '' }}"
+               wire:click.prevent="setTab('license')" href="#">
+                <i class="fas fa-key mr-1 text-warning"></i> License
+            </a>
+        </li>
     </ul>
 
     {{-- Tab content --}}
@@ -66,6 +72,8 @@
             @livewire('admin.sms-templates-component', [], key('tab-templates'))
         @elseif($activeTab === 'whatsapp')
             @livewire('admin.whats-app-settings-component', [], key('tab-whatsapp'))
+        @elseif($activeTab === 'license')
+            @livewire('admin.license-component', [], key('tab-license'))
         @endif
     </div>
 </div>

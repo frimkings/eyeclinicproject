@@ -255,7 +255,7 @@
             </div>
             <div class="item" style="border-bottom: 2px solid #000; margin-top: 6px; padding-top: 6px;">
                 <span class="item-name" style="font-size: 10px;">Total Cost of Spectacles</span>
-                <span class="item-price" style="font-size: 11px;">GH₵ {{ number_format($order->frame_price + $order->lens_price, 2) }}</span>
+                <span class="item-price" style="font-size: 11px;">{{ currency() }} {{ number_format($order->frame_price + $order->lens_price, 2) }}</span>
             </div>
         </div>
 
@@ -263,7 +263,7 @@
         @if($received > 0)
         <div class="payment-box">
             <div class="label">PAYMENT RECEIVED</div>
-            <div class="amount">GH₵ {{ number_format($received, 2) }}</div>
+            <div class="amount">{{ currency() }} {{ number_format($received, 2) }}</div>
         </div>
         @endif
 
@@ -272,16 +272,16 @@
         <div class="summary">
             <div class="sum-row total">
                 <span>TOTAL</span>
-                <span>GH₵ {{ number_format($order->frame_price + $order->lens_price, 2) }}</span>
+                <span>{{ currency() }} {{ number_format($order->frame_price + $order->lens_price, 2) }}</span>
             </div>
             <div class="sum-row">
                 <span>Paid</span>
-                <span>GH₵ {{ number_format($order->paid_amount, 2) }}</span>
+                <span>{{ currency() }} {{ number_format($order->paid_amount, 2) }}</span>
             </div>
             @if($balance > 0)
             <div class="sum-row balance">
                 <span>BALANCE DUE</span>
-                <span>GH₵ {{ number_format($balance, 2) }}</span>
+                <span>{{ currency() }} {{ number_format($balance, 2) }}</span>
             </div>
             @endif
         </div>

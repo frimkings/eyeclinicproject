@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\AuditTrail;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\IncomeStatementEntry;
@@ -70,6 +72,7 @@ class IncomeStatementComponent extends Component
 
     public function mount()
     {
+        abort_if(!LicenseService::has(Feature::ADVANCED_REPORTS), 403, 'Advanced reporting requires a Pro license.');
         $user = auth()->user();
         abort_if(!$user?->hasRole('Super Admin') && !$user?->can('manage billing'), 403);
         AuditTrail::record('report.accessed', 'Accessed income statement page');

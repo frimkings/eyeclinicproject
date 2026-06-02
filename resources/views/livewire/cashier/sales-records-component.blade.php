@@ -16,7 +16,7 @@
             <div class="card bg-primary text-white d-inline-block shadow-sm">
                 <div class="card-body py-2 px-3 text-left">
                     <small class="text-uppercase font-weight-bold opacity-75 d-block" style="font-size: 0.65rem;">Total Sales (Paid)</small>
-                    <h5 class="mb-0 font-weight-bold">GH₵ {{ number_format($totalSales, 2) }}</h5>
+                    <h5 class="mb-0 font-weight-bold">{{ currency() }} {{ number_format($totalSales, 2) }}</h5>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                                 <span class="d-block font-weight-bold text-dark">{{ $sale->patient->name ?? 'Walk-in' }}</span>
                                 <small class="text-muted">By: {{ $sale->user->name ?? 'N/A' }}</small>
                             </td>
-                            <td class="font-weight-bold">GH₵ {{ number_format($sale->total_amount, 2) }}</td>
+                            <td class="font-weight-bold">{{ currency() }} {{ number_format($sale->total_amount, 2) }}</td>
                             <td class="text-center">
                                 @if($sale->is_refunded)
                                     <span class="badge badge-pill badge-danger-light px-3 py-1">Refunded</span>
@@ -145,13 +145,15 @@
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-light py-2">
                     <h6 class="modal-title font-weight-bold text-dark">Sale Details</h6>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close"
+                            onclick="$('#viewSaleModal').modal('hide')">&times;</button>
                 </div>
                 <div class="modal-body p-3" id="modalContent">
                     {{-- Content will be loaded by JavaScript --}}
                 </div>
                 <div class="modal-footer bg-light py-2 border-0">
-                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-sm btn-secondary"
+                            onclick="$('#viewSaleModal').modal('hide')">Close</button>
                     <button onclick="printCurrentReceipt()" class="btn btn-sm btn-primary px-4 shadow-none" id="printBtn">
                         <i class="fas fa-print mr-1"></i> Print Receipt
                     </button>
@@ -173,7 +175,7 @@
                     <div class="alert alert-info border-0 small">
                         Submitting a refund request for
                         <strong>#{{ $initiatingRefundSale->transaction_id }}</strong>
-                        (GH₵ {{ number_format($initiatingRefundSale->total_amount, 2) }}).
+                        ({{ currency() }} {{ number_format($initiatingRefundSale->total_amount, 2) }}).
                         A manager must approve before the refund is processed.
                     </div>
                     <div class="form-group mb-0">
@@ -260,7 +262,7 @@
                     <tr>
                         <td>${productName}</td>
                         <td class="text-center">${quantity}</td>
-                        <td class="text-right">GH₵ ${subtotal}</td>
+                        <td class="text-right">{{ currency() }} ${subtotal}</td>
                     </tr>
                 `;
             });
@@ -269,7 +271,7 @@
                     </tbody>
                 </table>
                 <div class="mt-3 text-right">
-                    <h5 class="font-weight-bold text-primary">Grand Total: GH₵ ${total}</h5>
+                    <h5 class="font-weight-bold text-primary">Grand Total: {{ currency() }} ${total}</h5>
                 </div>
             `;
             

@@ -2,16 +2,21 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Models\AuditTrail;
 use App\Models\Expense;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\ExpenseCategory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class ExpensesComponent extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     protected $paginationTheme = 'bootstrap';
 
@@ -26,6 +31,7 @@ class ExpensesComponent extends Component
     public bool    $showModal  = false;
     public bool    $isEditing  = false;
     public ?int    $expenseId  = null;
+    public         $receiptFile = null;
 
     // Category management
     public bool    $showCategoryPanel   = false;
@@ -59,10 +65,9 @@ class ExpensesComponent extends Component
 
     public function mount(): void
     {
-        abort_if(
-            !auth()->user()?->hasAnyRole(['Manager', 'Super Admin', 'Cashier']),
-            403
-        );
+        // Fix #12: generic 403 — don't leak feature flag names to unauthenticated/low-role users
+        abort_if(!LicenseService::has(Feature::EXPENSE_TRACKING), 403);
+        abort_if(!auth()->user()?->hasAnyRole(['Manager', 'Super Admin', 'Cashier']), 403);
 
         $this->fromDate = Carbon::now()->startOfMonth()->toDateString();
         $this->toDate   = Carbon::now()->toDateString();
@@ -112,15 +117,39 @@ class ExpensesComponent extends Component
         $data['recorded_by'] = auth()->id();
 
         if ($this->isEditing) {
-            Expense::findOrFail($this->expenseId)->update($data);
+            $expense = Expense::findOrFail($this->expenseId);
+            if ($this->receiptFile) {
+                if ($expense->receipt_path) {
+                    Storage::disk('public')->delete($expense->receipt_path);
+                }
+                $data['receipt_path'] = $this->receiptFile->store('expense-receipts', 'public');
+            }
+            $old = $expense->only(array_keys($data));
+            $expense->update($data);
+            AuditTrail::record('expense.updated', "Updated expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, $old, $data);
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Expense updated.']);
         } else {
-            Expense::create($data);
+            if ($this->receiptFile) {
+                $data['receipt_path'] = $this->receiptFile->store('expense-receipts', 'public');
+            }
+            $expense = Expense::create($data);
+            AuditTrail::record('expense.created', "Recorded expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, [], $data);
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Expense recorded.']);
         }
 
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    public function deleteReceipt(int $id): void
+    {
+        $expense = Expense::findOrFail($id);
+        if ($expense->receipt_path) {
+            Storage::disk('public')->delete($expense->receipt_path);
+        }
+        $expense->update(['receipt_path' => null]);
+        AuditTrail::record('expense.receipt_deleted', "Removed receipt from: {$expense->description}", $expense, force: true);
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Receipt removed.']);
     }
 
     public function confirmDelete(int $id): void
@@ -137,7 +166,9 @@ class ExpensesComponent extends Component
     {
         abort_if(!auth()->user()?->hasAnyRole(['Manager', 'Super Admin']), 403);
 
-        Expense::findOrFail($id)->delete();
+        $expense = Expense::findOrFail($id);
+        AuditTrail::record('expense.deleted', "Deleted expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, $expense->toArray(), []);
+        $expense->delete();
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Expense deleted.']);
     }
 
@@ -159,13 +190,19 @@ class ExpensesComponent extends Component
             'Expires'             => '0',
         ];
 
-        $callback = function () use ($expenses) {
+        // Fix #2: sanitize values against CSV formula injection
+        $sanitize = static function ($v): string {
+            $v = (string) $v;
+            return ($v !== '' && preg_match('/^[=+\-@\t\r]/', $v)) ? "'" . $v : $v;
+        };
+
+        $callback = function () use ($expenses, $sanitize) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
             fputcsv($file, ['#', 'Date', 'Category', 'Description', 'Amount', 'Reference', 'Notes', 'Recorded By']);
 
             foreach ($expenses as $expense) {
-                fputcsv($file, [
+                fputcsv($file, array_map($sanitize, [
                     $expense->id,
                     $expense->expense_date->format('Y-m-d'),
                     optional($expense->category)->name ?? '—',
@@ -174,7 +211,7 @@ class ExpensesComponent extends Component
                     $expense->reference ?? '',
                     $expense->notes ?? '',
                     optional($expense->recorder)->name ?? '—',
-                ]);
+                ]));
             }
 
             fclose($file);
@@ -298,6 +335,7 @@ class ExpensesComponent extends Component
             'state.amount'              => 'required|numeric|min:0.01',
             'state.reference'           => 'nullable|string|max:100',
             'state.notes'               => 'nullable|string|max:1000',
+            'receiptFile'               => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ], [], [
             'state.expense_category_id' => 'category',
             'state.expense_date'        => 'date',
@@ -316,8 +354,9 @@ class ExpensesComponent extends Component
     private function resetForm(): void
     {
         $this->resetValidation();
-        $this->expenseId = null;
-        $this->isEditing = false;
+        $this->expenseId   = null;
+        $this->isEditing   = false;
+        $this->receiptFile = null;
         $this->state = [
             'expense_category_id' => '',
             'expense_date'        => today()->toDateString(),
@@ -348,9 +387,13 @@ class ExpensesComponent extends Component
             ->limit(5)
             ->get();
 
+        $editingReceiptUrl = ($this->isEditing && $this->expenseId)
+            ? optional(Expense::find($this->expenseId))->receipt_url
+            : null;
+
         return view('livewire.admin.expenses-component', compact(
             'expenses', 'categories', 'allCategories', 'sectionLabels',
-            'totalInRange', 'todayTotal', 'topCategories'
+            'totalInRange', 'todayTotal', 'topCategories', 'editingReceiptUrl'
         ))->layout('layouts.admin.admin-layout');
     }
 }

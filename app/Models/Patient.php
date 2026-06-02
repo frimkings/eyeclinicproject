@@ -5,12 +5,14 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Patient extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'uuid',
         'user_id',
         'pxnumber',
         'name',
@@ -22,7 +24,22 @@ class Patient extends Model
         'email',
         'civil_status',
         'recall_sms_sent_at',
+        'insurer_id',
+        'insurance_member_id',
+        'insurance_policy_number',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            $model->uuid ??= (string) Str::uuid();
+        });
+    }
 
     protected $casts = [
         'recall_sms_sent_at' => 'datetime',
@@ -46,6 +63,11 @@ class Patient extends Model
 
 
 
+
+public function insurer()
+{
+    return $this->belongsTo(Insurer::class);
+}
 
 public function clearances()
 {

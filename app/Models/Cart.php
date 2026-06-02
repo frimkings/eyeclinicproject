@@ -292,7 +292,7 @@ class Cart extends Model
      */
     public function getFormattedPriceAttribute()
     {
-        return 'GH₵' . number_format($this->price, 2);
+        return currency() . number_format($this->price, 2);
     }
 
     /**
@@ -300,7 +300,7 @@ class Cart extends Model
      */
     public function getFormattedTotalAttribute()
     {
-        return 'GH₵' . number_format($this->total, 2);
+        return currency() . number_format($this->total, 2);
     }
 
     /**

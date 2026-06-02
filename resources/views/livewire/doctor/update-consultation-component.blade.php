@@ -455,7 +455,7 @@
  {{-- modal --}}
  <form autocomplete="off" wire:submit.prevent="addSpectaclePrescription">
     <div class="modal fade" id="modal-info">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content bg-info">
 
                 <div class="modal-body">

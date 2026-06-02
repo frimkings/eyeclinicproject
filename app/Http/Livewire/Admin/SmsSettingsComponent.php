@@ -3,7 +3,9 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\Setting;
+use App\Services\LicenseService;
 use App\Services\SmsService;
+use App\Support\Feature;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Livewire\Component;
@@ -34,6 +36,7 @@ class SmsSettingsComponent extends Component
 
     public function mount(): void
     {
+        abort_if(!LicenseService::has(Feature::SMS_CAMPAIGNS), 403, 'SMS campaigns require a Pro license.');
         if (!Auth::user()->hasRole('Super Admin')) {
             return;
         }

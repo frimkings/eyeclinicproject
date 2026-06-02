@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\LensOrder;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\Setting;
 use App\Models\SmsTemplate;
 use App\Services\SmsService;
@@ -25,6 +27,7 @@ class SpectacleRenewalApprovalsComponent extends Component
     public function mount(): void
     {
         abort_if(!Auth::user()?->hasRole('Super Admin'), 403);
+        abort_if(!LicenseService::has(Feature::SPECTACLES_PRO), 403, 'Spectacle renewals require a Pro license.');
     }
 
     public function updatingFilterStatus(): void

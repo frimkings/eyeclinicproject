@@ -185,7 +185,7 @@
 </head>
 <body>
 @php
-    $currency = 'GH₵ ';
+    $currency = currency() . ' ';
     $grossAmount = $sale->items->sum('subtotal');
     $discountAmount = (float) ($sale->discount_amount ?? 0);
     $amountPaid = (float) ($sale->amount_paid ?? 0);

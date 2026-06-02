@@ -220,15 +220,15 @@
                                     @if($type === 'lens_order')
                                         <table class="table table-sm table-borderless">
                                             <tr><th class="text-muted" style="width:140px;">Frame Model</th><td>{{ $data->frame_model_number ?: '—' }}</td></tr>
-                                            <tr><th class="text-muted">Frame Price</th><td>GH₵ {{ number_format($data->frame_price, 2) }}</td></tr>
-                                            <tr><th class="text-muted">Lens Price</th><td>GH₵ {{ number_format($data->lens_price, 2) }}</td></tr>
-                                            <tr><th class="text-muted">Amount Paid</th><td>GH₵ {{ number_format($data->paid_amount, 2) }}</td></tr>
+                                            <tr><th class="text-muted">Frame Price</th><td>{{ currency() }} {{ number_format($data->frame_price, 2) }}</td></tr>
+                                            <tr><th class="text-muted">Lens Price</th><td>{{ currency() }} {{ number_format($data->lens_price, 2) }}</td></tr>
+                                            <tr><th class="text-muted">Amount Paid</th><td>{{ currency() }} {{ number_format($data->paid_amount, 2) }}</td></tr>
                                             <tr>
                                                 <th class="text-muted">Balance</th>
                                                 <td>
                                                     @php $balance = ($data->frame_price + $data->lens_price) - $data->paid_amount; @endphp
                                                     @if($balance > 0)
-                                                        <span class="text-danger font-weight-bold">GH₵ {{ number_format($balance, 2) }}</span>
+                                                        <span class="text-danger font-weight-bold">{{ currency() }} {{ number_format($balance, 2) }}</span>
                                                     @else
                                                         <span class="text-success">Cleared</span>
                                                     @endif

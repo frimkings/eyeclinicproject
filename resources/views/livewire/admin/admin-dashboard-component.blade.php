@@ -37,7 +37,7 @@
             <div class="kpi-card kpi-card--green h-100">
                 <div class="kpi-card__icon"><i class="fas fa-cash-register fa-lg"></i></div>
                 <div class="kpi-card__label">Today's Sales</div>
-                <div class="kpi-card__value kpi-card__value--green">GH&#8373; {{ number_format($todayRevenue, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--green">{{ currency() }} {{ number_format($todayRevenue, 2) }}</div>
                 <a href="{{ route('admin.daily-cash-summary') }}"
                    class="small font-weight-bold mt-2 d-block" style="color:#28a745;">
                     More Info <i class="fas fa-arrow-circle-right ml-1"></i>
@@ -80,7 +80,7 @@
             <div class="kpi-card kpi-card--green h-100">
                 <div class="kpi-card__icon"><i class="fas fa-chart-line fa-lg"></i></div>
                 <div class="kpi-card__label">This Month's Revenue</div>
-                <div class="kpi-card__value kpi-card__value--green">GH&#8373; {{ number_format($monthRevenue, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--green">{{ currency() }} {{ number_format($monthRevenue, 2) }}</div>
                 <small class="text-muted mt-1 d-block">{{ now()->format('F Y') }}</small>
                 <a href="{{ route('admin.income-statement') }}"
                    class="small font-weight-bold mt-1 d-block" style="color:#28a745;">
@@ -93,7 +93,7 @@
             <div class="kpi-card kpi-card--red h-100">
                 <div class="kpi-card__icon"><i class="fas fa-file-invoice-dollar fa-lg"></i></div>
                 <div class="kpi-card__label">Expenses This Month</div>
-                <div class="kpi-card__value kpi-card__value--red">GH&#8373; {{ number_format($monthExpenses, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--red">{{ currency() }} {{ number_format($monthExpenses, 2) }}</div>
                 <small class="text-muted mt-1 d-block">{{ now()->format('F Y') }}</small>
                 <a href="{{ route('admin.expenses') }}"
                    class="small font-weight-bold mt-1 d-block" style="color:#dc3545;">
@@ -147,7 +147,7 @@
                         <h6 class="mb-0 font-weight-bold text-dark">
                             <i class="fas fa-chart-bar text-primary mr-2"></i>Revenue &mdash; Last 7 Days
                         </h6>
-                        <small class="text-muted">Daily collected revenue (GH&#8373;)</small>
+                        <small class="text-muted">Daily collected revenue ({{ currency() }})</small>
                     </div>
                     <a href="{{ route('admin.reports') }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-external-link-alt mr-1"></i>Full Report
@@ -312,7 +312,7 @@
                                             <span class="badge badge-light border">{{ number_format($item->total_qty) }}</span>
                                         </td>
                                         <td class="text-right font-weight-bold text-success">
-                                            GH&#8373; {{ number_format($item->total_revenue, 2) }}
+                                            {{ currency() }} {{ number_format($item->total_revenue, 2) }}
                                         </td>
                                     </tr>
                                 @empty
@@ -469,7 +469,7 @@ document.addEventListener('livewire:load', function () {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Revenue (GH₵)',
+                label: 'Revenue ({{ currency() }})',
                 data: revenues,
                 backgroundColor: gradient,
                 borderColor: '#28a745',
@@ -491,7 +491,7 @@ document.addEventListener('livewire:load', function () {
                     cornerRadius: 8,
                     callbacks: {
                         label: function (ctx) {
-                            return ' GH₵ ' + ctx.parsed.y.toLocaleString('en-US', {
+                            return ' {{ currency() }} ' + ctx.parsed.y.toLocaleString('en-US', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2
                             });
@@ -508,7 +508,7 @@ document.addEventListener('livewire:load', function () {
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,.05)', borderDash: [4, 4] },
                     ticks: {
-                        callback: function (v) { return 'GH₵ ' + v.toLocaleString(); },
+                        callback: function (v) { return '{{ currency() }} ' + v.toLocaleString(); },
                         font: { size: 11 }
                     }
                 }

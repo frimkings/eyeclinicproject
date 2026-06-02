@@ -10,6 +10,7 @@ use App\Models\SaleItem;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use DB;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -30,7 +31,9 @@ class ReportsComponent extends Component
 
     /* Chart */
     public $chartPeriod = 'daily';
-    public $chartLoaded = false;
+
+    /* Payment status filter */
+    public $paymentStatus = '';
 
     /* Refund */
     public $refundReason = '';
@@ -41,7 +44,6 @@ class ReportsComponent extends Component
 
     /* Refund Details */
     public $viewingRefundSale = null;
-    protected $refundLog = null;
 
     protected $paginationTheme = 'bootstrap';
 
@@ -67,14 +69,15 @@ class ReportsComponent extends Component
         $this->setDateRangeForTab($tab);
         $this->resetPage();
 
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
-        }
+        $this->dispatchChart();
     }
 
     public function switchAnalyticsView($view)
     {
         $this->analyticsView = $view;
+        if ($view === 'overview') {
+            $this->dispatchChart();
+        }
     }
 
     protected function setDateRangeForTab($tab)
@@ -121,18 +124,20 @@ class ReportsComponent extends Component
 
     public function updatedFromDate()
     {
-        $this->resetPage();
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
+        if ($this->fromDate > $this->toDate) {
+            $this->toDate = $this->fromDate;
         }
+        $this->resetPage();
+        $this->dispatchChart();
     }
 
     public function updatedToDate()
     {
-        $this->resetPage();
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
+        if ($this->toDate < $this->fromDate) {
+            $this->fromDate = $this->toDate;
         }
+        $this->resetPage();
+        $this->dispatchChart();
     }
 
     public function updatedSearchQuery()
@@ -148,9 +153,12 @@ class ReportsComponent extends Component
     public function updatedShowRefunded()
     {
         $this->resetPage();
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
-        }
+        $this->dispatchChart();
+    }
+
+    public function updatedPaymentStatus()
+    {
+        $this->resetPage();
     }
 
     /* ---------------- BASE QUERY ---------------- */
@@ -176,7 +184,8 @@ class ReportsComponent extends Component
                               $p->where('name', 'like', '%' . $this->searchQuery . '%')
                           );
                 });
-            });
+            })
+            ->when($this->paymentStatus, fn ($q) => $q->where('payment_status', $this->paymentStatus));
     }
 
     protected function salesQuery()
@@ -188,42 +197,49 @@ class ReportsComponent extends Component
 
     public function getSummaryProperty()
     {
-        $agg = $this->salesBaseQuery()
-            ->selectRaw('
-                COUNT(*) as count,
-                COALESCE(SUM(total_amount), 0) as total_sales,
-                COALESCE(SUM(profit), 0)       as profit,
-                COALESCE(AVG(total_amount), 0) as avg_transaction
-            ')
-            ->first();
+        $cacheKey = 'reports_summary_' . md5(
+            $this->activeTab . $this->fromDate . $this->toDate .
+            ($this->showRefunded ? '1' : '0') . $this->paymentStatus
+        );
 
-        $costOfSales = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->when($this->activeTab === 'trash', fn ($q) => $q->where('sales.is_refunded', true),
-                   fn ($q) => $this->showRefunded ? $q : $q->where('sales.is_refunded', false))
-            ->whereBetween('sales.created_at', [
-                $this->fromDate . ' 00:00:00',
-                $this->toDate   . ' 23:59:59',
-            ])
-            ->whereNull('sale_items.deleted_at')
-            ->whereNull('sales.deleted_at')
-            ->sum(DB::raw('sale_items.dispensed_quantity * COALESCE(products.cost_price, 0)'));
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () {
+            $agg = $this->salesBaseQuery()
+                ->selectRaw('
+                    COUNT(*) as count,
+                    COALESCE(SUM(total_amount), 0) as total_sales,
+                    COALESCE(SUM(profit), 0)       as profit,
+                    COALESCE(AVG(total_amount), 0) as avg_transaction
+                ')
+                ->first();
 
-        $count      = (int) $agg->count;
-        $totalSales = (float) $agg->total_sales;
-        $profit     = (float) $agg->profit;
-        $cost       = (float) $costOfSales;
-        $gross      = $totalSales - $cost;
+            $costOfSales = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->when($this->activeTab === 'trash', fn ($q) => $q->where('sales.is_refunded', true),
+                       fn ($q) => $this->showRefunded ? $q : $q->where('sales.is_refunded', false))
+                ->whereBetween('sales.created_at', [
+                    $this->fromDate . ' 00:00:00',
+                    $this->toDate   . ' 23:59:59',
+                ])
+                ->whereNull('sale_items.deleted_at')
+                ->whereNull('sales.deleted_at')
+                ->sum(DB::raw('sale_items.dispensed_quantity * COALESCE(products.cost_price, 0)'));
 
-        return [
-            'count'           => $count,
-            'total_sales'     => $totalSales,
-            'cost_of_sales'   => $cost,
-            'gross_profit'    => $gross,
-            'profit'          => $profit,
-            'avg_transaction' => (float) $agg->avg_transaction,
-            'margin'          => $totalSales > 0 ? ($gross / $totalSales) * 100 : 0,
-        ];
+            $count      = (int) $agg->count;
+            $totalSales = (float) $agg->total_sales;
+            $profit     = (float) $agg->profit;
+            $cost       = (float) $costOfSales;
+            $gross      = $totalSales - $cost;
+
+            return [
+                'count'           => $count,
+                'total_sales'     => $totalSales,
+                'cost_of_sales'   => $cost,
+                'gross_profit'    => $gross,
+                'profit'          => $profit,
+                'avg_transaction' => (float) $agg->avg_transaction,
+                'margin'          => $totalSales > 0 ? ($gross / $totalSales) * 100 : 0,
+            ];
+        });
     }
 
     /* ---------------- SALES BY ITEM ---------------- */
@@ -362,15 +378,14 @@ class ReportsComponent extends Component
 
     public function resetFilters()
     {
-        $this->searchQuery  = '';
-        $this->showRefunded = false;
-        $this->perPage      = 25;
+        $this->searchQuery   = '';
+        $this->showRefunded  = false;
+        $this->paymentStatus = '';
+        $this->perPage       = 25;
         $this->setDateRangeForTab($this->activeTab);
         $this->resetPage();
 
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
-        }
+        $this->dispatchChart();
 
         $this->dispatchBrowserEvent('notify', [
             'type'    => 'success',
@@ -381,10 +396,7 @@ class ReportsComponent extends Component
     public function refreshData()
     {
         $this->resetPage();
-
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
-        }
+        $this->dispatchChart();
 
         $this->dispatchBrowserEvent('notify', [
             'type'    => 'success',
@@ -392,85 +404,166 @@ class ReportsComponent extends Component
         ]);
     }
 
-    /* ---------------- CHART ENGINE ---------------- */
+    /* ---------------- CSV EXPORT ---------------- */
 
-    public function loadChart()
+    public function exportCsv()
     {
-        if (!$this->chartLoaded) {
-            $this->chartLoaded = true;
-            $this->dispatchChart();
-        }
+        $filename = 'sales-report-' . $this->fromDate . '-to-' . $this->toDate . '.csv';
+        $query    = $this->salesBaseQuery()->with(['patient:id,name']);
+
+        return response()->streamDownload(function () use ($query) {
+            $f = fopen('php://output', 'w');
+            fputcsv($f, ['Transaction ID', 'Patient', 'Date', 'Time', 'Total Amount', 'Amount Paid', 'Payment Status', 'Profit']);
+            $query->chunkById(500, function ($chunk) use ($f) {
+                foreach ($chunk as $sale) {
+                    fputcsv($f, [
+                        $sale->transaction_id,
+                        $sale->patient->name ?? 'Walk-in Customer',
+                        $sale->created_at->format('Y-m-d'),
+                        $sale->created_at->format('H:i:s'),
+                        $sale->total_amount,
+                        $sale->amount_paid,
+                        $sale->payment_status,
+                        $sale->profit,
+                    ]);
+                }
+            });
+            fclose($f);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
+
+    /* ---------------- CHART ENGINE ---------------- */
 
     public function updatedChartPeriod()
     {
-        if (!in_array($this->chartPeriod, ['daily', 'weekly', 'monthly'], true)) {
+        if (!in_array($this->chartPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
+            $this->chartPeriod = 'daily';
+        }
+        $this->dispatchChart();
+    }
+
+    protected function buildChartPayload(): array
+    {
+        if (!in_array($this->chartPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
             $this->chartPeriod = 'daily';
         }
 
-        if ($this->chartLoaded) {
-            $this->dispatchChart();
+        $cacheKey = 'reports_chart_' . md5(
+            $this->chartPeriod . $this->activeTab . $this->fromDate . $this->toDate .
+            ($this->showRefunded ? '1' : '0')
+        );
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () {
+
+        // "Today" is the default tab — use a natural window per period so the chart always has meaningful data.
+        // Any other tab explicitly narrows the chart to that tab's date range.
+        if ($this->activeTab === 'today') {
+            [$start, $end] = match ($this->chartPeriod) {
+                'weekly'  => [Carbon::now()->startOfMonth()->startOfDay(),            Carbon::now()->endOfMonth()->endOfDay()],
+                'monthly' => [Carbon::now()->startOfYear()->startOfDay(),             Carbon::now()->endOfYear()->endOfDay()],
+                'yearly'  => [Carbon::now()->subYears(4)->startOfYear()->startOfDay(), Carbon::now()->endOfYear()->endOfDay()],
+                default   => [Carbon::now()->startOfWeek(Carbon::MONDAY)->startOfDay(), Carbon::now()->endOfWeek(Carbon::SUNDAY)->endOfDay()],
+            };
+        } else {
+            $start = Carbon::parse($this->fromDate)->startOfDay();
+            $end   = Carbon::parse($this->toDate)->endOfDay();
         }
+
+        // Auto-downgrade daily chart for wide ranges — prevents thousands of loop iterations
+        if ($this->chartPeriod === 'daily' && $start->diffInDays($end) > 90) {
+            $this->chartPeriod = 'monthly';
+        }
+
+        $labels = $revenue = $profit = [];
+
+        if ($this->chartPeriod === 'daily') {
+            $rows = Sales::query()
+                ->where('is_refunded', false)
+                ->whereBetween('created_at', [$start, $end])
+                ->select(DB::raw('DATE(created_at) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get()
+                ->keyBy('period');
+
+            $useDayNames = $start->copy()->diffInDays($end) <= 6;
+
+            for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+                $key = $day->format('Y-m-d');
+                $labels[]  = $useDayNames ? $day->format('D') : $day->format('M j');
+                $revenue[] = (float) ($rows[$key]->revenue ?? 0);
+                $profit[]  = (float) ($rows[$key]->profit  ?? 0);
+            }
+
+        } elseif ($this->chartPeriod === 'weekly') {
+            $rows = Sales::query()
+                ->where('is_refunded', false)
+                ->whereBetween('created_at', [$start, $end])
+                ->select(DB::raw('YEARWEEK(created_at, 3) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get()
+                ->keyBy('period');
+
+            $weekNum = 1;
+            $current = $start->copy()->startOfWeek(Carbon::MONDAY);
+            while ($current->lte($end)) {
+                $key = (int) $current->format('oW'); // ISO YYYYWW — matches YEARWEEK(date, 3)
+                $labels[]  = 'Week ' . $weekNum++;
+                $revenue[] = (float) ($rows[$key]->revenue ?? 0);
+                $profit[]  = (float) ($rows[$key]->profit  ?? 0);
+                $current->addWeek();
+            }
+
+        } elseif ($this->chartPeriod === 'monthly') {
+            $rows = Sales::query()
+                ->where('is_refunded', false)
+                ->whereBetween('created_at', [$start, $end])
+                ->select(DB::raw("DATE_FORMAT(created_at,'%Y-%m') as period"), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get()
+                ->keyBy('period');
+
+            $current = $start->copy()->startOfMonth();
+            while ($current->lte($end)) {
+                $key = $current->format('Y-m');
+                $labels[]  = $current->format('M Y');
+                $revenue[] = (float) ($rows[$key]->revenue ?? 0);
+                $profit[]  = (float) ($rows[$key]->profit  ?? 0);
+                $current->addMonth();
+            }
+
+        } else {
+            // yearly
+            $rows = Sales::query()
+                ->where('is_refunded', false)
+                ->whereBetween('created_at', [$start, $end])
+                ->select(DB::raw('YEAR(created_at) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get()
+                ->keyBy('period');
+
+            $current = $start->copy()->startOfYear();
+            while ($current->lte($end)) {
+                $key = $current->year;
+                $labels[]  = (string) $key;
+                $revenue[] = (float) ($rows[$key]->revenue ?? 0);
+                $profit[]  = (float) ($rows[$key]->profit  ?? 0);
+                $current->addYear();
+            }
+        }
+
+        return compact('labels', 'revenue', 'profit');
+        }); // end Cache::remember
     }
 
-    protected function dispatchChart()
+    protected function dispatchChart(): void
     {
-        if (!in_array($this->chartPeriod, ['daily', 'weekly', 'monthly'], true)) {
-            $this->chartPeriod = 'daily';
-        }
-
-        $start = Carbon::parse($this->fromDate)->startOfDay();
-        $end   = Carbon::parse($this->toDate)->endOfDay();
-
-        switch ($this->chartPeriod) {
-            case 'weekly':
-                $group = "YEARWEEK(created_at)";
-                break;
-            case 'monthly':
-                $group = "DATE_FORMAT(created_at,'%Y-%m')";
-                break;
-            default:
-                $group = "DATE(created_at)";
-        }
-
-        $rows = $this->salesBaseQuery()
-            ->select(
-                DB::raw("$group as period"),
-                DB::raw('SUM(total_amount) as revenue'),
-                DB::raw('SUM(profit) as profit')
-            )
-            ->groupBy('period')
-            ->orderBy('period')
-            ->get();
-
-        $labels  = [];
-        $revenue = [];
-        $profit  = [];
-
-        foreach ($rows as $row) {
-            $labels[]  = $this->formatChartLabel($row->period);
-            $revenue[] = (float) $row->revenue;
-            $profit[]  = (float) $row->profit;
-        }
-
-        $this->dispatchBrowserEvent('update-chart', [
-            'labels'  => $labels,
-            'revenue' => $revenue,
-            'profit'  => $profit,
-        ]);
+        $this->dispatchBrowserEvent('update-chart', $this->buildChartPayload());
     }
 
-    protected function formatChartLabel($period)
-    {
-        switch ($this->chartPeriod) {
-            case 'weekly':
-                return 'Week ' . substr($period, 4);
-            case 'monthly':
-                return Carbon::parse($period . '-01')->format('M Y');
-            default:
-                return Carbon::parse($period)->format('M d');
-        }
-    }
 
     /* ---------------- VIEW ITEMS MODAL ---------------- */
 
@@ -565,20 +658,20 @@ class ReportsComponent extends Component
     public function showRefundDetailsModal($saleId)
     {
         $this->viewingRefundSale = Sales::with('refundedBy')->findOrFail($saleId);
-        $this->refundLog         = RefundLog::where('sale_id', $saleId)->first();
         $this->dispatchBrowserEvent('show-refundDetailsModal-form');
     }
 
     public function closeRefundDetailsModal()
     {
         $this->viewingRefundSale = null;
-        $this->refundLog         = null;
         $this->dispatchBrowserEvent('hide-refundDetailsModal-modal');
     }
 
-    public function getRefundLogProperty()
+    public function getRefundLogProperty(): ?RefundLog
     {
-        return $this->refundLog;
+        return $this->viewingRefundSale
+            ? RefundLog::where('sale_id', $this->viewingRefundSale->id)->latest()->first()
+            : null;
     }
 
     /* ---------------- RENDER ---------------- */
@@ -588,9 +681,10 @@ class ReportsComponent extends Component
         return view('livewire.reports-component', [
             'sales'           => $this->salesQuery()->latest()->paginate($this->perPage),
             'summary'         => $this->summary,
-            'salesByItems'    => $this->salesByItems,
-            'salesByCategory' => $this->salesByCategory,
-            'paymentMethods'  => $this->paymentMethods,
+            'salesByItems'    => $this->analyticsView === 'items'      ? $this->salesByItems    : collect(),
+            'salesByCategory' => $this->analyticsView === 'categories' ? $this->salesByCategory : collect(),
+            'paymentMethods'  => $this->analyticsView === 'payments'   ? $this->paymentMethods  : collect(),
+            'chartPayload'    => $this->buildChartPayload(),
         ])->layout('layouts.admin.admin-layout');
     }
 }

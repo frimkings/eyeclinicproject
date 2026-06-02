@@ -64,7 +64,7 @@
             <div class="kpi-card kpi-card--teal h-100">
                 <div class="kpi-card__icon"><i class="fas fa-cash-register fa-lg"></i></div>
                 <div class="kpi-card__label">Today's Sales</div>
-                <div class="kpi-card__value kpi-card__value--teal">GH&#8373; {{ number_format($todaySales, 2) }}</div>
+                <div class="kpi-card__value kpi-card__value--teal">{{ currency() }} {{ number_format($todaySales, 2) }}</div>
                 <small class="text-muted mt-1 d-block">{{ now()->format('D, d M Y') }}</small>
                 <a href="{{ route('cashier.sales-records') }}"
                    class="small font-weight-bold mt-2 d-block" style="color:#20c997;">

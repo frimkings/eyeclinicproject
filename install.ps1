@@ -174,11 +174,11 @@ $phpIni = "$XamppRoot\php\php.ini"
 if (-not (Test-Path $phpIni)) { Stop-WithError "php.ini not found at $phpIni" }
 
 $ini = Get-Content $phpIni -Raw
-foreach ($ext in @('pdo_mysql','mysqli','fileinfo','openssl','mbstring','zip','gd')) {
+foreach ($ext in @('pdo_mysql','mysqli','fileinfo','openssl','mbstring','zip','gd','sodium')) {
     $ini = $ini -replace "(?m)^;(extension=$ext\b)", '$1'
 }
 [System.IO.File]::WriteAllText($phpIni, $ini, [System.Text.Encoding]::UTF8)
-Write-OK "Extensions enabled: pdo_mysql, mysqli, fileinfo, openssl, mbstring, zip, gd"
+Write-OK "Extensions enabled: pdo_mysql, mysqli, fileinfo, openssl, mbstring, zip, gd, sodium"
 
 # ── Step 6: Configure Apache ──────────────────────────────────────────────────
 Write-Section "Step 3 of 9 - Configuring Apache web server"
@@ -197,9 +197,23 @@ $vhostRaw  = if (Test-Path $vhostConf) { Get-Content $vhostConf -Raw } else { ""
 $docRoot   = ($ScriptDir + "\public") -replace '\\', '/'
 
 if ($vhostRaw -notmatch [regex]::Escape("ServerName $Domain")) {
-    $block = "`r`n<VirtualHost *:80>`r`n    ServerName $Domain`r`n    DocumentRoot `"$docRoot`"`r`n    <Directory `"$docRoot`">`r`n        Options Indexes FollowSymLinks`r`n        AllowOverride All`r`n        Require all granted`r`n    </Directory>`r`n</VirtualHost>`r`n"
+    $block = @"
+
+<VirtualHost *:80>
+    ServerName $Domain
+    DocumentRoot "$docRoot"
+    <Directory "$docRoot">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    <FilesMatch "(^\.env|^\.git|composer\.(json|lock)|artisan)$">
+        Require all denied
+    </FilesMatch>
+</VirtualHost>
+"@
     Add-Content $vhostConf $block -Encoding UTF8
-    Write-OK "Virtual host created for $Domain"
+    Write-OK "Virtual host created for $Domain (with .env protection)"
 } else {
     Write-OK "Virtual host already exists for $Domain"
 }
@@ -213,6 +227,19 @@ if ($hostsContent -notmatch [regex]::Escape($Domain)) {
     Write-OK "Added $Domain to hosts file"
 } else {
     Write-OK "hosts file already has $Domain"
+}
+
+# Restrict phpMyAdmin to localhost only (blocks access from other devices on the network)
+$xamppConf = "$XamppRoot\apache\conf\extra\httpd-xampp.conf"
+if (Test-Path $xamppConf) {
+    $xc = Get-Content $xamppConf -Raw
+    if ($xc -match 'phpmyadmin' -and $xc -notmatch 'Require local') {
+        $xc = $xc -replace '(?si)(<Directory[^>]*phpmyadmin[^>]*>.*?)(Require all granted)', '$1Require local'
+        [System.IO.File]::WriteAllText($xamppConf, $xc, [System.Text.Encoding]::UTF8)
+        Write-OK "phpMyAdmin restricted to localhost only"
+    } else {
+        Write-OK "phpMyAdmin already restricted (or not found in config)"
+    }
 }
 
 Write-Info "Restarting Apache..."
@@ -237,6 +264,36 @@ $createOut  = & $MySQL @createArgs 2>&1
 if ($LASTEXITCODE -ne 0) { Stop-WithError "Could not create database '$DbName'.`n$($createOut | Out-String)" }
 Write-OK "Database '$DbName' is ready"
 
+# Create dedicated app user with limited privileges (not root)
+$DbAppUser = "eyeclinic_user"
+$DbAppPass = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 24 | ForEach-Object { [char]$_ })
+$grantSql  = "CREATE USER IF NOT EXISTS '${DbAppUser}'@'localhost' IDENTIFIED BY '${DbAppPass}'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON ``${DbName}``.* TO '${DbAppUser}'@'localhost'; FLUSH PRIVILEGES;"
+$grantArgs = @("-u", "root", "-e", $grantSql)
+if ($DbPass) { $grantArgs = @("-u", "root", "--password=$DbPass", "-e", $grantSql) }
+$grantOut  = & $MySQL @grantArgs 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Info "Could not create dedicated DB user — app will use root instead."
+    $DbAppUser = "root"
+    $DbAppPass = $DbPass
+} else {
+    Write-OK "Dedicated database user '$DbAppUser' created (app uses this, not root)"
+}
+
+# Set MySQL root password if it is currently blank (XAMPP default)
+$rootPassCheck = & $MySQL @("-u", "root", "--connect-timeout=3", "-e", "SELECT 1;") 2>&1
+if ($LASTEXITCODE -eq 0 -and -not $DbPass) {
+    $NewRootPass = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 20 | ForEach-Object { [char]$_ })
+    $setRootSql  = "ALTER USER 'root'@'localhost' IDENTIFIED BY '${NewRootPass}'; FLUSH PRIVILEGES;"
+    & $MySQL @("-u", "root", "-e", $setRootSql) 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        $DbPass = $NewRootPass
+        $rootPassFile = "$env:USERPROFILE\Desktop\MYSQL_ROOT_PASSWORD.txt"
+        "MySQL root password set by Eye Clinic installer.`nPassword: $NewRootPass`n`nStore this somewhere safe and delete this file." |
+            Set-Content $rootPassFile -Encoding UTF8
+        Write-OK "MySQL root password set and saved to your Desktop (MYSQL_ROOT_PASSWORD.txt)"
+    }
+}
+
 # ── Step 8: Write .env file ────────────────────────────────────────────────────
 Write-Section "Step 5 of 9 - Writing configuration"
 
@@ -254,8 +311,8 @@ DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=$DbName
-DB_USERNAME=root
-DB_PASSWORD=$DbPass
+DB_USERNAME=$DbAppUser
+DB_PASSWORD=$DbAppPass
 
 BROADCAST_DRIVER=log
 CACHE_DRIVER=file
@@ -314,6 +371,31 @@ Run-Artisan @('storage:link', '--force') "File storage linked"
 Run-Artisan @('config:cache')            "Configuration cached"
 Run-Artisan @('route:cache')             "Routes cached"
 Run-Artisan @('view:cache')              "Views cached"
+
+# ── Step 10b: Security hardening — folder permissions ─────────────────────────
+Write-Info "Securing project folder permissions..."
+try {
+    $projPath = $ScriptDir
+    $acl = Get-Acl $projPath
+    $acl.SetAccessRuleProtection($true, $false)   # break inheritance, remove inherited
+
+    $adminRule  = New-Object System.Security.AccessControl.FileSystemAccessRule(
+        "Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+        "SYSTEM", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+
+    # Apache service runs as SYSTEM on XAMPP; add Network Service as fallback
+    $netSvcRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+        "NETWORK SERVICE", "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow")
+
+    $acl.AddAccessRule($adminRule)
+    $acl.AddAccessRule($systemRule)
+    $acl.AddAccessRule($netSvcRule)
+    Set-Acl $projPath $acl
+    Write-OK "Project folder locked — standard user accounts cannot read .env"
+} catch {
+    Write-Info "Could not set folder permissions (non-fatal): $($_.Exception.Message)"
+}
 
 # ── Step 11: Set up automatic backup scheduler ────────────────────────────────
 Write-Section "Step 8 of 9 - Setting up automatic backups"

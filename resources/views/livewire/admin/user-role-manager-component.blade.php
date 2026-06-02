@@ -333,7 +333,7 @@
     {{-- Create/Edit Modal --}}
     @if($isOpen)
     <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
             <div class="modal-content" style="max-height: 90vh;">
                 {{-- Modal Header --}}
                 <div class="modal-header">
@@ -590,7 +590,7 @@
     {{-- CSV Import Modal --}}
     @if($isImportOpen)
     <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">

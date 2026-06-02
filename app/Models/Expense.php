@@ -17,6 +17,7 @@ class Expense extends Model
         'amount',
         'reference',
         'notes',
+        'receipt_path',
         'recorded_by',
     ];
 
@@ -24,6 +25,13 @@ class Expense extends Model
         'expense_date' => 'date',
         'amount'       => 'decimal:2',
     ];
+
+    public function getReceiptUrlAttribute(): ?string
+    {
+        return $this->receipt_path
+            ? route('admin.expenses.receipt', ['filename' => basename($this->receipt_path)])
+            : null;
+    }
 
     public function category()
     {

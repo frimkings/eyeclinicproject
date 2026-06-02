@@ -445,9 +445,9 @@
                                                 {{ $product->quantity }}
                                             </span>
                                         </td>
-                                        <td class="text-right">GH₵ {{ number_format($product->cost_price, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($product->cost_price, 2) }}</td>
                                         <td class="text-right">
-                                            <strong>GH₵ {{ number_format($product->selling_price, 2) }}</strong>
+                                            <strong>{{ currency() }} {{ number_format($product->selling_price, 2) }}</strong>
                                         </td>
                                         <td>
                                             <small>{{ $product->manufacture_date->format('M d, Y') }}</small>

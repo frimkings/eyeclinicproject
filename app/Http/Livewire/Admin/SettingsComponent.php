@@ -23,11 +23,9 @@ class SettingsComponent extends Component
     public $currentLogo;
     public $uploadInputKey = 0;
     public $missingSetupFields = [];
-    public string $va_notation = '6m';
+    public string $va_notation      = '6m';
+    public string $currency_symbol  = 'GH₵';
 
-    /**
-     * Define validation rules
-     */
     protected function rules()
     {
         return [
@@ -36,6 +34,7 @@ class SettingsComponent extends Component
             'state.clinic_contact' => 'nullable|string|max:50',
             'state.clinic_email'   => 'nullable|email|max:100',
             'newLogo'              => 'nullable|image|max:2048',
+            'currency_symbol'      => ['required', 'string', 'max:10', \Illuminate\Validation\Rule::in(array_keys(\App\Models\Setting::CURRENCIES))],
         ];
     }
 
@@ -46,7 +45,8 @@ class SettingsComponent extends Component
         $setting = Setting::getSettings();
         $this->fillFromSetting($setting);
         $this->missingSetupFields = $setting->missingSetupFields();
-        $this->va_notation = $setting->va_notation ?? '6m';
+        $this->va_notation     = $setting->va_notation     ?? '6m';
+        $this->currency_symbol = $setting->currency_symbol ?? \App\Models\Setting::DEFAULT_CURRENCY;
     }
 
     public function updateSettings()
@@ -60,7 +60,8 @@ class SettingsComponent extends Component
             'clinic_address' => $this->nullableValue($this->state['clinic_address']),
             'clinic_contact' => $this->nullableValue($this->state['clinic_contact']),
             'clinic_email' => $this->nullableValue($this->state['clinic_email']),
-            'va_notation' => in_array($this->va_notation, ['6m', '20ft']) ? $this->va_notation : '6m',
+            'va_notation'      => in_array($this->va_notation, ['6m', '20ft']) ? $this->va_notation : '6m',
+            'currency_symbol'  => array_key_exists($this->currency_symbol, \App\Models\Setting::CURRENCIES) ? $this->currency_symbol : \App\Models\Setting::DEFAULT_CURRENCY,
         ];
 
         if ($this->newLogo) {
@@ -75,19 +76,21 @@ class SettingsComponent extends Component
 
         $setting->update($data);
         Cache::forget('pos.settings');
+        \App\Models\Setting::clearCurrencyCache();
 
         // Reset the file input after saving
         $this->newLogo = null;
         $this->uploadInputKey++;
         $setting = $setting->fresh();
         $this->fillFromSetting($setting);
-        $this->missingSetupFields = $setting->missingSetupFields();
+        $this->missingSetupFields  = $setting->missingSetupFields();
+        $this->currency_symbol     = $setting->currency_symbol ?? \App\Models\Setting::DEFAULT_CURRENCY;
 
         $this->dispatchBrowserEvent('notify', [
-            'type' => 'success', 
+            'type' => 'success',
             'message' => $setting->needsSetup()
                 ? 'Settings saved. Please complete the highlighted clinic details.'
-                : 'Branding and contact details updated!'
+                : 'Branding and contact details updated!',
         ]);
     }
 

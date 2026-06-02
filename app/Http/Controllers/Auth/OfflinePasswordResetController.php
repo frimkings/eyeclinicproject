@@ -7,6 +7,7 @@ use App\Models\PasswordResetRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class OfflinePasswordResetController extends Controller
 {
@@ -21,35 +22,27 @@ class OfflinePasswordResetController extends Controller
 
         $email = $request->email;
 
-        // Email must belong to a real account
-        if (!User::where('email', $email)->exists()) {
-            return back()
-                ->withErrors(['email' => 'No account found with that email address.'])
-                ->withInput();
+        // Fix H3: always perform the same work and return the same status
+        // regardless of whether the email exists, to prevent user enumeration.
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            $existing = PasswordResetRequest::latestFor($email);
+
+            if ($existing && $existing->isApproved()) {
+                session(['offline_reset_email' => $email]);
+                return redirect()->route('password.offline.form');
+            }
+
+            if (!$existing || !$existing->isPending()) {
+                PasswordResetRequest::where('email', $email)
+                    ->whereIn('status', ['rejected', 'completed'])
+                    ->update(['status' => 'completed']);
+                PasswordResetRequest::create(['email' => $email, 'status' => 'pending']);
+            }
         }
 
-        $existing = PasswordResetRequest::latestFor($email);
-
-        if ($existing && $existing->isApproved()) {
-            // Admin already approved — let them set a new password
-            session(['offline_reset_email' => $email]);
-            return redirect()->route('password.offline.form');
-        }
-
-        if ($existing && $existing->isPending()) {
-            return back()
-                ->with('request_status', 'pending')
-                ->withInput();
-        }
-
-        // Create a fresh pending request
-        // Close any old rejected/completed requests first
-        PasswordResetRequest::where('email', $email)
-            ->whereIn('status', ['rejected', 'completed'])
-            ->update(['status' => 'completed']);
-
-        PasswordResetRequest::create(['email' => $email, 'status' => 'pending']);
-
+        // Always show 'submitted' — attacker learns nothing about email existence
         return back()
             ->with('request_status', 'submitted')
             ->withInput();
@@ -92,7 +85,7 @@ class OfflinePasswordResetController extends Controller
         }
 
         $request->validate([
-            'password'              => 'required|min:8|confirmed',
+            'password'              => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
             'password_confirmation' => 'required',
         ]);
 

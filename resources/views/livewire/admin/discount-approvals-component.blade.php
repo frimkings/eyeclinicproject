@@ -63,18 +63,18 @@
                                                 <span class="badge badge-danger mt-1">Duplicate product discount</span>
                                             @endif
                                         </td>
-                                        <td class="text-right">GH₵ {{ number_format($request->gross_amount, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($request->gross_amount, 2) }}</td>
                                         <td class="text-center">
                                             <span class="badge badge-warning">
                                                 @if($request->discount_type === 'percentage')
                                                     {{ number_format($request->discount_value, 0) }}%
                                                 @else
-                                                    GH₵ {{ number_format($request->discount_value, 2) }}
+                                                    {{ currency() }} {{ number_format($request->discount_value, 2) }}
                                                 @endif
                                             </span>
-                                            <div class="text-danger font-weight-bold">-GH₵ {{ number_format($request->discount_amount, 2) }}</div>
+                                            <div class="text-danger font-weight-bold">-{{ currency() }} {{ number_format($request->discount_amount, 2) }}</div>
                                         </td>
-                                        <td class="text-right text-success font-weight-bold">GH₵ {{ number_format($request->final_amount, 2) }}</td>
+                                        <td class="text-right text-success font-weight-bold">{{ currency() }} {{ number_format($request->final_amount, 2) }}</td>
                                         <td class="text-right">
                                             <button type="button"
                                                     wire:click="approveRequest({{ $request->id }})"
@@ -116,7 +116,7 @@
                         <span class="info-box-icon bg-danger"><i class="fas fa-minus-circle"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total Discount Given</span>
-                            <span class="info-box-number">GH₵ {{ number_format($summary->total_discounted ?? 0, 2) }}</span>
+                            <span class="info-box-number">{{ currency() }} {{ number_format($summary->total_discounted ?? 0, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -125,7 +125,7 @@
                         <span class="info-box-icon bg-info"><i class="fas fa-calculator"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Average Discount</span>
-                            <span class="info-box-number">GH₵ {{ number_format($summary->avg_discount ?? 0, 2) }}</span>
+                            <span class="info-box-number">{{ currency() }} {{ number_format($summary->avg_discount ?? 0, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -167,7 +167,7 @@
                             <select wire:model="filterType" class="form-control form-control-sm">
                                 <option value="">All Types</option>
                                 <option value="percentage">Percentage (%)</option>
-                                <option value="fixed">Fixed Amount (GH₵)</option>
+                                <option value="fixed">Fixed Amount ({{ currency() }})</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -203,7 +203,7 @@
                                     <th>Patient</th>
                                     <th class="text-right">Gross Amount</th>
                                     <th class="text-center">Discount</th>
-                                    <th class="text-right">Discount (GH₵)</th>
+                                    <th class="text-right">Discount ({{ currency() }})</th>
                                     <th class="text-right">Final Total</th>
                                     <th>Approved By</th>
                                     <th>Cashier</th>
@@ -228,7 +228,7 @@
                                             {{ $sale->patient->name ?? '<span class="text-muted">Walk-in</span>' }}
                                         </td>
                                         <td class="text-right text-muted">
-                                            <small><s>GH₵ {{ number_format($gross, 2) }}</s></small>
+                                            <small><s>{{ currency() }} {{ number_format($gross, 2) }}</s></small>
                                         </td>
                                         <td class="text-center">
                                             @if($sale->discount_type === 'percentage')
@@ -237,15 +237,15 @@
                                                 </span>
                                             @else
                                                 <span class="badge badge-warning">
-                                                    GH₵ {{ number_format($sale->discount_value, 2) }} fixed
+                                                    {{ currency() }} {{ number_format($sale->discount_value, 2) }} fixed
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="text-right text-danger fw-bold">
-                                            -GH₵ {{ number_format($sale->discount_amount, 2) }}
+                                            -{{ currency() }} {{ number_format($sale->discount_amount, 2) }}
                                         </td>
                                         <td class="text-right text-success fw-bold">
-                                            GH₵ {{ number_format($sale->total_amount, 2) }}
+                                            {{ currency() }} {{ number_format($sale->total_amount, 2) }}
                                         </td>
                                         <td>
                                             @if($sale->approvedBy)

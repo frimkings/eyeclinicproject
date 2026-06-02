@@ -36,8 +36,8 @@
                                     <td><span class="badge badge-info">{{ $product->category->name ?? 'N/A' }}</span></td>
                                     <td><code>{{ $product->batch_number }}</code></td>
                                     <td class="text-center"><span class="badge {{ $product->quantity <= 10 ? 'badge-warning' : 'badge-success' }}">{{ $product->quantity }}</span></td>
-                                    <td class="text-right">GH₵ {{ number_format($product->cost_price, 2) }}</td>
-                                    <td class="text-right font-weight-bold">GH₵ {{ number_format($product->selling_price, 2) }}</td>
+                                    <td class="text-right">{{ currency() }} {{ number_format($product->cost_price, 2) }}</td>
+                                    <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($product->selling_price, 2) }}</td>
                                     <td>{{ $product->expiry_date->format('M d, Y') }}</td>
                                     <td>
                                         @if($expired)

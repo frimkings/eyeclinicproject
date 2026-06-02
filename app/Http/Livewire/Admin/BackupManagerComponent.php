@@ -3,17 +3,17 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\Setting;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
 class BackupManagerComponent extends Component
 {
-    public bool   $isRunning   = false;
-    public bool   $isRestoring = false;
-    public string $lastResult  = '';
-    public string $lastMessage = '';
-    public array  $copyResults = [];
+    public bool  $isRunning   = false;
+    public bool  $isRestoring = false;
+    public array $copyResults = [];
 
     // Extra destination management
     public string $newPath    = '';
@@ -39,8 +39,20 @@ class BackupManagerComponent extends Component
 
     public function mount(): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        $this->authorise();
         $this->extraPaths = Setting::getSettings()->backup_extra_paths ?? [];
+    }
+
+    // Fix C1: re-run role check on every Livewire AJAX call, not just initial render
+    public function hydrate(): void
+    {
+        $this->authorise();
+    }
+
+    private function authorise(): void
+    {
+        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!LicenseService::has(Feature::MANUAL_BACKUP), 403);
     }
 
     public function openBrowser(): void
@@ -224,21 +236,24 @@ class BackupManagerComponent extends Component
     public function runBackup(): void
     {
         $this->isRunning   = true;
-        $this->lastResult  = '';
         $this->copyResults = [];
 
         try {
             Artisan::call('backup:run --only-db --disable-notifications');
             $output = Artisan::output();
+            $success = str_contains($output, 'Backup completed');
 
-            $this->lastResult = str_contains($output, 'Backup completed') ? 'success' : 'warning';
-
-            if ($this->lastResult === 'success' && !empty($this->extraPaths)) {
+            if ($success && !empty($this->extraPaths)) {
                 Artisan::call('backup:copy-to-drives');
                 $this->copyResults = cache('backup_copy_results', []);
             }
+
+            $this->dispatchBrowserEvent('notify', $success
+                ? ['type' => 'success', 'message' => 'Backup completed successfully. The file appears in the list below.']
+                : ['type' => 'warning', 'message' => 'Backup finished but the output was unexpected. Check storage manually.']
+            );
         } catch (\Throwable $e) {
-            $this->lastResult = 'error';
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Backup failed. Check your database connection and mysqldump configuration.']);
         }
 
         $this->isRunning = false;
@@ -254,47 +269,62 @@ class BackupManagerComponent extends Component
         }
     }
 
-    public function requestDeleteBackup(string $path): void
+    // Fix C2: accept a numeric index, resolve the real path server-side.
+    // The browser never controls a filesystem path — only an integer offset
+    // into the server-computed backup list.
+    public function requestDeleteBackup(int $index): void
     {
-        $this->dispatchBrowserEvent('show-backup-delete-confirmation', ['path' => $path]);
-    }
-
-    public function deleteBackup(string $path): void
-    {
-        if (Storage::disk('backups')->exists($path)) {
-            Storage::disk('backups')->delete($path);
-            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Backup deleted.']);
-        }
-    }
-
-    public function requestRestore(string $path): void
-    {
-        $this->dispatchBrowserEvent('show-backup-restore-confirmation', [
-            'path' => $path,
-            'name' => basename($path),
+        $backup = $this->resolveBackupByIndex($index);
+        if (!$backup) return;
+        $this->dispatchBrowserEvent('show-backup-delete-confirmation', [
+            'index' => $index,
+            'name'  => $backup['name'],
         ]);
     }
 
-    public function restoreBackup(string $path): void
+    public function deleteBackup(int $index): void
     {
+        $backup = $this->resolveBackupByIndex($index);
+        abort_unless($backup, 404);
+        Storage::disk('backups')->delete($backup['path']);
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Backup deleted.']);
+    }
+
+    public function requestRestore(int $index): void
+    {
+        $backup = $this->resolveBackupByIndex($index);
+        if (!$backup) return;
+        $this->dispatchBrowserEvent('show-backup-restore-confirmation', [
+            'index' => $index,
+            'name'  => $backup['name'],
+        ]);
+    }
+
+    public function restoreBackup(int $index): void
+    {
+        $backup = $this->resolveBackupByIndex($index);
+        abort_unless($backup, 404);
+
         $this->isRestoring = true;
-        $this->lastResult  = '';
-        $this->lastMessage = '';
 
         $exitCode = Artisan::call('backup:restore', [
-            'file'    => $path,
+            'file'    => $backup['path'],
             '--force' => true,
         ]);
 
         $this->isRestoring = false;
 
         if ($exitCode === 0) {
-            $this->lastResult  = 'success';
-            $this->lastMessage = 'Backup restored from ' . basename($path) . '. Refresh the page if the UI looks stale.';
+            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Backup restored from ' . $backup['name'] . '. Refresh the page if the UI looks stale.']);
         } else {
-            $this->lastResult  = 'error';
-            $this->lastMessage = 'Restore failed. Output: ' . trim(Artisan::output());
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Restore failed. Output: ' . trim(Artisan::output())]);
         }
+    }
+
+    // Resolve a backup by its numeric index in the sorted server-side list
+    private function resolveBackupByIndex(int $index): ?array
+    {
+        return $this->buildBackupList()->get($index);
     }
 
     public function addPath(): void
@@ -341,10 +371,19 @@ class BackupManagerComponent extends Component
 
     public function render()
     {
-        $backupName = config('backup.backup.name');
-        $disk       = Storage::disk('backups');
+        $backups = $this->buildBackupList();
+        return view('livewire.admin.backup-manager-component', [
+            'backups'   => $backups,
+            'totalSize' => $this->humanFileSize($backups->sum('size')),
+        ])->layout('layouts.admin.admin-layout');
+    }
 
-        $files = collect($disk->files($backupName))
+    // Single authoritative backup list — render() and resolveBackupByIndex() both call this.
+    // Index position in this collection is the only thing the browser ever sends back.
+    private function buildBackupList(): \Illuminate\Support\Collection
+    {
+        $disk = Storage::disk('backups');
+        return collect($disk->files(config('backup.backup.name')))
             ->map(fn ($path) => [
                 'path'          => $path,
                 'name'          => basename($path),
@@ -354,11 +393,6 @@ class BackupManagerComponent extends Component
             ])
             ->sortByDesc('last_modified')
             ->values();
-
-        return view('livewire.admin.backup-manager-component', [
-            'backups'   => $files,
-            'totalSize' => $this->humanFileSize($files->sum('size')),
-        ])->layout('layouts.admin.admin-layout');
     }
 
     private function humanFileSize(int $bytes): string

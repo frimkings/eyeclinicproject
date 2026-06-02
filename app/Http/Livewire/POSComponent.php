@@ -185,6 +185,7 @@ class POSComponent extends Component
                 ->whereNotNull('consultation_id')
                 ->where('consultation_id', '!=', 0)
                 ->orderBy('created_at', 'desc')
+                ->limit(500)
                 ->get();
 
             if ($pendingCarts->isEmpty()) {
@@ -1042,7 +1043,7 @@ class POSComponent extends Component
             'Discount Approval Requested',
             Auth::user()->name . ' is requesting a '
                 . $this->discountValue
-                . ($this->discountType === 'percentage' ? '%' : ' GH₵')
+                . ($this->discountType === 'percentage' ? '%' : ' ' . currency())
                 . ' discount.',
             'fas fa-percent',
             'text-warning',
@@ -1146,7 +1147,7 @@ class POSComponent extends Component
 
         $this->dispatchBrowserEvent('notify', [
             'type'    => 'success',
-            'message' => 'Discount of GH₵ ' . number_format($this->discountAmount, 2) . ' approved by ' . $approver->name . '.',
+            'message' => 'Discount of ' . currency() . ' ' . number_format($this->discountAmount, 2) . ' approved by ' . $approver->name . '.',
         ]);
     }
 
@@ -1471,7 +1472,7 @@ class POSComponent extends Component
                         'product_id'       => $item->product_id,
                         'quantity'         => $item->quantity,
                         'frequency'        => $item->product->isDrugCategory() ? $item->frequency : null,
-                        'eye'              => $item->product->isDrugCategory() ? $item->eye : null,
+                        'eye'              => $item->product->isDrugCategory() ? $this->normalizeEye($item->eye) : null,
                         'cart_id'          => $item->id,
                         'from_prescription' => $fromPrescription,
                         'is_frame'         => str_contains($categoryName, 'frame'),
@@ -1492,6 +1493,17 @@ class POSComponent extends Component
         $this->prescriptionConsultationId = $prescriptionItem ? $prescriptionItem->consultation_id : null;
 
         $this->calculateTotal();
+    }
+
+    private function normalizeEye(?string $eye): ?string
+    {
+        if (!$eye) return null;
+        return match(strtolower(trim($eye))) {
+            'both eyes', 'ou', 'both'       => 'OU',
+            'od (right eye)', 'od', 'right'  => 'OD',
+            'os (left eye)',  'os', 'left'   => 'OS',
+            default                          => null,
+        };
     }
 
     private function loadCartFromDiscountSnapshot(array $snapshot): void
@@ -1563,7 +1575,7 @@ class POSComponent extends Component
         if (!$this->isPartPayment && $amountPaid < $finalAmount) {
             $this->dispatchBrowserEvent('notify', [
                 'type'    => 'error',
-                'message' => 'Total paid (GH₵ ' . number_format($amountPaid, 2) . ') is less than total due (GH₵ ' . number_format($finalAmount, 2) . ').',
+                'message' => 'Total paid (' . currency() . ' ' . number_format($amountPaid, 2) . ') is less than total due (' . currency() . ' ' . number_format($finalAmount, 2) . ').',
             ]);
             return;
         }
@@ -1694,13 +1706,16 @@ class POSComponent extends Component
 
             $paymentStatus = $isPartPayment ? 'partial' : 'paid';
 
+            // For full payments cap amount_paid at the total (excess is change, not revenue)
+            $recordedAmountPaid = $isPartPayment ? $amountPaid : min($amountPaid, $finalAmount);
+
             // Create sale record
             $sale = Sales::create([
                 'user_id'         => Auth::id(),
                 'patient_id'      => $this->patientId,
                 'consultation_id' => $this->prescriptionConsultationId,
                 'total_amount'    => $finalAmount,
-                'amount_paid'     => $amountPaid,
+                'amount_paid'     => $recordedAmountPaid,
                 'payment_status'  => $paymentStatus,
                 'profit'          => $isPartPayment ? 0 : max(0, $total_profit - $this->discountAmount),
                 'transaction_id'  => $transactionId,
@@ -1735,15 +1750,24 @@ class POSComponent extends Component
                 }
             }
 
-            // Log one PaymentTransaction per split-payment entry
+            // Log one PaymentTransaction per split-payment entry.
+            // Cap each amount at the remaining balance so the total never exceeds
+            // the sale amount — the excess the cashier entered is change returned
+            // to the customer and must not be recorded as collected revenue.
+            $remaining = $finalAmount;
             foreach ($this->payments as $payment) {
+                if ($remaining <= 0) break;
+                $recordAmount = $isPartPayment
+                    ? (float) $payment['amount']
+                    : min((float) $payment['amount'], $remaining);
                 \App\Models\PaymentTransaction::create([
                     'sale_id'        => $sale->id,
-                    'amount'         => $payment['amount'],
+                    'amount'         => $recordAmount,
                     'payment_method' => $payment['method'],
                     'notes'          => $isPartPayment ? 'Initial deposit' : 'Full payment',
                     'collected_by'   => Auth::id(),
                 ]);
+                $remaining -= $recordAmount;
             }
 
             // Create sale items & decrement stock (stock reserved even for partial)
@@ -1819,7 +1843,7 @@ class POSComponent extends Component
 
                 AuditTrail::record(
                     'discount.approved',
-                    'Discount of GH₵ ' . number_format($this->discountAmount, 2) . ' approved by ' . $this->discountApprovedBy . ' for sale ' . $sale->transaction_id,
+                    'Discount of ' . currency() . ' ' . number_format($this->discountAmount, 2) . ' approved by ' . $this->discountApprovedBy . ' for sale ' . $sale->transaction_id,
                     $sale,
                     [],
                     [
@@ -1887,7 +1911,7 @@ class POSComponent extends Component
                 'discount_value'  => $this->discountValue,
                 'discount_amount' => $this->discountAmount,
                 'total_amount'    => $saleData->total_amount,
-                'amount_paid'    => $amountPaid,
+                'amount_paid'    => $recordedAmountPaid,
                 'balance'        => max(0, (float) $saleData->total_amount - $amountPaid),
                 'payments'       => $this->payments,
                 'payment_status' => $paymentStatus,

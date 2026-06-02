@@ -54,7 +54,10 @@ class AllrecordsComponent extends Component
 
     public function updated($propertyName): void
     {
-        $this->resetPage();
+        // Only reset pagination for actual filter properties, not checkbox state
+        if (!in_array($propertyName, ['selectedIds', 'selectAll'])) {
+            $this->resetPage();
+        }
     }
 
     public function updatedSelectAll(bool $value): void
@@ -66,7 +69,12 @@ class AllrecordsComponent extends Component
 
     public function updatedSelectedIds(): void
     {
-        $this->selectAll = false;
+        // Guard: only unset selectAll when it's currently true to avoid
+        // a re-trigger loop (updatedSelectedIds → selectAll=false →
+        // updatedSelectAll(false) → selectedIds=[] → loop)
+        if ($this->selectAll) {
+            $this->selectAll = false;
+        }
     }
 
     public function exportCsv(): StreamedResponse
@@ -220,7 +228,7 @@ class AllrecordsComponent extends Component
 
     public function render()
     {
-        $allrecords = $this->buildQuery()->with(['patient', 'diagnoses'])->latest()->paginate(10);
+        $allrecords = $this->buildQuery()->with(['patient', 'diagnoses', 'clearance:id,uuid'])->latest()->paginate(10);
         $diagnoses  = Diagnosis::orderBy('name')->get(['id', 'name']);
         $vaOptions  = self::VA_ORDER;
 

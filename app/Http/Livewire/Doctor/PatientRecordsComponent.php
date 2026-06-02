@@ -137,6 +137,14 @@ public $isEditingAppointment = false;
 
     public function mount(CashierPatientClearance $clearance)
     {
+        if (auth()->user()->hasRole('Doctor')) {
+            $allowed = !$clearance->doctor_status
+                || Consultations::where('clearance_id', $clearance->id)
+                    ->where('user_id', auth()->id())
+                    ->exists();
+            abort_unless($allowed, 403);
+        }
+
         $this->clearance = $clearance;
         $this->patient = $clearance->patient;
         $this->loadAvailableProducts();

@@ -334,19 +334,29 @@
                                         </small>
                                     </td>
                                     <td class="text-center align-middle">
-                                        @if($clearance->pendingRevokeLog)
-                                            <span class="badge badge-warning px-2 py-1"
-                                                  title="Revoke request awaiting manager approval">
-                                                <i class="fas fa-hourglass-half mr-1"></i>Revoke Pending
-                                            </span>
-                                        @else
-                                            <button type="button"
-                                                    class="btn btn-xs btn-outline-danger"
-                                                    wire:click="openRevokeModal({{ $clearance->id }})"
-                                                    title="Request Revoke">
-                                                <i class="fas fa-undo mr-1"></i>Request Revoke
-                                            </button>
-                                        @endif
+                                        <div class="d-flex justify-content-center" style="gap:4px;">
+                                            @if($clearance->sale_id)
+                                                <a href="javascript:void(0)"
+                                                   onclick="window.open('{{ route('cashier.receipt.show', $clearance->sale_id) }}','_blank','width=302,height=600')"
+                                                   class="btn btn-xs btn-outline-info"
+                                                   title="View Receipt">
+                                                    <i class="fas fa-receipt"></i>
+                                                </a>
+                                            @endif
+                                            @if($clearance->pendingRevokeLog)
+                                                <span class="badge badge-warning px-2 py-1"
+                                                      title="Revoke request awaiting manager approval">
+                                                    <i class="fas fa-hourglass-half mr-1"></i>Revoke Pending
+                                                </span>
+                                            @else
+                                                <button type="button"
+                                                        class="btn btn-xs btn-outline-danger"
+                                                        wire:click="openRevokeModal({{ $clearance->id }})"
+                                                        title="Request Revoke">
+                                                    <i class="fas fa-undo mr-1"></i>Request Revoke
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                                 @empty
@@ -393,10 +403,11 @@
                         </label>
                         <select class="custom-select custom-select-lg"
                                 wire:model.defer="selectedServiceId"
-                                id="selectedServiceId">
+                                id="selectedServiceId"
+                                onchange="toggleClearancePaymentMethod(this.value)">
                             <option value="">Select service…</option>
                             @foreach($services as $svc)
-                                <option value="{{ $svc->id }}">{{ $svc->name }} — GH₵ {{ number_format($svc->selling_price, 2) }}</option>
+                                <option value="{{ $svc->id }}">{{ $svc->name }} — {{ currency() }} {{ number_format($svc->selling_price, 2) }}</option>
                             @endforeach
                             <option value="unpaid">✗ Unpaid (no charge)</option>
                         </select>
@@ -404,15 +415,70 @@
                             <div class="text-danger mt-1"><small>{{ $message }}</small></div>
                         @enderror
                     </div>
+
+                    {{-- Split payment section --}}
+                    <div id="clearancePaymentSection" style="display:none;">
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="font-weight-bold mb-0">
+                                <i class="fas fa-credit-card mr-1 text-primary"></i>Payment
+                            </label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="addClearancePaymentRow()">
+                                <i class="fas fa-plus mr-1"></i>Split
+                            </button>
+                        </div>
+
+                        <div id="clearancePaymentRows"></div>
+
+                        <div class="mt-2 p-2 rounded" style="background:#f8f9fa;font-size:.85rem;">
+                            <div class="d-flex justify-content-between">
+                                <span>Service Total</span>
+                                <strong id="clr-svc-total">0.00</strong>
+                            </div>
+                            <div class="d-flex justify-content-between text-success">
+                                <span>Amount Entered</span>
+                                <strong id="clr-entered">0.00</strong>
+                            </div>
+                            <div class="d-flex justify-content-between text-danger" id="clr-balance-row">
+                                <span>Remaining</span>
+                                <strong id="clr-remaining">0.00</strong>
+                            </div>
+                        </div>
+                        <div id="clr-payment-error" class="text-danger small mt-1" style="display:none;"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         <i class="fa fa-times mr-1"></i>Cancel
                     </button>
-                    <button type="button"
-                            onclick="@this.call('createClearance', document.getElementById('selectedServiceId').value)"
+                    <button type="button" id="clearanceConfirmBtn"
+                            onclick="submitClearance()"
                             class="btn btn-success">
                         <i class="fa fa-check mr-1"></i>Confirm & Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clearance Receipt Modal -->
+    <div class="modal fade" id="clearanceReceiptModal" tabindex="-1" role="dialog" wire:ignore.self>
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light py-2">
+                    <h6 class="modal-title font-weight-bold text-dark">
+                        <i class="fas fa-receipt mr-1"></i>Clearance Receipt
+                    </h6>
+                    <button type="button" class="close"
+                            onclick="$('#clearanceReceiptModal').modal('hide')">&times;</button>
+                </div>
+                <div class="modal-body p-3" id="clrReceiptModalContent"></div>
+                <div class="modal-footer bg-light py-2 border-0">
+                    <button type="button" class="btn btn-sm btn-secondary"
+                            onclick="$('#clearanceReceiptModal').modal('hide')">Close</button>
+                    <button onclick="printClearanceReceipt()" class="btn btn-sm btn-primary px-4">
+                        <i class="fas fa-print mr-1"></i>Print Receipt
                     </button>
                 </div>
             </div>
@@ -470,5 +536,184 @@
     <script>
         window.addEventListener('show-revokeRequestModal', () => $('#revokeRequestModal').modal('show'));
         window.addEventListener('hide-revokeRequestModal', () => $('#revokeRequestModal').modal('hide'));
+
+        var _clrPrintUrl = '';
+
+        window.addEventListener('show-clearance-receipt-modal', function(e) {
+            var d = e.detail;
+            _clrPrintUrl = d.printUrl;
+
+            var currency = '{{ currency() }}';
+
+            // Payment rows
+            var paymentHtml = '';
+            if (d.payments && d.payments.length) {
+                d.payments.forEach(function(p) {
+                    paymentHtml +=
+                        '<div class="d-flex justify-content-between text-muted" style="font-size:.85rem;">' +
+                        '<span>PAID (' + p.method.toUpperCase() + ')</span>' +
+                        '<span>' + currency + ' ' + p.amount + '</span>' +
+                        '</div>';
+                });
+                if (d.payments.length > 1) {
+                    paymentHtml +=
+                        '<div class="d-flex justify-content-between font-weight-bold" style="font-size:.85rem;">' +
+                        '<span>TOTAL PAID</span><span>' + currency + ' ' + d.amount + '</span></div>';
+                }
+            }
+
+            var statusClass = d.status === 'Paid' ? 'text-success' : 'text-danger';
+
+            var html =
+                '<div class="d-flex justify-content-between mb-2">' +
+                '<span class="text-muted" style="font-size:.8rem;">Patient</span>' +
+                '<span class="font-weight-bold" style="font-size:.85rem;">' + d.patient + '</span>' +
+                '</div>' +
+                '<div class="d-flex justify-content-between mb-2">' +
+                '<span class="text-muted" style="font-size:.8rem;">ID</span>' +
+                '<span style="font-size:.85rem;">' + d.pxnumber + '</span>' +
+                '</div>' +
+                '<div class="d-flex justify-content-between mb-3">' +
+                '<span class="text-muted" style="font-size:.8rem;">TXN</span>' +
+                '<span class="font-weight-bold" style="font-size:.85rem;">' + d.txn + '</span>' +
+                '</div>' +
+                '<hr class="my-2">' +
+                '<table class="table table-sm table-bordered mb-2" style="font-size:.85rem;">' +
+                '<thead class="thead-light"><tr><th>Service</th><th class="text-right">Amount</th></tr></thead>' +
+                '<tbody><tr><td>' + d.service + '</td><td class="text-right">' + currency + ' ' + d.amount + '</td></tr></tbody>' +
+                '</table>' +
+                '<div class="d-flex justify-content-between font-weight-bold mb-1">' +
+                '<span>Grand Total</span><span class="text-primary">' + currency + ' ' + d.amount + '</span>' +
+                '</div>' +
+                (paymentHtml ? '<hr class="my-1">' + paymentHtml : '') +
+                '<hr class="my-2">' +
+                '<div class="d-flex justify-content-between">' +
+                '<span class="font-weight-bold" style="font-size:.85rem;">Payment Status</span>' +
+                '<span class="font-weight-bold ' + statusClass + '">' + d.status.toUpperCase() + '</span>' +
+                '</div>';
+
+            document.getElementById('clrReceiptModalContent').innerHTML = html;
+            $('#clearanceReceiptModal').modal('show');
+        });
+
+        function printClearanceReceipt() {
+            var w = window.open(_clrPrintUrl, '_blank', 'width=302,height=600');
+            if (w) {
+                w.addEventListener('load', function() { setTimeout(function() { w.print(); }, 250); });
+            }
+        }
+
+        // Service price map (populated server-side)
+        var _clrPrices = {
+            @foreach($services as $svc)
+            {{ $svc->id }}: {{ (float) $svc->selling_price }},
+            @endforeach
+        };
+        var _clrServiceTotal = 0;
+
+        function toggleClearancePaymentMethod(val) {
+            var section = document.getElementById('clearancePaymentSection');
+            if (!section) return;
+            if (val && val !== '' && val !== 'unpaid') {
+                _clrServiceTotal = _clrPrices[val] || 0;
+                document.getElementById('clr-svc-total').textContent = _clrServiceTotal.toFixed(2);
+                section.style.display = 'block';
+                // Reset rows and add one default row
+                document.getElementById('clearancePaymentRows').innerHTML = '';
+                addClearancePaymentRow();
+                updateClearanceTotals();
+            } else {
+                section.style.display = 'none';
+                document.getElementById('clearancePaymentRows').innerHTML = '';
+            }
+        }
+
+        var _clrRowIdx = 0;
+        function addClearancePaymentRow() {
+            var idx = _clrRowIdx++;
+            var remaining = _clrServiceTotal - getClearanceEntered();
+            var amount = remaining > 0 ? remaining.toFixed(2) : '';
+            var row = document.createElement('div');
+            row.className = 'd-flex align-items-center mb-2';
+            row.style.gap = '6px';
+            row.id = 'clr-row-' + idx;
+            row.innerHTML =
+                '<select class="custom-select custom-select-sm clr-method" style="width:140px;" onchange="updateClearanceTotals()">' +
+                    '<option value="cash">Cash</option>' +
+                    '<option value="momo">Mobile Money</option>' +
+                    '<option value="card">Card</option>' +
+                    '<option value="cheque">Cheque</option>' +
+                '</select>' +
+                '<input type="number" class="form-control form-control-sm clr-amount" min="0.01" step="0.01" ' +
+                       'placeholder="Amount" value="' + amount + '" oninput="updateClearanceTotals()" style="width:110px;">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeClearanceRow(' + idx + ')">' +
+                    '<i class="fas fa-times"></i>' +
+                '</button>';
+            document.getElementById('clearancePaymentRows').appendChild(row);
+            updateClearanceTotals();
+        }
+
+        function removeClearanceRow(idx) {
+            var rows = document.getElementById('clearancePaymentRows');
+            if (rows.children.length <= 1) return; // keep at least one row
+            var row = document.getElementById('clr-row-' + idx);
+            if (row) rows.removeChild(row);
+            updateClearanceTotals();
+        }
+
+        function getClearanceEntered() {
+            var total = 0;
+            document.querySelectorAll('.clr-amount').forEach(function(inp) {
+                total += parseFloat(inp.value) || 0;
+            });
+            return total;
+        }
+
+        function updateClearanceTotals() {
+            var entered   = getClearanceEntered();
+            var remaining = _clrServiceTotal - entered;
+            document.getElementById('clr-entered').textContent   = entered.toFixed(2);
+            document.getElementById('clr-remaining').textContent = Math.max(0, remaining).toFixed(2);
+            document.getElementById('clr-balance-row').style.display = remaining > 0.005 ? 'flex' : 'none';
+        }
+
+        function submitClearance() {
+            var svc = document.getElementById('selectedServiceId').value;
+            if (!svc) return;
+
+            if (svc !== 'unpaid') {
+                var entered   = getClearanceEntered();
+                var remaining = _clrServiceTotal - entered;
+
+                if (remaining > 0.005) {
+                    var err = document.getElementById('clr-payment-error');
+                    err.textContent = 'Total payments (' + entered.toFixed(2) + ') are less than the service amount (' + _clrServiceTotal.toFixed(2) + ').';
+                    err.style.display = 'block';
+                    return;
+                }
+                document.getElementById('clr-payment-error').style.display = 'none';
+
+                // Collect payments
+                var payments = [];
+                document.querySelectorAll('#clearancePaymentRows > div').forEach(function(row) {
+                    var method = row.querySelector('.clr-method').value;
+                    var amount = parseFloat(row.querySelector('.clr-amount').value) || 0;
+                    if (amount > 0) payments.push({method: method, amount: amount});
+                });
+
+                @this.call('createClearance', svc, JSON.stringify(payments));
+            } else {
+                @this.call('createClearance', svc, '[]');
+            }
+        }
+
+        // Reset when modal closes
+        $('#addClearanceModal').on('hidden.bs.modal', function () {
+            document.getElementById('clearancePaymentSection').style.display = 'none';
+            document.getElementById('clearancePaymentRows').innerHTML = '';
+            document.getElementById('selectedServiceId').value = '';
+            document.getElementById('clr-payment-error').style.display = 'none';
+            _clrRowIdx = 0;
+        });
     </script>
 </div>

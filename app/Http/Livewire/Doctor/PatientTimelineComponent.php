@@ -19,6 +19,15 @@ class PatientTimelineComponent extends Component
 
     public function mount(Patient $patient)
     {
+        if (auth()->user()->hasRole('Doctor')) {
+            abort_unless(
+                Consultations::where('patient_id', $patient->id)
+                    ->where('user_id', auth()->id())
+                    ->exists(),
+                403
+            );
+        }
+
         $this->patient = $patient;
     }
 

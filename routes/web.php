@@ -32,6 +32,7 @@ use App\Http\Livewire\Admin\RefundApprovalsComponent;
 use App\Http\Livewire\Admin\ClearanceRevokeApprovalsComponent;
 use App\Http\Livewire\Admin\AllApprovalsComponent;
 use App\Http\Livewire\Admin\AuditTrailViewerComponent;
+use App\Http\Livewire\Admin\LicenseComponent;
 use App\Http\Livewire\Admin\DailyCashSummaryComponent;
 use App\Http\Livewire\Admin\InventoryAlertsComponent;
 use App\Http\Livewire\Admin\LoginHistoryComponent;
@@ -112,7 +113,7 @@ Route::middleware(['auth', 'role:Secretary|Manager|Super Admin'])->group(functio
    Route::get('secretary/dashboard', SecretaryDashboardController::class)->name('secretary.dashboard');
 
     Route::get('secretary/patients', PatientsComponent::class)->name('secretary.patients');
-    Route::get('secretary/appointments', AppointmentsComponent::class)->name('secretary.appointments');
+    Route::get('secretary/appointments', AppointmentsComponent::class)->name('secretary.appointments')->middleware('feature:appointments');
     Route::get('secretary/spectacles', SpectaclesComponent::class)->name('secretary.spectacles');
 Route::get('secretary/patient-clearance', CashierPatientClearanceComponent::class)->name('secretary.patient-clearance');
 
@@ -126,7 +127,7 @@ Route::middleware(['auth', 'role:Secretary|Cashier|Manager|Super Admin'])->group
  //cashier
 Route::get('cashier/dashboard', CashierDashboardComponent::class)->name('cashier.dashboard');
 Route::get('cashier/seller-desk', POSComponent::class)->name('cashier.seller-desk');
-Route::get('cashier/outstanding-balances', OutstandingBalancesComponent::class)->name('cashier.outstanding-balances');
+Route::get('cashier/outstanding-balances', OutstandingBalancesComponent::class)->name('cashier.outstanding-balances')->middleware('feature:outstanding_balances');
 Route::get('/livewire/ajax-patients', [POSComponent::class, 'getPatientsJson']);
 Route::get('/cashier/sales-records', SalesRecordsComponent::class)->name('cashier.sales-records');
 Route::get('/cashier/refund-logs', RefundLogsComponent::class)->name('refunds.logs');
@@ -137,6 +138,12 @@ Route::get('/cashier/receipt/{saleId}', [ReceiptController::class, 'show'])
     ->name('cashier.receipt.show');
 Route::get('/cashier/receipt/{saleId}/pdf', [ReceiptController::class, 'downloadPdf'])
     ->name('cashier.receipt.pdf');
+
+Route::get('/cashier/clearance-receipt/{id}', function ($id) {
+    $clearance = \App\Models\CashierPatientClearance::with(['patient', 'service', 'user', 'sale'])->findOrFail($id);
+    $clinicSettings = \App\Models\Setting::getSettings();
+    return view('cashier.clearance-receipt', compact('clearance', 'clinicSettings'));
+})->name('cashier.clearance-receipt');
 });
 
 
@@ -148,7 +155,7 @@ Route::get('/cashier/receipt/{saleId}/pdf', [ReceiptController::class, 'download
 
 
 Route::get('/reports/export/pdf', [\App\Http\Controllers\ReportExportController::class, 'exportPdf'])
-    ->middleware(['auth', 'role:Super Admin'])
+    ->middleware(['auth', 'role:Super Admin', 'feature:advanced_reports'])
     ->name('reports.export.pdf');
 
 
@@ -158,15 +165,15 @@ Route::get('/reports/export/pdf', [\App\Http\Controllers\ReportExportController:
 Route::middleware(['auth', 'role:Super Admin|Manager'])->group(function () {
  //admin
 Route::get('/admin/reports', ReportsComponent::class)->name('admin.reports');
-Route::get('/admin/income-statement', \App\Http\Livewire\Admin\IncomeStatementComponent::class)->name('admin.income-statement');
-Route::get('/admin/income-statement/export/csv', [IncomeStatementExportController::class, 'exportCsv'])->name('admin.income-statement.export.csv');
-Route::get('/admin/income-statement/export/pdf', [IncomeStatementExportController::class, 'exportPdf'])->name('admin.income-statement.export.pdf');
-Route::get('/admin/income-statement/preview', [IncomeStatementExportController::class, 'preview'])->name('admin.income-statement.preview');
+Route::get('/admin/income-statement', \App\Http\Livewire\Admin\IncomeStatementComponent::class)->name('admin.income-statement')->middleware('feature:advanced_reports');
+Route::get('/admin/income-statement/export/csv', [IncomeStatementExportController::class, 'exportCsv'])->name('admin.income-statement.export.csv')->middleware('feature:advanced_reports');
+Route::get('/admin/income-statement/export/pdf', [IncomeStatementExportController::class, 'exportPdf'])->name('admin.income-statement.export.pdf')->middleware('feature:advanced_reports');
+Route::get('/admin/income-statement/preview', [IncomeStatementExportController::class, 'preview'])->name('admin.income-statement.preview')->middleware('feature:advanced_reports');
 Route::get('/admin/diagnoses', \App\Http\Livewire\Admin\DiagnosisComponent::class)->name('admin.diagnoses');
-Route::get('/admin/inventory-alerts', InventoryAlertsComponent::class)->name('admin.inventory-alerts');
-Route::get('/admin/stock-movements', StockMovementComponent::class)->name('admin.stock-movements');
+Route::get('/admin/inventory-alerts', InventoryAlertsComponent::class)->name('admin.inventory-alerts')->middleware('feature:inventory');
+Route::get('/admin/stock-movements', StockMovementComponent::class)->name('admin.stock-movements')->middleware('feature:inventory');
 Route::get('/admin/daily-cash-summary', DailyCashSummaryComponent::class)->name('admin.daily-cash-summary');
-Route::get('/admin/lens-outstanding-report', function () {
+Route::get('/admin/lens-outstanding-report', function () { // feature:spectacles_pro checked in middleware below
     $debts = \App\Models\LensOrder::with(['refraction.consultation.patient'])
         ->whereRaw('(frame_price + lens_price) > paid_amount')
         ->where('status', '!=', 'Cancelled')
@@ -179,17 +186,48 @@ Route::get('/admin/lens-outstanding-report', function () {
     ])->setPaper('a4', 'landscape');
 
     return response()->streamDownload(fn () => print($pdf->output()), 'Lens_Outstanding_Report_' . date('Y-m-d') . '.pdf');
-})->name('admin.lens-outstanding-report');
-Route::get('/admin/login-history', LoginHistoryComponent::class)->name('admin.login-history');
-Route::get('/admin/audit-trail', AuditTrailViewerComponent::class)->name('admin.audit-trail');
-Route::get('/admin/sms-logs', SmsLogsComponent::class)->name('admin.sms-logs');
-Route::get('/admin/expenses', \App\Http\Livewire\Admin\ExpensesComponent::class)->name('admin.expenses');
+})->name('admin.lens-outstanding-report')->middleware('feature:spectacles_pro');
+Route::get('/admin/login-history', LoginHistoryComponent::class)->name('admin.login-history')->middleware('feature:audit_trail');
+Route::get('/admin/audit-trail', AuditTrailViewerComponent::class)->name('admin.audit-trail')->middleware('feature:audit_trail');
+Route::get('/admin/license', LicenseComponent::class)->name('admin.license')->middleware(['auth', 'role:Super Admin']);
+Route::get('/admin/sms-logs', SmsLogsComponent::class)->name('admin.sms-logs')->middleware('feature:sms_campaigns');
+Route::get('/admin/expenses', \App\Http\Livewire\Admin\ExpensesComponent::class)->name('admin.expenses')->middleware('feature:expense_tracking');
+Route::get('/admin/expenses/receipt/{filename}', function (string $filename) {
+    // Basename strips any path traversal attempts
+    $path = 'expense-receipts/' . basename($filename);
+    abort_unless(\Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+    return response()->file(\Illuminate\Support\Facades\Storage::disk('public')->path($path));
+})->name('admin.expenses.receipt')->middleware(['auth']);
 Route::get('admin/dashboard', AdminDashboardController::class)->name('admin.dashboard');
 Route::get('admin/category', CategoryComponent::class)->name('admin.category');
 Route::get('admin/product', ProductsComponent::class)->name('admin.product');
-Route::get('admin/suppliers', \App\Http\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers');
+Route::get('admin/suppliers', \App\Http\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers')->middleware('feature:inventory');
+Route::get('admin/quotations', \App\Http\Livewire\Admin\QuotationComponent::class)->name('admin.quotations');
+Route::get('admin/quotations/{id}/pdf', function (int $id) {
+    $q = \App\Models\Quotation::with('items', 'creator')->findOrFail($id);
+    $setting = \App\Models\Setting::getSettings();
+    return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.quotation', compact('q', 'setting'))
+        ->setPaper('a4', 'portrait')
+        ->stream("Quotation-{$q->quotation_number}.pdf");
+})->name('admin.quotations.pdf');
+Route::get('admin/purchase-orders', \App\Http\Livewire\Admin\PurchaseOrderComponent::class)->name('admin.purchase-orders');
+Route::get('admin/purchase-orders/{id}/pdf', function (int $id) {
+    $po = \App\Models\PurchaseOrder::with('items', 'supplier', 'creator')->findOrFail($id);
+    $setting = \App\Models\Setting::getSettings();
+    return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.purchase-order', compact('po', 'setting'))
+        ->setPaper('a4', 'portrait')
+        ->stream("PO-{$po->po_number}.pdf");
+})->name('admin.purchase-orders.pdf');
+Route::get('admin/patient-ledger', \App\Http\Livewire\Admin\PatientLedgerComponent::class)->name('admin.patient-ledger');
 // Route::get('users', UsersComponent::class)->name('admin.users');
 Route::get('admin/settings', AdminSettingsComponent::class)->name('admin.settings');
+
+// Insurance module
+Route::get('/admin/insurance/claims', \App\Http\Livewire\Admin\InsuranceClaimsComponent::class)->name('admin.insurance.claims');
+Route::get('/admin/insurance/insurers', \App\Http\Livewire\Admin\InsurersComponent::class)->name('admin.insurance.insurers');
+
+// Patient Recall dashboard
+Route::get('/admin/patient-recall', \App\Http\Livewire\Admin\PatientRecallComponent::class)->name('admin.patient-recall')->middleware('feature:sms_campaigns');
 
 });
 
@@ -200,7 +238,7 @@ Route::get('admin/password-reset-approvals', fn() => redirect()->route('admin.ap
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     // Legacy URLs redirect to the unified settings page with the correct tab
     Route::get('admin/backups',          fn() => redirect()->route('admin.settings', ['tab' => 'backup']))->name('admin.backups');
-    Route::get('admin/report-delivery',  fn() => redirect()->route('admin.settings', ['tab' => 'report']))->name('admin.report-delivery');
+    Route::get('admin/report-delivery',  fn() => redirect()->route('admin.settings', ['tab' => 'report']))->name('admin.report-delivery')->middleware('feature:report_delivery');
     Route::get('admin/mail-settings',    fn() => redirect()->route('admin.settings', ['tab' => 'mail']))->name('admin.mail-settings');
     Route::get('admin/backups/download/{filename}', function (string $filename) {
         $decoded = base64_decode($filename, strict: true);
@@ -223,10 +261,10 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
             basename($decoded),
             ['Content-Type' => 'application/zip']
         );
-    })->name('admin.backup.download');
+    })->name('admin.backup.download')->middleware('feature:manual_backup');
 });
 
-Route::middleware(['auth', 'role:Manager|Super Admin'])->group(function () {
+Route::middleware(['auth', 'role:Manager|Super Admin', 'feature:approvals'])->group(function () {
     Route::get('admin/approvals', AllApprovalsComponent::class)->name('admin.approvals');
     Route::get('admin/discount-approvals', fn() => redirect()->route('admin.approvals', ['type' => 'discount']))->name('admin.discount-approvals');
     Route::get('admin/refund-approvals', fn() => redirect()->route('admin.approvals', ['type' => 'refund']))->name('admin.refund-approvals');
@@ -270,8 +308,8 @@ Route::get('/doctor/visit-summaries/download',
     [PatientMedicalRecordController::class, 'downloadVisitSummaries'])
     ->name('doctor.visit-summaries.download');
 
-Route::get('doctor/referrals', ReferralComponent::class)->name('doctor.referrals');
-Route::get('/doctor/referrals/{referral}/print', [ReferralController::class, 'printLetter'])->name('doctor.referral.pdf');
+Route::get('doctor/referrals', ReferralComponent::class)->name('doctor.referrals')->middleware('feature:referrals');
+Route::get('/doctor/referrals/{referral}/print', [ReferralController::class, 'printLetter'])->name('doctor.referral.pdf')->middleware('feature:referrals');
 
 Route::get('/refraction/print/{consultation}', function($consultationID){
     abort_if(!auth()->user()->hasAnyRole(['Doctor', 'Super Admin', 'Manager']), 403);

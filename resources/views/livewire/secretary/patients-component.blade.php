@@ -183,6 +183,37 @@
                             <textarea wire:model.defer="state.address" class="form-control bg-light border-0" rows="3"></textarea>
                         </div>
 
+                        {{-- Insurance Details (optional) --}}
+                        <div class="border rounded p-2 mb-3" style="background:#f8f9fa;">
+                            <div class="small font-weight-bold text-muted mb-2">
+                                <i class="fas fa-shield-alt mr-1 text-primary"></i>INSURANCE DETAILS
+                                <span class="font-weight-normal text-muted">(optional)</span>
+                            </div>
+                            <div class="form-group mb-2">
+                                <label class="small text-muted">Insurer</label>
+                                <select wire:model.defer="state.insurer_id" class="form-control form-control-sm bg-light border-0">
+                                    <option value="">— None / Cash Patient —</option>
+                                    @foreach($insurers as $ins)
+                                        <option value="{{ $ins->id }}">{{ $ins->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 form-group mb-0">
+                                    <label class="small text-muted">Member ID</label>
+                                    <input type="text" wire:model.defer="state.insurance_member_id"
+                                           class="form-control form-control-sm bg-light border-0"
+                                           placeholder="e.g. NHIS-123456">
+                                </div>
+                                <div class="col-6 form-group mb-0">
+                                    <label class="small text-muted">Policy Number</label>
+                                    <input type="text" wire:model.defer="state.insurance_policy_number"
+                                           class="form-control form-control-sm bg-light border-0"
+                                           placeholder="Policy #">
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn {{ $isEditing ? 'btn-info' : 'btn-primary' }} btn-block py-2 font-weight-bold shadow-sm mt-3">
                             {{ $isEditing ? 'UPDATE RECORD' : 'SAVE PATIENT' }}
                         </button>
@@ -232,7 +263,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row mb-4 align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="small font-weight-bold text-muted text-uppercase mb-1">Search Profile</label>
                             <div class="input-group">
                                 <input type="text" wire:model.debounce.500ms="pxSearch" class="form-control bg-light border-0" placeholder="Name or PX Number...">
@@ -247,16 +278,26 @@
                         </div>
                         <div class="col-md-4">
                             <label class="small font-weight-bold text-muted text-uppercase mb-1">Date Registered Range</label>
-                           <div class="d-flex position-relative">
-                                <input type="date" wire:model="fromDate" class="form-control bg-light border-0 mr-1">
-                                <input type="date" wire:model="toDate" class="form-control bg-light border-0">
+                            <div class="d-flex" style="gap:4px;">
+                                <input type="date" wire:model="fromDate" class="form-control bg-light border-0" style="min-width:0;flex:1;">
+                                <input type="date" wire:model="toDate" class="form-control bg-light border-0" style="min-width:0;flex:1;">
                             </div>
                         </div>
-                        <div class="col-md-4 text-right">
-                            <button wire:click="resetFilters" class="btn btn-light border mr-2 shadow-sm font-weight-bold">
+                        <div class="col-md-3">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">
+                                <i class="fas fa-shield-alt mr-1 text-primary"></i>Insurer
+                            </label>
+                            <select wire:model="insurerFilter" class="form-control bg-light border-0">
+                                <option value="">All Patients</option>
+                                @foreach($insurers as $ins)
+                                    <option value="{{ $ins->id }}">{{ $ins->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-right">
+                            <button wire:click="resetFilters" class="btn btn-light border shadow-sm font-weight-bold w-100">
                                 <i class="fas fa-undo-alt mr-1"></i> RESET
                             </button>
-                          
                         </div>
                     </div>
 

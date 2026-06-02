@@ -10,11 +10,26 @@
             </button>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3">
+        <ul class="nav nav-tabs mb-0">
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', false)"
+                   class="nav-link {{ !$showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-list mr-1"></i> Active
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', true)"
+                   class="nav-link {{ $showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-archive mr-1"></i> Archived
+                </a>
+            </li>
+        </ul>
+
+        <div class="card shadow-sm border-0 mb-3" style="border-top-left-radius:0">
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-2"><label class="small font-weight-bold text-muted">Search</label><input class="form-control" wire:model.debounce.400ms="search" placeholder="Event, user, patient..."></div>
-                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">Event</label><select class="form-control" wire:model="event"><option value="">All</option>@foreach($events as $eventName)<option value="{{ $eventName }}">{{ $eventName }}</option>@endforeach</select></div>
+                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">Event</label><select class="form-control" wire:model="event"><option value="">All</option>@foreach($events as $eventName)<option value="{{ $eventName }}">{{ ucwords(str_replace(['.','_'], [' — ', ' '], $eventName)) }}</option>@endforeach</select></div>
                     <div class="col-md-3 mb-2"><label class="small font-weight-bold text-muted">User</label><select class="form-control" wire:model="userId"><option value="">All users</option>@foreach($users as $user)<option value="{{ $user->id }}">{{ $user->name }}</option>@endforeach</select></div>
                     <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">From</label><input type="date" class="form-control" wire:model="fromDate"></div>
                     <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">To</label><input type="date" class="form-control" wire:model="toDate"></div>
@@ -29,9 +44,19 @@
                     <thead class="thead-light"><tr><th>Event</th><th>Description</th><th>User / Patient</th><th>IP</th><th class="text-right">Time</th></tr></thead>
                     <tbody>
                         @forelse($audits as $audit)
+                            @php
+                                $eventBadge = match(true) {
+                                    str_contains($audit->event, '.created') || str_contains($audit->event, '.restored') => 'badge-success',
+                                    str_contains($audit->event, '.updated') || str_contains($audit->event, '.status_updated') || str_contains($audit->event, '.activated') => 'badge-info',
+                                    str_contains($audit->event, '.deleted') || str_contains($audit->event, '.archived') || str_contains($audit->event, '.revoke') => 'badge-danger',
+                                    str_contains($audit->event, 'login') || str_contains($audit->event, 'logout') => 'badge-secondary',
+                                    str_contains($audit->event, 'report') || str_contains($audit->event, 'export') => 'badge-dark',
+                                    default => 'badge-warning',
+                                };
+                            @endphp
                             <tr>
                                 <td>
-                                    <span class="badge badge-info">{{ $this->formatEventLabel($audit->event) }}</span>
+                                    <span class="badge {{ $eventBadge }}">{{ $this->formatEventLabel($audit->event) }}</span>
                                     <div class="small text-muted mt-1">{{ $audit->event }}</div>
                                 </td>
                                 <td>

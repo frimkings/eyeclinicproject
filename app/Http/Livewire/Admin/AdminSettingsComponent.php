@@ -14,14 +14,14 @@ class AdminSettingsComponent extends Component
         abort_if(!Auth::user()->hasRole('Super Admin'), 403);
 
         $tab = request()->query('tab', 'system');
-        if (in_array($tab, ['system', 'backup', 'report', 'mail', 'sms', 'templates', 'whatsapp'])) {
+        if (in_array($tab, ['system', 'backup', 'report', 'mail', 'sms', 'templates', 'whatsapp', 'license'])) {
             $this->activeTab = $tab;
         }
     }
 
     public function setTab(string $tab): void
     {
-        if (in_array($tab, ['system', 'backup', 'report', 'mail', 'sms', 'templates', 'whatsapp'])) {
+        if (in_array($tab, ['system', 'backup', 'report', 'mail', 'sms', 'templates', 'whatsapp', 'license'])) {
             $this->activeTab = $tab;
         }
     }

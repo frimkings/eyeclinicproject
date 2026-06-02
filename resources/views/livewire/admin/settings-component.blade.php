@@ -58,6 +58,18 @@
                             <small class="form-text text-muted">Leave blank if the clinic does not use an email address.</small>
                         </div>
 
+                        {{-- Currency --}}
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-muted">CURRENCY</label>
+                            <select wire:model="currency_symbol" class="form-control bg-light border-0 @error('currency_symbol') is-invalid @enderror">
+                                @foreach(\App\Models\Setting::CURRENCIES as $symbol => $label)
+                                    <option value="{{ $symbol }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('currency_symbol') <span class="text-danger small">{{ $message }}</span> @enderror
+                            <small class="form-text text-muted">Applies to all prices, receipts, and financial reports.</small>
+                        </div>
+
                         {{-- VA Notation --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">VISUAL ACUITY NOTATION</label>

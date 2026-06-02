@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\Setting;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use Illuminate\Support\Facades\Artisan;
 use Livewire\Component;
 
@@ -30,6 +32,7 @@ class ReportDeliveryComponent extends Component
 
     public function mount(): void
     {
+        abort_if(!LicenseService::has(Feature::REPORT_DELIVERY), 403, 'Report delivery requires a Pro license.');
         $s = Setting::getSettings();
 
         $this->enabled    = (bool) ($s->report_enabled ?? false);

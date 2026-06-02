@@ -504,8 +504,8 @@
                                         <td>{{ $product['name'] ?? 'N/A' }}</td>
                                         <td>{{ $product['batch_number'] ?? 'N/A' }}</td>
                                         <td class="text-right">{{ $product['quantity'] ?? 0 }}</td>
-                                        <td class="text-right">GH₵ {{ number_format($product['price'] ?? 0, 2) }}</td>
-                                        <td class="text-right">GH₵ {{ number_format($product['total'] ?? 0, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($product['price'] ?? 0, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($product['total'] ?? 0, 2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -513,7 +513,7 @@
                                     <tr>
                                         <td colspan="4" class="text-right">Grand Total:</td>
                                         <td class="text-right">
-                                            GH₵ {{ number_format(collect($consultation->products)->sum('total'), 2) }}
+                                            {{ currency() }} {{ number_format(collect($consultation->products)->sum('total'), 2) }}
                                         </td>
                                     </tr>
                                 </tfoot>

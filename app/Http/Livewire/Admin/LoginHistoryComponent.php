@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\LoginLog;
+use App\Models\LoginLogArchive;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Response;
@@ -15,6 +16,7 @@ class LoginHistoryComponent extends Component
 
     protected $paginationTheme = 'bootstrap';
 
+    public bool $showArchive = false;
     public $search = '';
     public $userId = '';
     public $fromDate;
@@ -53,6 +55,16 @@ class LoginHistoryComponent extends Component
     public function updatingFromDate() { $this->resetPage(); }
     public function updatingToDate() { $this->resetPage(); }
 
+    public function toggleArchive(): void
+    {
+        $this->showArchive = !$this->showArchive;
+        $this->search   = '';
+        $this->userId   = '';
+        $this->fromDate = '';
+        $this->toDate   = '';
+        $this->resetPage();
+    }
+
     public function resetFilters()
     {
         $this->search = '';
@@ -63,21 +75,23 @@ class LoginHistoryComponent extends Component
 
     public function exportCsv()
     {
-        $logs = $this->query()->get();
-        $filename = 'login_history_' . now()->format('Y-m-d_His') . '.csv';
+        $query    = $this->query();
+        $filename = 'login_history_' . ($this->showArchive ? 'archive_' : '') . now()->format('Y-m-d_His') . '.csv';
 
-        $callback = function () use ($logs) {
+        $callback = function () use ($query) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['User', 'Email', 'IP Address', 'Browser / Device', 'Login At']);
-            foreach ($logs as $log) {
-                fputcsv($file, [
-                    $log->user->name ?? 'Unknown',
-                    $log->user->email ?? '',
-                    $log->ip_address,
-                    $log->user_agent,
-                    optional($log->login_at)->format('Y-m-d H:i:s'),
-                ]);
-            }
+            $query->chunkById(500, function ($logs) use ($file) {
+                foreach ($logs as $log) {
+                    fputcsv($file, [
+                        $log->user->name ?? 'Unknown',
+                        $log->user->email ?? '',
+                        $log->ip_address,
+                        $log->user_agent,
+                        optional($log->login_at)->format('Y-m-d H:i:s'),
+                    ]);
+                }
+            });
             fclose($file);
         };
 
@@ -86,7 +100,9 @@ class LoginHistoryComponent extends Component
 
     private function query()
     {
-        return LoginLog::with('user')
+        $model = $this->showArchive ? new LoginLogArchive : new LoginLog;
+
+        return $model::with('user')
             ->when($this->search, function ($query) {
                 $search = '%' . $this->search . '%';
                 $query->where(function ($q) use ($search) {
@@ -107,8 +123,9 @@ class LoginHistoryComponent extends Component
     public function render()
     {
         return view('livewire.admin.login-history-component', [
-            'logs' => $this->query()->paginate(20),
-            'users' => User::orderBy('name')->get(['id', 'name', 'email']),
+            'logs'        => $this->query()->paginate(20),
+            'users'       => User::orderBy('name')->get(['id', 'name', 'email']),
+            'showArchive' => $this->showArchive,
         ])->layout('layouts.admin.admin-layout');
     }
 }

@@ -53,6 +53,10 @@
                     <div class="d-flex align-items-center" style="gap:8px;">
                         <span class="small text-muted">
                             <span class="font-weight-bold text-dark">{{ number_format($allrecords->total()) }}</span> records
+                            <span wire:loading.delay
+                                  wire:target="searchTerm,startDate,endDate,genderFilter,diagnosisFilter,ageMin,ageMax,iopMin,iopMax,cdrMin,cdrMax,vaMin,vaMax,resetFilters,clearClinicalFilters,previousPage,nextPage,gotoPage">
+                                <i class="fas fa-spinner fa-spin fa-xs text-muted ml-1"></i>
+                            </span>
                         </span>
                         <button wire:click="resetFilters" class="btn-reset">
                             <i class="fas fa-undo mr-1"></i>Reset All
@@ -316,6 +320,18 @@
             {{-- ═══════════════════════════════════════════════════════════ --}}
             {{-- RESULTS TABLE                                                --}}
             {{-- ═══════════════════════════════════════════════════════════ --}}
+
+            {{-- Centered overlay spinner — appears after 200ms on any filter/page change --}}
+            <div wire:loading.delay.flex
+                 wire:target="searchTerm,startDate,endDate,genderFilter,diagnosisFilter,ageMin,ageMax,iopMin,iopMax,cdrMin,cdrMax,vaMin,vaMax,resetFilters,clearClinicalFilters,previousPage,nextPage,gotoPage"
+                 class="position-fixed"
+                 style="display:none; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9999; pointer-events:none; flex-direction:column; align-items:center;">
+                <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <small class="text-muted mt-2 font-weight-bold" style="font-size:.8rem;">Searching records…</small>
+            </div>
+
             <div class="card shadow-sm border-0" style="border-radius:10px; overflow:hidden;">
 
                 {{-- Export toolbar (shown always; selection count updates dynamically) --}}
@@ -341,14 +357,26 @@
                             @if(count($selectedIds) === 0) Export all filtered @else Export selected @endif
                         </span>
                         <a wire:click="exportCsv" href="#"
+                           wire:loading.class="disabled" wire:target="exportCsv"
                            class="btn btn-sm btn-outline-success rounded-pill px-3"
                            style="font-size:.78rem;">
-                            <i class="fas fa-file-csv mr-1"></i>CSV
+                            <span wire:loading.remove wire:target="exportCsv">
+                                <i class="fas fa-file-csv mr-1"></i>CSV
+                            </span>
+                            <span wire:loading wire:target="exportCsv">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>Exporting…
+                            </span>
                         </a>
                         <a wire:click="exportPdf" href="#"
+                           wire:loading.class="disabled" wire:target="exportPdf"
                            class="btn btn-sm btn-outline-danger rounded-pill px-3"
                            style="font-size:.78rem;">
-                            <i class="fas fa-file-pdf mr-1"></i>PDF
+                            <span wire:loading.remove wire:target="exportPdf">
+                                <i class="fas fa-file-pdf mr-1"></i>PDF
+                            </span>
+                            <span wire:loading wire:target="exportPdf">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>Generating…
+                            </span>
                         </a>
                     </div>
                 </div>
@@ -484,7 +512,7 @@
                                     </td>
 
                                     <td class="text-right px-3 align-middle">
-                                        <a href="{{ route('doctor.patient-records', $record->clearance_id) }}"
+                                        <a href="{{ route('doctor.patient-records', $record->clearance) }}"
                                            class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"
                                            style="font-size:.78rem;">
                                             <i class="fas fa-folder-open mr-1"></i>Open

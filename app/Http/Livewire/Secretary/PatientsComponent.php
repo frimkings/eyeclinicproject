@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Secretary;
 
+use App\Models\AuditTrail;
 use App\Models\Patient;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -16,38 +17,41 @@ class PatientsComponent extends Component
 
     protected $paginationTheme = 'bootstrap';
 
-    // Form State Properties
     public $state = [];
-    public $nameSearch = ''; // Autocomplete for the registration form
-    public $suggestions = []; 
-    
-    // UI State Properties
-    public $isEditing = false;
-    public $activeTab = 'today'; 
-    public $birthdaysTodayCount = 0;
-    
-    // Unified Table Search Property
-    public $pxSearch = ''; // Single input for Name or PX Number
-    public $fromDate = null;
-    public $toDate = null;
+    public $nameSearch = '';
+    public $suggestions = [];
 
-    // Bulk Action Properties
+    public $isEditing = false;
+    public $activeTab = 'today';
+    public $birthdaysTodayCount = 0;
+
+    public $pxSearch      = '';
+    public $fromDate      = null;
+    public $toDate        = null;
+    public $insurerFilter = '';
+
     public $selectedPatients = [];
     public $selectAll = false;
 
-    // CSV Import
     public $showImportPanel = false;
     public $importFile = null;
     public $importResults = null;
 
     public function mount()
     {
-
-      if (!Auth::user()->hasAnyRole(['Secretary', 'Super Admin'])) {
-        return redirect()->route('dashboard')->with('error', 'Access Denied: You do not have the required permissions for the Registry Hub.');
-    }
+        if (!Auth::user()->hasAnyRole(['Secretary', 'Super Admin'])) {
+            return redirect()->route('dashboard')->with('error', 'Access Denied.');
+        }
         $this->resetForm();
         $this->setDefaultDates();
+    }
+
+    // Fix #1/#3: re-check role on every Livewire AJAX request, not just mount()
+    public function hydrate()
+    {
+        if (!Auth::user()->hasAnyRole(['Secretary', 'Super Admin'])) {
+            abort(403);
+        }
     }
 
     public function setDefaultDates()
@@ -56,10 +60,13 @@ class PatientsComponent extends Component
         $this->toDate = Carbon::today()->toDateString();
     }
 
-    /**
-     * Resets pagination when the unified search query changes
-     */
     public function updatedPxSearch()
+    {
+        $this->resetPage();
+        $this->clearSelection();
+    }
+
+    public function updatedInsurerFilter()
     {
         $this->resetPage();
         $this->clearSelection();
@@ -78,7 +85,8 @@ class PatientsComponent extends Component
 
     public function resetFilters()
     {
-        $this->pxSearch = '';
+        $this->pxSearch      = '';
+        $this->insurerFilter = '';
         $this->setDefaultDates();
         $this->resetPage();
         $this->clearSelection();
@@ -87,26 +95,28 @@ class PatientsComponent extends Component
     public function getGenderStatsProperty()
     {
         $query = $this->applyFilters(Patient::query());
-        
+
         return [
-            'male' => (clone $query)->where('gender', 'Male')->count(),
+            'male'   => (clone $query)->where('gender', 'Male')->count(),
             'female' => (clone $query)->where('gender', 'Female')->count(),
-            'other' => (clone $query)->where('gender', 'Other')->count(),
+            'other'  => (clone $query)->where('gender', 'Other')->count(),
         ];
     }
 
+    // Fix #10: urlencode phone so a stored number like "0244&text=injected"
+    // cannot rewrite the WhatsApp URL parameters.
     public function generateWhatsAppLink($name, $contact)
     {
-        $phone = $this->formatPhoneForWhatsApp($contact);
+        $phone   = $this->formatPhoneForWhatsApp($contact);
         $message = "Hello " . $name . ", this is Vision Space Eye Center.";
-        return "https://api.whatsapp.com/send?phone=" . $phone . "&text=" . urlencode($message);
+        return "https://api.whatsapp.com/send?phone=" . urlencode($phone) . "&text=" . urlencode($message);
     }
 
     public function generateBirthdayWhatsAppLink($name, $contact)
     {
-        $phone = $this->formatPhoneForWhatsApp($contact);
+        $phone   = $this->formatPhoneForWhatsApp($contact);
         $message = "Happy Birthday, " . $name . "! 🎂 On behalf of the entire team at Vision Space Eye Center, we wish you a very Happy Birthday. Wishing you a healthy and happy year ahead!";
-        return "https://api.whatsapp.com/send?phone=" . $phone . "&text=" . urlencode($message);
+        return "https://api.whatsapp.com/send?phone=" . urlencode($phone) . "&text=" . urlencode($message);
     }
 
     public function generateCallLink($contact)
@@ -133,48 +143,71 @@ class PatientsComponent extends Component
 
     public function archiveSelected()
     {
-        Patient::whereIn('id', $this->selectedPatients)->delete();
+        // Fix #1: resolve IDs against the DB so forged/injected IDs are silently ignored
+        $validIds = Patient::whereIn('id', $this->selectedPatients)->pluck('id')->all();
+        $count    = count($validIds);
+        Patient::whereIn('id', $validIds)->delete();
+        // Fix #8 force=true: bulk-delete must be logged even if license is downgraded
+        AuditTrail::record('patient.archived', "Archived {$count} patient record(s).", null, [], [], null, true);
         $this->clearSelection();
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Selected records archived!']);
     }
 
+    // Fix #5: pass the query builder; downloadCSV streams with chunkById
     public function exportRegistry()
     {
         $query = $this->applyFilters(Patient::query());
-        return $this->downloadCSV($query->get(), 'Patient_Registry_Report');
+        // Fix #8 force=true: exports are security-critical — always audit
+        AuditTrail::record('patient.exported', 'Exported patient registry.', null, [], [], null, true);
+        return $this->downloadCSV($query, 'Patient_Registry_Report');
     }
 
     public function exportSelected()
     {
         if (empty($this->selectedPatients)) return;
-        $patients = Patient::whereIn('id', $this->selectedPatients)->get();
-        return $this->downloadCSV($patients, 'Selected_Patients_Export');
+        // Fix #1: resolve against DB so forged IDs in the public property are ignored
+        $query = Patient::whereIn('id', $this->selectedPatients);
+        AuditTrail::record('patient.exported', 'Exported ' . count($this->selectedPatients) . ' selected patient(s).', null, [], [], null, true);
+        return $this->downloadCSV($query, 'Selected_Patients_Export');
     }
 
-    private function downloadCSV($patients, $filename)
+    // Fix #2 + #5: accepts a query Builder, streams with chunkById (no unbounded get()),
+    // and sanitizes every value against CSV formula injection.
+    private function downloadCSV($query, $filename)
     {
         $fileName = $filename . '_' . date('Y-m-d') . '.csv';
-        $callback = function() use($patients) {
+        $callback = function () use ($query) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['PX Number', 'Name', 'Email', 'Contact', 'DOB', 'Gender', 'Civil Status', 'Occupation', 'Address', 'Registered Date']);
-            
-            foreach ($patients as $px) {
-                fputcsv($file, [
-                    $px->pxnumber, 
-                    $px->name, 
-                    $px->email, 
-                    $px->contact, 
-                    $px->dob, 
-                    $px->gender, 
-                    $px->civil_status, 
-                    $px->occupation, 
-                    $px->address, 
-                    $px->created_at->format('Y-m-d')
-                ]);
-            }
+            $query->chunkById(500, function ($patients) use ($file) {
+                foreach ($patients as $px) {
+                    fputcsv($file, array_map([$this, 'sanitizeCsvValue'], [
+                        $px->pxnumber,
+                        $px->name,
+                        $px->email,
+                        $px->contact,
+                        $px->dob,
+                        $px->gender,
+                        $px->civil_status,
+                        $px->occupation,
+                        $px->address,
+                        $px->created_at->format('Y-m-d'),
+                    ]));
+                }
+            });
             fclose($file);
         };
         return response()->streamDownload($callback, $fileName);
+    }
+
+    // Fix #2: prefix formula-trigger characters so Excel/Sheets won't execute them
+    private function sanitizeCsvValue($value): string
+    {
+        $value = (string) $value;
+        if ($value !== '' && preg_match('/^[=+\-@\t\r]/', $value)) {
+            return "'" . $value;
+        }
+        return $value;
     }
 
     public function importCsv()
@@ -187,26 +220,33 @@ class PatientsComponent extends Component
             'importFile.max' => 'CSV file must be under 4 MB.',
         ]);
 
-        $handle = fopen($this->importFile->getRealPath(), 'r');
-        $header = fgetcsv($handle);
+        // Fix #11: content-sniff — reject binary files even if MIME was spoofed
+        $firstBytes = file_get_contents($this->importFile->getRealPath(), false, null, 0, 512);
+        if ($firstBytes !== false && !mb_check_encoding($firstBytes, 'UTF-8') && !mb_check_encoding($firstBytes, 'ASCII')) {
+            $this->addError('importFile', 'The file does not appear to be a valid text/CSV file.');
+            return;
+        }
+
+        $handle  = fopen($this->importFile->getRealPath(), 'r');
+        $header  = fgetcsv($handle);
         $imported = 0;
-        $skipped = 0;
-        $errors = [];
-        $rowNum = 1;
+        $skipped  = 0;
+        $errors   = [];
+        $rowNum   = 1;
 
         while (($row = fgetcsv($handle)) !== false) {
             $rowNum++;
             $data = $this->mapImportRow($header, $row);
 
             $payload = [
-                'name' => trim((string) ($data['name'] ?? $data['full_name'] ?? '')),
-                'email' => trim((string) ($data['email'] ?? $data['email_address'] ?? '')),
-                'contact' => trim((string) ($data['contact'] ?? $data['phone'] ?? $data['phone_number'] ?? '')),
-                'dob' => $this->normalizeImportDate($data['dob'] ?? $data['birthday'] ?? $data['date_of_birth'] ?? null),
-                'gender' => $this->normalizeGender($data['gender'] ?? ''),
+                'name'         => trim((string) ($data['name'] ?? $data['full_name'] ?? '')),
+                'email'        => trim((string) ($data['email'] ?? $data['email_address'] ?? '')),
+                'contact'      => trim((string) ($data['contact'] ?? $data['phone'] ?? $data['phone_number'] ?? '')),
+                'dob'          => $this->normalizeImportDate($data['dob'] ?? $data['birthday'] ?? $data['date_of_birth'] ?? null),
+                'gender'       => $this->normalizeGender($data['gender'] ?? ''),
                 'civil_status' => trim((string) ($data['civil_status'] ?? $data['marital_status'] ?? '')),
-                'occupation' => trim((string) ($data['occupation'] ?? '')),
-                'address' => trim((string) ($data['address'] ?? '')),
+                'occupation'   => trim((string) ($data['occupation'] ?? '')),
+                'address'      => trim((string) ($data['address'] ?? '')),
             ];
 
             if ($payload['name'] === '' && $payload['contact'] === '') {
@@ -215,13 +255,13 @@ class PatientsComponent extends Component
             }
 
             $validator = Validator::make($payload, [
-                'name' => 'required|string|max:255',
-                'contact' => 'required|string|max:50',
-                'email' => 'nullable|email|max:255',
-                'dob' => 'required|date|date_format:Y-m-d|before:today',
-                'gender' => 'required|in:Male,Female,Other',
-                'address' => 'required|string|max:1000',
-                'occupation' => 'nullable|string|max:255',
+                'name'         => 'required|string|max:255',
+                'contact'      => 'required|string|max:50',
+                'email'        => 'nullable|email|max:255',
+                'dob'          => 'required|date|date_format:Y-m-d|before:today',
+                'gender'       => 'required|in:Male,Female,Other',
+                'address'      => 'required|string|max:1000',
+                'occupation'   => 'nullable|string|max:255',
                 'civil_status' => 'nullable|string|max:255',
             ]);
 
@@ -237,15 +277,16 @@ class PatientsComponent extends Component
             }
 
             Patient::create(array_merge($validator->validated(), [
-                'pxnumber' => 'PX-' . mt_rand(1000, 9999) . '-' . date('y'),
-                'user_id' => Auth::id(),
+                // Fix #4: random_int() is cryptographically secure; mt_rand() is not
+                'pxnumber' => 'PX-' . random_int(1000, 9999) . '-' . date('y'),
+                'user_id'  => Auth::id(),
             ]));
             $imported++;
         }
 
         fclose($handle);
 
-        $this->importFile = null;
+        $this->importFile    = null;
         $this->importResults = compact('imported', 'skipped', 'errors');
         $this->showImportPanel = true;
         $this->clearSelection();
@@ -254,7 +295,7 @@ class PatientsComponent extends Component
 
     public function clearImport()
     {
-        $this->importFile = null;
+        $this->importFile    = null;
         $this->importResults = null;
         $this->showImportPanel = false;
         $this->resetValidation('importFile');
@@ -268,19 +309,19 @@ class PatientsComponent extends Component
             fputcsv($file, ['Ama Patient', 'ama@example.com', '0244123456', '1995-06-20', 'Female', 'Single', 'Teacher', 'Kumasi']);
             fclose($file);
         };
-
         return response()->streamDownload($callback, 'patients_import_template.csv');
     }
 
     public function resetForm()
     {
         $this->state = [
-            'id' => null, 'pxnumber' => '', 'name' => '', 'contact' => '', 'email' => '', 
+            'id' => null, 'pxnumber' => '', 'name' => '', 'contact' => '', 'email' => '',
             'dob' => '', 'gender' => '', 'address' => '', 'occupation' => '',
-            'civil_status' => ''
+            'civil_status' => '',
+            'insurer_id' => '', 'insurance_member_id' => '', 'insurance_policy_number' => '',
         ];
         $this->nameSearch = '';
-        $this->isEditing = false;
+        $this->isEditing  = false;
         $this->resetValidation();
     }
 
@@ -288,49 +329,60 @@ class PatientsComponent extends Component
     {
         $this->state['name'] = $this->nameSearch;
         $validatedData = Validator::make($this->state, [
-            'name' => 'required|string|max:255',
-            'contact' => 'required',
-            'email' => 'nullable|email',
-            'dob' => 'required|date|before:today',
-            'gender' => 'required|in:Male,Female,Other',
-            'address' => 'required',
-            'occupation' => 'nullable',
-            'civil_status' => 'nullable',
+            'name'         => 'required|string|max:255',
+            'contact'      => 'required',
+            'email'        => 'nullable|email',
+            'dob'          => 'required|date|before:today',
+            'gender'       => 'required|in:Male,Female,Other',
+            'address'      => 'required',
+            'occupation'               => 'nullable',
+            'civil_status'             => 'nullable',
+            'insurer_id'               => 'nullable|exists:insurers,id',
+            'insurance_member_id'      => 'nullable|string|max:60',
+            'insurance_policy_number'  => 'nullable|string|max:60',
         ])->validate();
 
         if ($this->isEditing) {
-            Patient::findOrFail($this->state['id'])->update($validatedData);
+            $patient = Patient::findOrFail($this->state['id']);
+            $old     = $patient->only(array_keys($validatedData));
+            $patient->update($validatedData);
+            AuditTrail::record('patient.updated', "Updated patient profile: {$patient->name} ({$patient->pxnumber})", $patient, $old, $validatedData, $patient->id);
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Profile Updated!']);
         } else {
-            $validatedData['pxnumber'] = 'PX-' . mt_rand(1000, 9999) . '-' . date('y');
-            $validatedData['user_id'] = Auth::id();
-            Patient::create($validatedData);
+            // Fix #4: random_int() instead of mt_rand()
+            $validatedData['pxnumber'] = 'PX-' . random_int(1000, 9999) . '-' . date('y');
+            $validatedData['user_id']  = Auth::id();
+            $patient = Patient::create($validatedData);
+            AuditTrail::record('patient.created', "Registered new patient: {$patient->name} ({$patient->pxnumber})", $patient, [], [], $patient->id);
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'New Patient Saved!']);
         }
         $this->resetForm();
     }
 
-    /**
-     * Applies the Unified Search Logic
-     */
     private function applyFilters($query)
     {
-        // One input searches across two columns
         if ($this->pxSearch) {
-            $query->where(function($q) {
-                $q->where('name', 'like', "%{$this->pxSearch}%")
-                  ->orWhere('pxnumber', 'like', "%{$this->pxSearch}%");
+            $term = $this->pxSearch;
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                  ->orWhere('pxnumber', 'like', "%{$term}%")
+                  ->orWhere('insurance_member_id', 'like', "%{$term}%")
+                  ->orWhere('insurance_policy_number', 'like', "%{$term}%")
+                  ->orWhereHas('insurer', fn ($i) => $i->where('name', 'like', "%{$term}%"));
             });
         }
-        
-        // Date filter is ignored if a search string is present to allow finding old records
+
         if (!$this->pxSearch) {
             if ($this->fromDate && $this->toDate) {
                 $query->whereBetween('created_at', [
-                    Carbon::parse($this->fromDate)->startOfDay(), 
-                    Carbon::parse($this->toDate)->endOfDay()
+                    Carbon::parse($this->fromDate)->startOfDay(),
+                    Carbon::parse($this->toDate)->endOfDay(),
                 ]);
             }
+        }
+
+        if ($this->insurerFilter) {
+            $query->where('insurer_id', $this->insurerFilter);
         }
 
         if ($this->activeTab === 'birthdays') {
@@ -344,23 +396,18 @@ class PatientsComponent extends Component
         if (!is_array($header) || empty($header)) {
             return [];
         }
-
         $mapped = [];
         foreach ($header as $index => $column) {
-            $key = strtolower(trim((string) $column));
-            $key = str_replace([' ', '-', '.'], '_', $key);
+            $key          = strtolower(trim((string) $column));
+            $key          = str_replace([' ', '-', '.'], '_', $key);
             $mapped[$key] = $row[$index] ?? null;
         }
-
         return $mapped;
     }
 
     private function normalizeImportDate($value): ?string
     {
-        if (!$value) {
-            return null;
-        }
-
+        if (!$value) return null;
         try {
             return Carbon::parse($value)->format('Y-m-d');
         } catch (\Throwable $e) {
@@ -371,41 +418,36 @@ class PatientsComponent extends Component
     private function normalizeGender($value): string
     {
         $value = strtolower(trim((string) $value));
-
         return match ($value) {
-            'm', 'male' => 'Male',
-            'f', 'female' => 'Female',
-            'other', 'o' => 'Other',
-            default => '',
+            'm', 'male'    => 'Male',
+            'f', 'female'  => 'Female',
+            'other', 'o'   => 'Other',
+            default        => '',
         };
     }
 
     private function formatPhoneForWhatsApp($contact): string
     {
         $phone = preg_replace('/[^0-9]/', '', (string) $contact);
-
         if (str_starts_with($phone, '0') && strlen($phone) === 10) {
             return '233' . substr($phone, 1);
         }
-
         if (str_starts_with($phone, '233')) {
             return $phone;
         }
-
         return $phone;
     }
 
     private function formatPhoneForCall($contact): string
     {
-        $phone = preg_replace('/[^0-9+]/', '', (string) $contact);
-        return $phone;
+        return preg_replace('/[^0-9+]/', '', (string) $contact);
     }
 
     public function edit(Patient $patient)
     {
-        $this->state = $patient->toArray();
+        $this->state      = $patient->toArray();
         $this->nameSearch = $patient->name;
-        $this->isEditing = true;
+        $this->isEditing  = true;
     }
 
     public function updatedNameSearch($value)
@@ -414,20 +456,19 @@ class PatientsComponent extends Component
         $this->suggestions = Patient::where('name', 'like', '%' . $value . '%')->limit(5)->get()->toArray();
     }
 
-    public function selectPatient($id)
+    // Fix #7: type-hint int; use findOrFail so an invalid/forged ID throws 404
+    // rather than silently loading nothing and potentially resetting the form state.
+    public function selectPatient(int $id)
     {
-        $p = Patient::find($id);
-        if ($p) {
-            $this->state = $p->toArray();
-            $this->nameSearch = $p->name;
-            $this->isEditing = true;
-            $this->suggestions = [];
-        }
+        $p = Patient::findOrFail($id);
+        $this->state      = $p->toArray();
+        $this->nameSearch = $p->name;
+        $this->isEditing  = true;
+        $this->suggestions = [];
     }
 
     public function render()
     {
-        // Birthday count is stable within a day — compute once, cache for the session
         if ($this->birthdaysTodayCount === 0) {
             $this->birthdaysTodayCount = Patient::whereMonth('dob', Carbon::now()->month)
                 ->whereDay('dob', Carbon::now()->day)
@@ -436,7 +477,8 @@ class PatientsComponent extends Component
 
         $query = $this->applyFilters(Patient::query());
         return view('livewire.secretary.patients-component', [
-            'patients' => $query->latest()->paginate(10)
+            'patients' => $query->latest()->paginate(10),
+            'insurers' => \App\Models\Insurer::where('active', true)->orderBy('name')->get(['id', 'name', 'scheme_type']),
         ])->layout('layouts.secretary.secretary-layout');
     }
 }

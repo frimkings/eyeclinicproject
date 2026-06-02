@@ -193,7 +193,7 @@
                                             <strong>{{ number_format($movement->quantity_after) }}</strong>
                                         </td>
                                         <td class="text-right">
-                                            {{ $movement->cost_price !== null ? 'GH₵ ' . number_format($movement->cost_price, 2) : 'N/A' }}
+                                            {{ $movement->cost_price !== null ? currency() . ' ' . number_format($movement->cost_price, 2) : 'N/A' }}
                                         </td>
                                         <td>{{ optional($movement->expiry_date)->format('M d, Y') ?: 'N/A' }}</td>
                                         <td>

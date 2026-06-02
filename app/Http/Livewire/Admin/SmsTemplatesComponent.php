@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\Patient;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\Setting;
 use App\Models\SmsTemplate;
 use App\Services\SmsService;
@@ -28,6 +30,7 @@ class SmsTemplatesComponent extends Component
 
     public function mount(): void
     {
+        abort_if(!LicenseService::has(Feature::SMS_CAMPAIGNS), 403, 'SMS campaigns require a Pro license.');
         $this->loadTemplates();
         $s = Setting::getSettings();
         $this->birthdayFilter        = $s->birthday_sms_filter        ?? 'all';

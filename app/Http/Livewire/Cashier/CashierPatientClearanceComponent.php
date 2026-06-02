@@ -2,15 +2,20 @@
 
 namespace App\Http\Livewire\Cashier;
 
+use App\Models\AuditTrail;
 use App\Models\CashierPatientClearance;
 use App\Models\Category;
 use App\Models\ClearanceRevokeLog;
 use App\Models\Patient;
+use App\Models\PaymentTransaction;
 use App\Models\Product;
+use App\Models\SaleItem;
+use App\Models\Sales;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -37,6 +42,7 @@ class CashierPatientClearanceComponent extends Component
     public $patientClearanceId   = null;
     public string $selectedServiceId = ''; // numeric product id OR 'unpaid'
     public string $patientName   = '';
+    public array $clearancePayments = [];
 
     // --- Inline status update ---
     public ?int   $editingClearanceId     = null;
@@ -118,13 +124,15 @@ class CashierPatientClearanceComponent extends Component
         $this->dispatchBrowserEvent('show-addClearanceModal-form');
     }
 
-    public function createClearance(string $serviceValue = ''): void
+    public function createClearance(string $serviceValue = '', string $paymentsJson = '[]'): void
     {
-        // Value passed directly from JS to avoid wire:model.defer capture issues
-        // when Bootstrap has moved the modal outside the component boundary.
         if ($serviceValue !== '') {
             $this->selectedServiceId = $serviceValue;
         }
+        $payments = collect(json_decode($paymentsJson, true) ?: [])
+            ->filter(fn($p) => isset($p['amount']) && (float) $p['amount'] > 0)
+            ->values()
+            ->toArray();
 
         $this->validate(['selectedServiceId' => 'required']);
 
@@ -154,9 +162,6 @@ class CashierPatientClearanceComponent extends Component
                 return;
             }
 
-            // A previously revoked (soft-deleted) record for the same patient+date
-            // would cause a unique-constraint violation on a plain create(). Restore
-            // it instead so the DB row is reused.
             $existing = CashierPatientClearance::withTrashed()
                 ->where('patient_id', $this->patientClearanceId)
                 ->where('clearance_date', now()->toDateString())
@@ -169,8 +174,10 @@ class CashierPatientClearanceComponent extends Component
                     'service_id'     => $serviceId,
                     'payment_status' => $paymentStatus,
                     'doctor_status'  => false,
+                    'sale_id'        => null,
                 ]);
                 $clearance = $existing;
+                AuditTrail::record('clearance.restored', "Restored clearance for {$this->patientName} ({$paymentStatus})", $clearance, [], [], $this->patientClearanceId);
             } else {
                 $clearance = CashierPatientClearance::create([
                     'patient_id'     => $this->patientClearanceId,
@@ -180,6 +187,73 @@ class CashierPatientClearanceComponent extends Component
                     'doctor_status'  => false,
                     'clearance_date' => now()->toDateString(),
                 ]);
+                AuditTrail::record('clearance.created', "Created clearance for {$this->patientName} ({$paymentStatus})", $clearance, [], [], $this->patientClearanceId);
+            }
+
+            // Record sale for paid clearances
+            $receiptUrl = route('cashier.clearance-receipt', $clearance->id);
+            if (!$isUnpaid && $serviceId) {
+                $service       = Product::findOrFail($serviceId);
+                $transactionId = now()->format('dmY') . '-' . strtoupper(Str::random(8));
+                $totalAmount   = (float) $service->selling_price;
+                $amountPaid    = collect($payments)->sum('amount');
+                $paymentStatus = $amountPaid >= $totalAmount ? 'paid' : 'partial';
+                $profit        = $paymentStatus === 'paid'
+                    ? max(0, $totalAmount - (float) ($service->cost_price ?? 0))
+                    : 0;
+
+                $sale = Sales::create([
+                    'user_id'        => Auth::id(),
+                    'patient_id'     => $this->patientClearanceId,
+                    'transaction_id' => $transactionId,
+                    'total_amount'   => $totalAmount,
+                    'amount_paid'    => $amountPaid,
+                    'payment_status' => $paymentStatus,
+                    'profit'         => $profit,
+                ]);
+
+                SaleItem::create([
+                    'sale_id'             => $sale->id,
+                    'product_id'          => $serviceId,
+                    'prescribed_quantity' => 1,
+                    'dispensed_quantity'  => 1,
+                    'selling_price'       => $totalAmount,
+                    'subtotal'            => $totalAmount,
+                    'notes'               => 'Clearance Service',
+                ]);
+
+                $methodNames = [];
+                foreach ($payments as $p) {
+                    PaymentTransaction::create([
+                        'sale_id'        => $sale->id,
+                        'amount'         => $p['amount'],
+                        'payment_method' => $p['method'],
+                        'notes'          => 'Clearance payment',
+                        'collected_by'   => Auth::id(),
+                    ]);
+                    $methodNames[] = ucfirst($p['method']) . ' ' . currency() . number_format($p['amount'], 2);
+                }
+
+                $clearance->update(['sale_id' => $sale->id]);
+
+                AuditTrail::record(
+                    'sale.created',
+                    "Clearance sale: {$this->patientName} — {$service->name} (" . currency() . " {$totalAmount}) | " . implode(', ', $methodNames),
+                    $sale, [], [], $this->patientClearanceId
+                );
+
+                $receiptUrl = route('cashier.receipt.show', $sale->id);
+            }
+
+            // Fresh-load relations for the event payload (created inside transaction)
+            $clearance->load(['patient', 'service', 'sale']);
+
+            $paymentLines = [];
+            foreach ($payments as $p) {
+                $paymentLines[] = [
+                    'method' => ucfirst($p['method']),
+                    'amount' => number_format((float) $p['amount'], 2),
+                ];
             }
 
             DB::commit();
@@ -189,8 +263,19 @@ class CashierPatientClearanceComponent extends Component
                 'type'    => 'success',
                 'message' => "Patient {$this->patientName} cleared successfully!",
             ]);
+            $this->dispatchBrowserEvent('show-clearance-receipt-modal', [
+                'patient'  => $clearance->patient->name ?? '',
+                'pxnumber' => $clearance->patient->pxnumber ?? '',
+                'txn'      => $clearance->sale?->transaction_id
+                                ?? 'CLR-' . str_pad($clearance->id, 6, '0', STR_PAD_LEFT),
+                'service'  => $clearance->service?->name ?? 'No specific service',
+                'amount'   => number_format((float) ($clearance->service?->selling_price ?? 0), 2),
+                'status'   => $clearance->payment_status,
+                'payments' => $paymentLines,
+                'printUrl' => $receiptUrl,
+            ]);
 
-            $this->reset(['patientClearanceId', 'selectedServiceId', 'patientName']);
+            $this->reset(['patientClearanceId', 'selectedServiceId', 'patientName', 'clearancePayments']);
             $this->resetPage();
 
             Log::info('Patient clearance created', [
@@ -241,7 +326,9 @@ class CashierPatientClearanceComponent extends Component
         $clearance = CashierPatientClearance::find($this->editingClearanceId);
         if (!$clearance) return;
 
+        $old = ['payment_status' => $clearance->payment_status];
         $clearance->update(['payment_status' => $this->editingPaymentStatus]);
+        AuditTrail::record('clearance.status_updated', "Updated payment status to {$this->editingPaymentStatus} for clearance #{$clearance->id}", $clearance, $old, ['payment_status' => $this->editingPaymentStatus], $clearance->patient_id);
 
         $this->editingClearanceId   = null;
         $this->editingPaymentStatus = '';
@@ -317,6 +404,8 @@ class CashierPatientClearanceComponent extends Component
             'requested_at' => now(),
         ]);
 
+        AuditTrail::record('clearance.revoke_requested', "Revoke requested for clearance #{$clearance->id} ({$this->requestingRevokeName}): {$this->revokeReason}", $clearance, [], [], $clearance->patient_id);
+
         NotificationService::sendToRoles(
             ['Manager', 'Super Admin'],
             'clearance_revoke_requested',
@@ -388,7 +477,7 @@ class CashierPatientClearanceComponent extends Component
               ->orWhere('type', 'service');
         })->orderBy('name')->get();
 
-        $clearances = CashierPatientClearance::with(['patient', 'user', 'service', 'pendingRevokeLog'])
+        $clearances = CashierPatientClearance::with(['patient', 'user', 'service', 'sale', 'pendingRevokeLog'])
             ->whereDate('clearance_date', '>=', $from)
             ->whereDate('clearance_date', '<=', $to)
             ->when($this->statusFilter, fn($q) => $q->where('payment_status', $this->statusFilter))

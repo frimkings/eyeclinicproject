@@ -59,12 +59,18 @@
 
             {{-- SEARCH --}}
             <div class="mb-4 pb-3 border-bottom">
-                <p class="sidebar-label"><i class="fas fa-search mr-1"></i>Search</p>
+                <p class="sidebar-label">
+                    <i class="fas fa-search mr-1"></i>
+                    @if($analyticsView === 'items') Search Products
+                    @elseif($analyticsView === 'transactions') Search Transactions
+                    @else Search
+                    @endif
+                </p>
                 <input
                     type="text"
                     wire:model.debounce.500ms="searchQuery"
                     class="form-control form-control-sm"
-                    placeholder="Transaction or Patient..."
+                    placeholder="{{ $analyticsView === 'items' ? 'Product name...' : 'Transaction or Patient...' }}"
                 >
             </div>
 
@@ -72,10 +78,16 @@
             @if($activeTab !== 'trash')
             <div class="mb-4 pb-3 border-bottom">
                 <p class="sidebar-label"><i class="fas fa-cog mr-1"></i>Options</p>
-                <div class="custom-control custom-switch">
+                <div class="custom-control custom-switch mb-2">
                     <input type="checkbox" class="custom-control-input" id="showRefundedSwitch" wire:model="showRefunded">
                     <label class="custom-control-label small" for="showRefundedSwitch">Include Refunds</label>
                 </div>
+                <select wire:model="paymentStatus" class="form-control form-control-sm">
+                    <option value="">All Payment Statuses</option>
+                    <option value="paid">Paid</option>
+                    <option value="partial">Partial</option>
+                    <option value="unpaid">Unpaid</option>
+                </select>
             </div>
             @endif
 
@@ -100,7 +112,7 @@
             </button>
 
             {{-- ACTIVE FILTERS --}}
-            @if($searchQuery || ($showRefunded && $activeTab !== 'trash'))
+            @if($searchQuery || ($showRefunded && $activeTab !== 'trash') || $paymentStatus)
             <div class="mt-3 pt-3 border-top">
                 <p class="sidebar-label">Active Filters</p>
                 @if($searchQuery)
@@ -108,6 +120,9 @@
                 @endif
                 @if($showRefunded && $activeTab !== 'trash')
                     <span class="badge badge-warning d-inline-block mb-1">+Refunds</span>
+                @endif
+                @if($paymentStatus)
+                    <span class="badge badge-info d-inline-block mb-1">{{ ucfirst($paymentStatus) }}</span>
                 @endif
             </div>
             @endif
@@ -138,7 +153,10 @@
                         {{ $periodLabels[$activeTab] ?? '' }}
                     </p>
                 </div>
-                <div class="text-right">
+                <div class="text-right d-flex" style="gap:.5rem;">
+                    <button wire:click="exportCsv" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-file-csv mr-1"></i>Export CSV
+                    </button>
                     <a
                         href="{{ route('reports.export.pdf', ['from' => $fromDate, 'to' => $toDate]) }}"
                         target="_blank"
@@ -164,7 +182,7 @@
                     <div class="kpi-card kpi-card--green h-100">
                         <div class="kpi-card__icon"><i class="fas fa-dollar-sign"></i></div>
                         <div class="kpi-card__label">Net Revenue</div>
-                        <div class="kpi-card__value kpi-card__value--green">GH₵ {{ number_format($summary['total_sales'], 2) }}</div>
+                        <div class="kpi-card__value kpi-card__value--green">{{ currency() }} {{ number_format($summary['total_sales'], 2) }}</div>
                     </div>
                 </div>
                 {{-- Cost of Sales --}}
@@ -172,7 +190,7 @@
                     <div class="kpi-card kpi-card--orange h-100">
                         <div class="kpi-card__icon"><i class="fas fa-shopping-cart"></i></div>
                         <div class="kpi-card__label">Cost of Sales</div>
-                        <div class="kpi-card__value kpi-card__value--orange">GH₵ {{ number_format($summary['cost_of_sales'], 2) }}</div>
+                        <div class="kpi-card__value kpi-card__value--orange">{{ currency() }} {{ number_format($summary['cost_of_sales'], 2) }}</div>
                     </div>
                 </div>
                 {{-- Gross Profit --}}
@@ -180,7 +198,7 @@
                     <div class="kpi-card kpi-card--teal h-100">
                         <div class="kpi-card__icon"><i class="fas fa-chart-line"></i></div>
                         <div class="kpi-card__label">Gross Profit</div>
-                        <div class="kpi-card__value kpi-card__value--teal">GH₵ {{ number_format($summary['gross_profit'], 2) }}</div>
+                        <div class="kpi-card__value kpi-card__value--teal">{{ currency() }} {{ number_format($summary['gross_profit'], 2) }}</div>
                     </div>
                 </div>
                 {{-- Profit Margin --}}
@@ -201,7 +219,7 @@
                     <div class="kpi-card kpi-card--yellow h-100">
                         <div class="kpi-card__icon"><i class="fas fa-calculator"></i></div>
                         <div class="kpi-card__label">Avg Transaction</div>
-                        <div class="kpi-card__value kpi-card__value--yellow">GH₵ {{ number_format($summary['avg_transaction'], 2) }}</div>
+                        <div class="kpi-card__value kpi-card__value--yellow">{{ currency() }} {{ number_format($summary['avg_transaction'], 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -240,10 +258,11 @@
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
                                 <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
                             </select>
                         </div>
                         <div class="card-body">
-                            <div x-data x-init="$wire.loadChart()" wire:ignore style="height:260px;">
+                            <div wire:ignore style="height:260px;">
                                 <canvas id="salesChart"></canvas>
                             </div>
                         </div>
@@ -267,7 +286,7 @@
                                                 <small class="text-muted">{{ number_format($item->qty_sold) }} units sold</small>
                                             </div>
                                             <div class="text-right ml-2">
-                                                <div class="font-weight-bold text-success small">GH₵ {{ number_format($item->revenue, 2) }}</div>
+                                                <div class="font-weight-bold text-success small">{{ currency() }} {{ number_format($item->revenue, 2) }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -291,7 +310,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <p class="text-muted small mb-1 text-uppercase font-weight-bold">Total Revenue</p>
-                                    <h5 class="font-weight-bold mb-0 text-success">GH₵ {{ number_format($summary['total_sales'], 2) }}</h5>
+                                    <h5 class="font-weight-bold mb-0 text-success">{{ currency() }} {{ number_format($summary['total_sales'], 2) }}</h5>
                                 </div>
                                 <div style="width:48px;height:48px;background:rgba(40,167,69,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-arrow-up text-success fa-lg"></i>
@@ -306,7 +325,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <p class="text-muted small mb-1 text-uppercase font-weight-bold">Cost of Goods Sold</p>
-                                    <h5 class="font-weight-bold mb-0 text-danger">GH₵ {{ number_format($summary['cost_of_sales'], 2) }}</h5>
+                                    <h5 class="font-weight-bold mb-0 text-danger">{{ currency() }} {{ number_format($summary['cost_of_sales'], 2) }}</h5>
                                 </div>
                                 <div style="width:48px;height:48px;background:rgba(220,53,69,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-arrow-down text-danger fa-lg"></i>
@@ -321,7 +340,7 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
                                     <p class="text-muted small mb-1 text-uppercase font-weight-bold">Net Profit</p>
-                                    <h5 class="font-weight-bold mb-0 text-info">GH₵ {{ number_format($summary['profit'], 2) }}</h5>
+                                    <h5 class="font-weight-bold mb-0 text-info">{{ currency() }} {{ number_format($summary['profit'], 2) }}</h5>
                                 </div>
                                 <div style="width:48px;height:48px;background:rgba(23,162,184,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-chart-line text-info fa-lg"></i>
@@ -381,9 +400,9 @@
                                     <td class="text-center">
                                         <span class="badge badge-light font-weight-bold">{{ number_format($item->qty_sold) }}</span>
                                     </td>
-                                    <td class="text-right font-weight-bold text-success">GH₵ {{ number_format($item->revenue, 2) }}</td>
-                                    <td class="text-right text-danger">GH₵ {{ number_format($item->cost_of_sales, 2) }}</td>
-                                    <td class="text-right font-weight-bold text-info">GH₵ {{ number_format($item->gross_profit, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-success">{{ currency() }} {{ number_format($item->revenue, 2) }}</td>
+                                    <td class="text-right text-danger">{{ currency() }} {{ number_format($item->cost_of_sales, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-info">{{ currency() }} {{ number_format($item->gross_profit, 2) }}</td>
                                     <td class="text-center">
                                         <span class="badge badge-{{ $marginClass }}">{{ number_format($item->margin, 1) }}%</span>
                                     </td>
@@ -402,9 +421,9 @@
                                 <tr>
                                     <td colspan="2" class="text-uppercase small">Totals</td>
                                     <td class="text-center">{{ number_format($salesByItems->sum('qty_sold')) }}</td>
-                                    <td class="text-right text-success">GH₵ {{ number_format($salesByItems->sum('revenue'), 2) }}</td>
-                                    <td class="text-right text-danger">GH₵ {{ number_format($salesByItems->sum('cost_of_sales'), 2) }}</td>
-                                    <td class="text-right text-info">GH₵ {{ number_format($salesByItems->sum('gross_profit'), 2) }}</td>
+                                    <td class="text-right text-success">{{ currency() }} {{ number_format($salesByItems->sum('revenue'), 2) }}</td>
+                                    <td class="text-right text-danger">{{ currency() }} {{ number_format($salesByItems->sum('cost_of_sales'), 2) }}</td>
+                                    <td class="text-right text-info">{{ currency() }} {{ number_format($salesByItems->sum('gross_profit'), 2) }}</td>
                                     <td class="text-center">
                                         @php
                                             $totalRev = $salesByItems->sum('revenue');
@@ -455,11 +474,11 @@
                             </div>
                             <div class="row text-center">
                                 <div class="col-6 border-right">
-                                    <div class="text-success font-weight-bold small">GH₵ {{ number_format($cat->revenue, 0) }}</div>
+                                    <div class="text-success font-weight-bold small">{{ currency() }} {{ number_format($cat->revenue, 0) }}</div>
                                     <div class="text-muted" style="font-size:10px;">Revenue</div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="text-info font-weight-bold small">GH₵ {{ number_format($cat->gross_profit, 0) }}</div>
+                                    <div class="text-info font-weight-bold small">{{ currency() }} {{ number_format($cat->gross_profit, 0) }}</div>
                                     <div class="text-muted" style="font-size:10px;">Profit</div>
                                 </div>
                             </div>
@@ -518,9 +537,9 @@
                                     </td>
                                     <td class="text-center">{{ number_format($cat->transaction_count) }}</td>
                                     <td class="text-center">{{ number_format($cat->qty_sold) }}</td>
-                                    <td class="text-right font-weight-bold text-success">GH₵ {{ number_format($cat->revenue, 2) }}</td>
-                                    <td class="text-right text-danger">GH₵ {{ number_format($cat->cost_of_sales, 2) }}</td>
-                                    <td class="text-right font-weight-bold text-info">GH₵ {{ number_format($cat->gross_profit, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-success">{{ currency() }} {{ number_format($cat->revenue, 2) }}</td>
+                                    <td class="text-right text-danger">{{ currency() }} {{ number_format($cat->cost_of_sales, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-info">{{ currency() }} {{ number_format($cat->gross_profit, 2) }}</td>
                                     <td class="text-center">
                                         <span class="badge badge-{{ $cat->margin >= 40 ? 'success' : ($cat->margin >= 20 ? 'warning' : 'danger') }}">{{ number_format($cat->margin, 1) }}%</span>
                                     </td>
@@ -540,9 +559,9 @@
                                     <td class="text-uppercase small">Totals</td>
                                     <td class="text-center">—</td>
                                     <td class="text-center">{{ number_format($salesByCategory->sum('qty_sold')) }}</td>
-                                    <td class="text-right text-success">GH₵ {{ number_format($salesByCategory->sum('revenue'), 2) }}</td>
-                                    <td class="text-right text-danger">GH₵ {{ number_format($salesByCategory->sum('cost_of_sales'), 2) }}</td>
-                                    <td class="text-right text-info">GH₵ {{ number_format($salesByCategory->sum('gross_profit'), 2) }}</td>
+                                    <td class="text-right text-success">{{ currency() }} {{ number_format($salesByCategory->sum('revenue'), 2) }}</td>
+                                    <td class="text-right text-danger">{{ currency() }} {{ number_format($salesByCategory->sum('cost_of_sales'), 2) }}</td>
+                                    <td class="text-right text-info">{{ currency() }} {{ number_format($salesByCategory->sum('gross_profit'), 2) }}</td>
                                     <td class="text-center">—</td>
                                     <td></td>
                                 </tr>
@@ -596,7 +615,7 @@
                         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 font-weight-bold"><i class="fas fa-table mr-2 text-primary"></i>Payment Breakdown</h6>
                             @if($pmTotal > 0)
-                                <span class="badge badge-light font-weight-bold">GH₵ {{ number_format($pmTotal, 2) }} total</span>
+                                <span class="badge badge-light font-weight-bold">{{ currency() }} {{ number_format($pmTotal, 2) }} total</span>
                             @endif
                         </div>
                         <div class="card-body p-0">
@@ -622,7 +641,7 @@
                                             <td class="text-center">
                                                 <span class="badge badge-light">{{ number_format($pm->cnt) }}</span>
                                             </td>
-                                            <td class="text-right font-weight-bold text-success">GH₵ {{ number_format($pm->total, 2) }}</td>
+                                            <td class="text-right font-weight-bold text-success">{{ currency() }} {{ number_format($pm->total, 2) }}</td>
                                             <td style="min-width:110px;">
                                                 <div class="d-flex align-items-center">
                                                     <div class="progress flex-grow-1 mr-2" style="height:6px;">
@@ -638,7 +657,7 @@
                                         <tr>
                                             <td>Total</td>
                                             <td class="text-center">{{ number_format($paymentMethods->sum('cnt')) }}</td>
-                                            <td class="text-right text-success">GH₵ {{ number_format($pmTotal, 2) }}</td>
+                                            <td class="text-right text-success">{{ currency() }} {{ number_format($pmTotal, 2) }}</td>
                                             <td class="text-center">100%</td>
                                         </tr>
                                     </tfoot>
@@ -696,7 +715,7 @@
                                         return chart.data.labels.map(function(label, i) {
                                             var val = ds.data[i].toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
                                             return {
-                                                text: label + '  GH₵ ' + val,
+                                                text: label + '  {{ currency() }} ' + val,
                                                 fillStyle: ds.backgroundColor[i],
                                                 strokeStyle: ds.backgroundColor[i],
                                                 pointStyle: 'circle',
@@ -713,7 +732,7 @@
                                 callbacks: {
                                     label: function(ctx) {
                                         var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-                                        return ' ' + ctx.label + ': GH₵ ' + ctx.parsed.toLocaleString('en-US', {minimumFractionDigits:2}) + ' (' + pct + '%)';
+                                        return ' ' + ctx.label + ': {{ currency() }} ' + ctx.parsed.toLocaleString('en-US', {minimumFractionDigits:2}) + ' (' + pct + '%)';
                                     },
                                 },
                             },
@@ -765,13 +784,13 @@
                                         <div class="small text-muted">{{ $sale->created_at->format('h:i A') }}</div>
                                     </td>
                                     <td>
-                                        <div class="font-weight-bold">{{ $sale->patient_name ?? 'Walk-in Customer' }}</div>
+                                        <div class="font-weight-bold">{{ $sale->patient->name ?? 'Walk-in Customer' }}</div>
                                         <small class="text-muted">#{{ $sale->transaction_id }}</small>
                                     </td>
-                                    <td class="text-right font-weight-bold">GH₵ {{ number_format($sale->total_amount, 2) }}</td>
+                                    <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($sale->total_amount, 2) }}</td>
                                     <td class="text-right">
                                         <span class="font-weight-bold {{ $sale->profit > 0 ? 'text-success' : 'text-danger' }}">
-                                            GH₵ {{ number_format($sale->profit, 2) }}
+                                            {{ currency() }} {{ number_format($sale->profit, 2) }}
                                         </span>
                                     </td>
                                     <td class="text-right">
@@ -829,7 +848,7 @@
 
 {{-- View Items Modal --}}
 <div wire:ignore.self class="modal fade" id="itemsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-bold">
@@ -867,15 +886,15 @@
                                     @endif
                                 </td>
                                 <td class="text-center">{{ $qty }}</td>
-                                <td class="text-right">GH₵ {{ number_format($unitPrice, 2) }}</td>
-                                <td class="text-right font-weight-bold">GH₵ {{ number_format($item->subtotal, 2) }}</td>
+                                <td class="text-right">{{ currency() }} {{ number_format($unitPrice, 2) }}</td>
+                                <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($item->subtotal, 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-light">
                             <tr class="font-weight-bold">
                                 <td colspan="3" class="text-right text-uppercase small">Total</td>
-                                <td class="text-right text-success">GH₵ {{ number_format($viewingSale->total_amount, 2) }}</td>
+                                <td class="text-right text-success">{{ currency() }} {{ number_format($viewingSale->total_amount, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -941,12 +960,12 @@
                 </div>
                 <div class="mb-3">
                     <label class="text-muted small text-uppercase font-weight-bold">Refund Reason</label>
-                    <div class="p-3 bg-light border rounded small">{{ $viewingRefundSale->refund_reason }}</div>
+                    <div class="p-3 bg-light border rounded small">{{ $this->refundLog?->reason ?? $viewingRefundSale->refund_reason ?? '—' }}</div>
                 </div>
                 <div class="row">
                     <div class="col-6">
                         <label class="text-muted small text-uppercase font-weight-bold">Refunded At</label>
-                        <div class="small">{{ \Carbon\Carbon::parse($viewingRefundSale->refunded_at)->format('M d, Y h:i A') }}</div>
+                        <div class="small">{{ $viewingRefundSale->refunded_at?->format('M d, Y h:i A') ?? '—' }}</div>
                     </div>
                     <div class="col-6">
                         <label class="text-muted small text-uppercase font-weight-bold">Processed By</label>
@@ -970,57 +989,54 @@
 <script>
 document.addEventListener('livewire:load', function () {
     /* ─── Chart ─── */
-    const ctx = document.getElementById('salesChart');
-    if (!ctx) return;
-    const context = ctx.getContext('2d');
     let chart = null;
 
-    function makeGradient(r, g, b) {
-        const g1 = context.createLinearGradient(0, 0, 0, 260);
-        g1.addColorStop(0, `rgba(${r},${g},${b},0.25)`);
-        g1.addColorStop(1, `rgba(${r},${g},${b},0.02)`);
-        return g1;
-    }
+    function initSalesChart(d) {
+        if (!d.labels || !d.labels.length) return;
 
-    window.addEventListener('update-chart', e => {
+        // Always look up the canvas fresh — it is removed from DOM when the user
+        // navigates away from the Overview analytics tab and re-created on return.
+        const canvas = document.getElementById('salesChart');
+        if (!canvas) return;
+
         const data = {
-            labels: e.detail.labels,
+            labels: d.labels,
             datasets: [
                 {
                     label: 'Revenue',
-                    data: e.detail.revenue,
+                    data: d.revenue,
+                    backgroundColor: 'rgba(40,167,69,0.75)',
                     borderColor: '#28a745',
-                    backgroundColor: makeGradient(40, 167, 69),
-                    borderWidth: 2.5,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#28a745',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.6,
                 },
                 {
                     label: 'Profit',
-                    data: e.detail.profit,
+                    data: d.profit,
+                    backgroundColor: 'rgba(23,162,184,0.75)',
                     borderColor: '#17a2b8',
-                    backgroundColor: makeGradient(23, 162, 184),
-                    borderWidth: 2.5,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#17a2b8',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.6,
                 },
             ],
         };
 
-        if (chart) { chart.data = data; chart.update('active'); return; }
+        // Reuse existing chart only when it is still attached to the same canvas.
+        // After an analytics-tab round-trip the canvas is a new element, so destroy
+        // the stale instance and create a fresh one.
+        if (chart && chart.canvas === canvas) {
+            chart.data = data;
+            chart.update('active');
+            return;
+        }
+        if (chart) { chart.destroy(); chart = null; }
 
-        chart = new Chart(context, {
-            type: 'line',
+        chart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
             data: data,
             options: {
                 responsive: true,
@@ -1037,7 +1053,7 @@ document.addEventListener('livewire:load', function () {
                         padding: 12,
                         cornerRadius: 8,
                         callbacks: {
-                            label: ctx => ctx.dataset.label + ': GH₵ ' +
+                            label: ctx => ctx.dataset.label + ': {{ currency() }} ' +
                                 ctx.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         },
                     },
@@ -1048,14 +1064,20 @@ document.addEventListener('livewire:load', function () {
                         beginAtZero: true,
                         grid: { color: 'rgba(0,0,0,.05)', borderDash: [5, 5] },
                         ticks: {
-                            callback: v => 'GH₵ ' + v.toLocaleString(),
+                            callback: v => '{{ currency() }} ' + v.toLocaleString(),
                             font: { size: 11 },
                         },
                     },
                 },
             },
         });
-    });
+    }
+
+    // Initialize on page load from server-rendered data
+    initSalesChart(@json($chartPayload));
+
+    // Re-draw on filter/tab/date changes (Livewire AJAX re-render)
+    window.addEventListener('update-chart', e => initSalesChart(e.detail));
 
     /* ─── Modal events ─── */
     window.addEventListener('show-itemsModal-form',         () => $('#itemsModal').modal('show'));

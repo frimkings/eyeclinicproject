@@ -10,7 +10,22 @@
             </button>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3">
+        <ul class="nav nav-tabs mb-0">
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', false)"
+                   class="nav-link {{ !$showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-list mr-1"></i> Active
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', true)"
+                   class="nav-link {{ $showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-archive mr-1"></i> Archived
+                </a>
+            </li>
+        </ul>
+
+        <div class="card shadow-sm border-0 mb-3" style="border-top-left-radius:0">
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 mb-2">

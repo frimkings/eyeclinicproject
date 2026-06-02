@@ -19,9 +19,9 @@
                 </div>
                 <div class="row">
                     <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-primary"><i class="fas fa-receipt"></i></span><div class="info-box-content"><span class="info-box-text">Transactions</span><span class="info-box-number">{{ $salesCount }}</span></div></div></div>
-                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-success"><i class="fas fa-cash-register"></i></span><div class="info-box-content"><span class="info-box-text">Gross Sales</span><span class="info-box-number">GH₵ {{ number_format($grossSales, 2) }}</span></div></div></div>
-                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-info"><i class="fas fa-money-bill"></i></span><div class="info-box-content"><span class="info-box-text">Collected</span><span class="info-box-number">GH₵ {{ number_format($amountPaid, 2) }}</span></div></div></div>
-                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-warning"><i class="fas fa-balance-scale"></i></span><div class="info-box-content"><span class="info-box-text">Outstanding</span><span class="info-box-number">GH₵ {{ number_format($outstandingCreated, 2) }}</span></div></div></div>
+                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-success"><i class="fas fa-cash-register"></i></span><div class="info-box-content"><span class="info-box-text">Gross Sales</span><span class="info-box-number">{{ currency() }} {{ number_format($grossSales, 2) }}</span></div></div></div>
+                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-info"><i class="fas fa-money-bill"></i></span><div class="info-box-content"><span class="info-box-text">Collected</span><span class="info-box-number">{{ currency() }} {{ number_format($amountPaid, 2) }}</span></div></div></div>
+                    <div class="col-md-3"><div class="info-box"><span class="info-box-icon bg-warning"><i class="fas fa-balance-scale"></i></span><div class="info-box-content"><span class="info-box-text">Outstanding</span><span class="info-box-number">{{ currency() }} {{ number_format($outstandingCreated, 2) }}</span></div></div></div>
                 </div>
 
                 <div class="row mt-2">
@@ -40,7 +40,7 @@
                                     <tr>
                                         <td class="font-weight-bold">{{ $pLabels[$payment->payment_method] ?? strtoupper($payment->payment_method) }}</td>
                                         <td class="text-center">{{ $payment->count }}</td>
-                                        <td class="text-right">GH₵ {{ number_format($payment->total, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($payment->total, 2) }}</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="3" class="text-center text-muted">No payments recorded.</td></tr>
@@ -49,12 +49,12 @@
                             <tfoot>
                                 <tr class="font-weight-bold">
                                     <td>Total Collected</td><td></td>
-                                    <td class="text-right">GH₵ {{ number_format($payments->sum('total'), 2) }}</td>
+                                    <td class="text-right">{{ currency() }} {{ number_format($payments->sum('total'), 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
                         <div class="mt-3 text-muted small">
-                            <strong>Refunds:</strong> {{ $refundsCount }} transaction(s) — GH₵ {{ number_format($refundsTotal, 2) }}
+                            <strong>Refunds:</strong> {{ $refundsCount }} transaction(s) — {{ currency() }} {{ number_format($refundsTotal, 2) }}
                         </div>
                     </div>
 
@@ -62,7 +62,7 @@
                     <div class="col-md-5">
                         <h6 class="font-weight-bold mb-3"><i class="fas fa-chart-pie mr-2 text-primary"></i>How We Receive Payments</h6>
                         @if($payments->isNotEmpty())
-                            <div x-data x-init="$wire.loadPaymentChart()" wire:ignore style="position:relative; height:260px;">
+                            <div wire:ignore style="position:relative; height:260px;">
                                 <canvas id="paymentDonut"></canvas>
                             </div>
                         @else
@@ -77,18 +77,18 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         window.addEventListener('print-page', function () { window.print(); });
 
         (function () {
             var paymentChart = null;
 
-            window.addEventListener('update-payment-chart', function (e) {
+            function initPaymentChart(d) {
                 var canvas = document.getElementById('paymentDonut');
                 if (!canvas) return;
+                if (!d.labels || !d.labels.length) return;
 
-                var d     = e.detail;
                 var total = d.data.reduce(function (a, b) { return a + b; }, 0);
 
                 if (paymentChart) { paymentChart.destroy(); paymentChart = null; }
@@ -121,7 +121,7 @@
                                         return chart.data.labels.map(function (label, i) {
                                             var val = ds.data[i].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                             return {
-                                                text: label + '  GH₵ ' + val,
+                                                text: label + '  {{ currency() }} ' + val,
                                                 fillStyle: ds.backgroundColor[i],
                                                 strokeStyle: ds.backgroundColor[i],
                                                 pointStyle: 'circle',
@@ -135,13 +135,21 @@
                                 callbacks: {
                                     label: function (ctx) {
                                         var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-                                        return ' ' + ctx.label + ': GH₵ ' + ctx.parsed.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' (' + pct + '%)';
+                                        return ' ' + ctx.label + ': {{ currency() }} ' + ctx.parsed.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' (' + pct + '%)';
                                     },
                                 },
                             },
                         },
                     },
                 });
+            }
+
+            // Initialize on first page load from server-rendered data
+            initPaymentChart(@json($chartPayload));
+
+            // Re-draw when date changes (Livewire AJAX re-render)
+            window.addEventListener('update-payment-chart', function (e) {
+                initPaymentChart(e.detail);
             });
         })();
     </script>

@@ -28,7 +28,7 @@
                         <span class="info-box-icon bg-danger"><i class="fas fa-receipt"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Period Total</span>
-                            <span class="info-box-number">GH₵ {{ number_format($totalInRange, 2) }}</span>
+                            <span class="info-box-number">{{ currency() }} {{ number_format($totalInRange, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
                         <span class="info-box-icon bg-warning"><i class="fas fa-calendar-day"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Today</span>
-                            <span class="info-box-number">GH₵ {{ number_format($todayTotal, 2) }}</span>
+                            <span class="info-box-number">{{ currency() }} {{ number_format($todayTotal, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -50,7 +50,7 @@
                                 @foreach($topCategories as $tc)
                                     <span class="badge" style="background:{{ optional($tc->category)->color ?? '#6c757d' }}; font-size:12px; padding:4px 8px;">
                                         {{ optional($tc->category)->name ?? 'Uncategorised' }}:
-                                        GH₵{{ number_format($tc->total, 2) }}
+                                        {{ currency() }}{{ number_format($tc->total, 2) }}
                                     </span>
                                 @endforeach
                             </div>
@@ -153,7 +153,7 @@
                                         </td>
                                         <td>{{ $expense->reference ?: '—' }}</td>
                                         <td class="text-right font-weight-bold">
-                                            GH₵ {{ number_format($expense->amount, 2) }}
+                                            {{ currency() }} {{ number_format($expense->amount, 2) }}
                                         </td>
                                         <td>
                                             <small>{{ optional($expense->recorder)->name ?? '—' }}</small><br>
@@ -161,6 +161,12 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
+                                                @if($expense->receipt_path)
+                                                <a href="{{ $expense->receipt_url }}" target="_blank"
+                                                   class="btn btn-outline-secondary" title="View Receipt">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                                @endif
                                                 <button wire:click="openEdit({{ $expense->id }})"
                                                     class="btn btn-outline-primary" title="Edit">
                                                     <i class="fas fa-edit"></i>
@@ -198,7 +204,7 @@
                                 <tr>
                                     <td colspan="4" class="text-right font-weight-bold">Page Total:</td>
                                     <td class="text-right font-weight-bold text-danger">
-                                        GH₵ {{ number_format($expenses->sum('amount'), 2) }}
+                                        {{ currency() }} {{ number_format($expenses->sum('amount'), 2) }}
                                     </td>
                                     <td colspan="2"></td>
                                 </tr>
@@ -381,7 +387,7 @@
                         </div>
                         {{-- Amount --}}
                         <div class="col-md-6 form-group">
-                            <label>Amount (GH₵) <span class="text-danger">*</span></label>
+                            <label>Amount ({{ currency() }}) <span class="text-danger">*</span></label>
                             <input wire:model.defer="state.amount" type="number" step="0.01" min="0.01"
                                 class="form-control @error('state.amount') is-invalid @enderror"
                                 placeholder="0.00">
@@ -421,6 +427,27 @@
                             <input wire:model.defer="state.notes" type="text"
                                 class="form-control"
                                 placeholder="Optional note">
+                        </div>
+                        {{-- Receipt / Photo --}}
+                        <div class="col-md-12 form-group mb-0">
+                            <label>Receipt / Photo <small class="text-muted">(JPG, PNG, PDF · max 5 MB)</small></label>
+                            @if($isEditing && $editingReceiptUrl)
+                                <div class="mb-2 d-flex align-items-center" style="gap:8px;">
+                                    <a href="{{ $editingReceiptUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-paperclip mr-1"></i>View Current Receipt
+                                    </a>
+                                    <button wire:click="deleteReceipt({{ $expenseId }})" type="button"
+                                        class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-times mr-1"></i>Remove
+                                    </button>
+                                </div>
+                            @endif
+                            <input wire:model="receiptFile" type="file" class="form-control-file"
+                                   accept="image/*,application/pdf">
+                            @error('receiptFile')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                            @if($receiptFile)
+                                <small class="text-success mt-1 d-block">File selected — will be saved on submit.</small>
+                            @endif
                         </div>
                     </div>
                 </div>

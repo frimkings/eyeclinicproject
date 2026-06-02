@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\ClearanceRevokeLog;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\DiscountApprovalRequest;
 use App\Models\LensOrder;
 use App\Models\PasswordResetRequest;
@@ -19,6 +21,7 @@ class AllApprovalsComponent extends Component
 
     public function mount(): void
     {
+        abort_if(!LicenseService::has(Feature::APPROVALS), 403, 'Approval workflows require a Pro license.');
         $user = auth()->user();
         abort_if(
             !$user?->hasAnyRole(['Manager', 'Super Admin']) &&

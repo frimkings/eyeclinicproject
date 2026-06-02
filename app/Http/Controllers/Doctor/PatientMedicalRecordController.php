@@ -26,6 +26,12 @@ class PatientMedicalRecordController extends Controller
             403
         );
 
+        abort_if(
+            auth()->user()->hasRole('Doctor') &&
+            !Consultations::where('patient_id', $patient->id)->where('user_id', auth()->id())->exists(),
+            403
+        );
+
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
             ->with(['user', 'doctor'])
@@ -181,6 +187,12 @@ class PatientMedicalRecordController extends Controller
      */
     public function preview(Patient $patient, CashierPatientClearance $clearance)
     {
+        abort_if(
+            auth()->user()->hasRole('Doctor') &&
+            !Consultations::where('patient_id', $patient->id)->where('user_id', auth()->id())->exists(),
+            403
+        );
+
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
             ->with(['user', 'doctor'])

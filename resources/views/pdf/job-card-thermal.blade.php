@@ -17,8 +17,8 @@
         body {
             width: 80mm;
             font-family: 'Arial', sans-serif;
-            font-size: 9px;
-            line-height: 1.3;
+            font-size: 11px;
+            line-height: 1.4;
             color: #000;
             background: #fff;
             padding: 8px;
@@ -41,28 +41,28 @@
         }
 
         .clinic-name {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 900;
             letter-spacing: 2px;
             margin-bottom: 2px;
         }
 
         .job-title {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 1px;
             margin-bottom: 3px;
         }
 
         .order-id {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 900;
             letter-spacing: 0.5px;
         }
 
         /* Patient Info */
         .patient-info {
-            font-size: 8px;
+            font-size: 11px;
             margin-bottom: 8px;
             padding-bottom: 6px;
             border-bottom: 1px dashed #000;
@@ -88,7 +88,7 @@
             background: #000;
             color: #fff;
             padding: 4px 6px;
-            font-size: 8px;
+            font-size: 11px;
             font-weight: 900;
             text-align: center;
             margin: 8px 0 5px 0;
@@ -100,13 +100,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7.5px;
+            font-size: 10px;
             margin-bottom: 4px;
         }
 
         th, td {
             border: 1px solid #000;
-            padding: 3px 2px;
+            padding: 4px 3px;
             text-align: left;
             vertical-align: middle;
         }
@@ -115,12 +115,12 @@
             background: #000;
             color: #fff;
             font-weight: 900;
-            font-size: 7.5px;
+            font-size: 10px;
         }
 
         .eye-label {
             font-weight: 900;
-            font-size: 8px;
+            font-size: 11px;
         }
 
         .rx-value {
@@ -129,7 +129,7 @@
 
         /* Specs */
         .specs-grid {
-            font-size: 8px;
+            font-size: 11px;
             margin-bottom: 4px;
         }
 
@@ -154,7 +154,7 @@
         .notes-box {
             border: 1px solid #000;
             padding: 6px;
-            font-size: 7.5px;
+            font-size: 11px;
             min-height: 40px;
             margin-bottom: 8px;
             background: #fff;
@@ -166,7 +166,7 @@
             margin-top: 10px;
             padding-top: 6px;
             border-top: 1px dashed #000;
-            font-size: 7px;
+            font-size: 10px;
             font-style: italic;
         }
 

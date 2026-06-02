@@ -128,7 +128,7 @@ class OutstandingBalancesComponent extends Component
         $willFullyPay = round((float) $sale->amount_paid + $amount, 2) >= round((float) $sale->total_amount, 2);
 
         if ($amount > $balance) {
-            $this->addError('collectAmount', 'Amount exceeds remaining balance of GH₵ ' . number_format($balance, 2));
+            $this->addError('collectAmount', 'Amount exceeds remaining balance of ' . currency() . ' ' . number_format($balance, 2));
             return;
         }
 
@@ -197,7 +197,7 @@ class OutstandingBalancesComponent extends Component
         $this->closeModal();
         $this->dispatchBrowserEvent('notify', [
             'type' => 'success',
-            'message' => 'Payment of GH₵ ' . number_format($amount, 2) . ' recorded successfully.',
+            'message' => 'Payment of ' . currency() . ' ' . number_format($amount, 2) . ' recorded successfully.',
         ]);
 
         if ($willFullyPay) {

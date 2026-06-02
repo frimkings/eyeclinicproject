@@ -2,12 +2,17 @@
 
 namespace App\Http\Livewire\Admin;
 
+use App\Models\AuditTrail;
 use App\Models\User;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use Spatie\Permission\Models\Role;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Validation\Rules\Password;
 
 class UserRoleManagerComponent extends Component
 {
@@ -63,7 +68,9 @@ class UserRoleManagerComponent extends Component
         return [
             'name'           => 'required|min:3',
             'email'          => 'required|email|unique:users,email,' . $this->userId,
-            'password'       => $this->isEdit ? 'nullable|min:6' : 'required|min:6',
+            'password'       => $this->isEdit
+                ? ['nullable', Password::min(10)->mixedCase()->numbers()]
+                : ['required', Password::min(10)->mixedCase()->numbers()],
             'selectedRoles'  => 'required|array|min:1',
             'phone'          => 'nullable|string|max:25',
             'staff_id'       => 'nullable|string|max:30|unique:users,staff_id,' . $this->userId,
@@ -203,6 +210,19 @@ class UserRoleManagerComponent extends Component
     public function store()
     {
         abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+
+        // Free tier: max 3 user accounts
+        if (!$this->isEdit && !LicenseService::has(Feature::UNLIMITED_USERS)) {
+            $count = User::count();
+            if ($count >= 3) {
+                $this->dispatchBrowserEvent('show-alert', [
+                    'type'    => 'error',
+                    'message' => 'Free tier is limited to 3 user accounts. Upgrade to Pro to add more users.',
+                ]);
+                return;
+            }
+        }
+
         $this->validate();
 
         $user = User::updateOrCreate(['id' => $this->userId], [
@@ -236,9 +256,16 @@ class UserRoleManagerComponent extends Component
 
     public function export()
     {
+        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+
         $fileName = 'clinic_staff_' . now()->format('Y-m-d_His') . '.csv';
-        
-        $users = User::query()
+
+        $sanitize = static function ($v): string {
+            $v = (string) $v;
+            return ($v !== '' && preg_match('/^[=+\-@\t\r]/', $v)) ? "'" . $v : $v;
+        };
+
+        $query = User::query()
             ->with(['roles', 'latestLogin'])
             ->when($this->search, function($query) {
                 $query->where(function($q) {
@@ -267,43 +294,36 @@ class UserRoleManagerComponent extends Component
             ->when($this->filterDateTo, function($query) {
                 $query->whereDate('created_at', '<=', $this->filterDateTo);
             })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->get();
+            ->orderBy($this->sortField, $this->sortDirection);
 
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
+        AuditTrail::record('staff.exported', 'Staff list exported to CSV', null, [], [], null, true);
 
-        return response()->stream(function() use($users) {
+        return Response::streamDownload(function () use ($query, $sanitize) {
             $file = fopen('php://output', 'w');
-            
-            // CSV Headers
             fputcsv($file, ['ID', 'Staff ID', 'Name', 'Email', 'Phone', 'Gender', 'DOB', 'Department', 'Hire Date', 'Roles', 'Status', 'Last Login', 'Last IP', 'Member Since']);
 
-            foreach ($users as $user) {
-                fputcsv($file, [
-                    $user->id,
-                    $user->staff_id      ?? '—',
-                    $user->name,
-                    $user->email,
-                    $user->phone         ?? '—',
-                    $user->gender        ?? '—',
-                    $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '—',
-                    $user->department    ?? '—',
-                    $user->hire_date     ? $user->hire_date->format('Y-m-d') : '—',
-                    $user->roles->pluck('name')->implode(' | '),
-                    $user->is_active ? 'Active' : 'Inactive',
-                    $user->latestLogin ? $user->latestLogin->login_at->toDateTimeString() : 'Never',
-                    $user->latestLogin ? $user->latestLogin->ip_address : 'N/A',
-                    $user->created_at->toDateTimeString(),
-                ]);
-            }
+            $query->chunkById(500, function ($chunk) use ($file, $sanitize) {
+                foreach ($chunk as $user) {
+                    fputcsv($file, array_map($sanitize, [
+                        $user->id,
+                        $user->staff_id      ?? '—',
+                        $user->name,
+                        $user->email,
+                        $user->phone         ?? '—',
+                        $user->gender        ?? '—',
+                        $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '—',
+                        $user->department    ?? '—',
+                        $user->hire_date     ? $user->hire_date->format('Y-m-d') : '—',
+                        $user->roles->pluck('name')->implode(' | '),
+                        $user->is_active ? 'Active' : 'Inactive',
+                        $user->latestLogin ? $user->latestLogin->login_at->toDateTimeString() : 'Never',
+                        $user->latestLogin ? $user->latestLogin->ip_address : 'N/A',
+                        $user->created_at->toDateTimeString(),
+                    ]));
+                }
+            });
             fclose($file);
-        }, 200, $headers);
+        }, $fileName, ['Content-Type' => 'text/csv']);
     }
 
     public function delete($id)
@@ -345,7 +365,7 @@ class UserRoleManagerComponent extends Component
     {
         abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
         $this->validate([
-            'newPassword'             => 'required|min:8|same:newPasswordConfirmation',
+            'newPassword'             => ['required', 'same:newPasswordConfirmation', Password::min(10)->mixedCase()->numbers()],
             'newPasswordConfirmation' => 'required',
         ], [
             'newPassword.same' => 'Passwords do not match.',
@@ -394,7 +414,7 @@ class UserRoleManagerComponent extends Component
         return response()->stream(function () {
             $f = fopen('php://output', 'w');
             fputcsv($f, ['name', 'email', 'password', 'role', 'phone', 'staff_id', 'gender', 'date_of_birth', 'department', 'hire_date']);
-            fputcsv($f, ['Jane Doe', 'jane@clinic.com', 'secret123', 'Cashier', '+233 50 123 4567', 'EMP-001', 'Female', '1990-05-15', 'Billing', '2024-01-01']);
+            fputcsv($f, ['Jane Doe', 'jane@clinic.com', 'ChangeMe123!', 'Cashier', '+233 50 123 4567', 'EMP-001', 'Female', '1990-05-15', 'Billing', '2024-01-01']);
             fclose($f);
         }, 200, $headers);
     }

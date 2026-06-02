@@ -291,9 +291,9 @@
                             </div>
                             <div>
                                 <span>POS amount</span>
-                                <strong>GHS {{ number_format($posSummary['amount'], 2) }}</strong>
+                                <strong>{{ currency() }} {{ number_format($posSummary['amount'], 2) }}</strong>
                                 @if($posSummary['balance'] > 0)
-                                    <small>Balance GHS {{ number_format($posSummary['balance'], 2) }}</small>
+                                    <small>Balance {{ currency() }} {{ number_format($posSummary['balance'], 2) }}</small>
                                 @endif
                             </div>
                             @if($posSummary['items']->isNotEmpty())

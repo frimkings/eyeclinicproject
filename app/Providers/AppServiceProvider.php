@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\LicenseService;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -23,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
   public function boot()
 {
+    // @feature('feature_name') ... @else ... @endfeature
+    Blade::if('feature', fn(string $f) => LicenseService::has($f));
+
     // Global Date Directive
     Blade::directive('formatDate', function ($expression) {
         return "<?php echo {$expression} 

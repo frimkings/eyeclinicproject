@@ -105,7 +105,7 @@
                                                 <i class="fas fa-concierge-bell mr-1" style="font-size:.7rem;"></i>
                                                 {{ $patient->service->name }}
                                             </span>
-                                            <br><small class="text-muted">GH₵ {{ number_format($patient->service->selling_price, 2) }}</small>
+                                            <br><small class="text-muted">{{ currency() }} {{ number_format($patient->service->selling_price, 2) }}</small>
                                         @else
                                             <span class="text-muted small">—</span>
                                         @endif
@@ -121,7 +121,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end pe-4">
-                                        <a href="{{ route('doctor.patient-records', $patient->id) }}"
+                                        <a href="{{ route('doctor.patient-records', $patient) }}"
                                            class="btn btn-sm btn-dark px-3 rounded-pill shadow-sm">
                                             Open File <i class="fas fa-chevron-right ms-1"></i>
                                         </a>

@@ -14,18 +14,34 @@ class CheckAccountStatusMiddleware
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-   public function handle(Request $request, Closure $next)
-{
-    if (auth()->check() && !auth()->user()->is_active) {
-        auth()->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+    public function handle(Request $request, Closure $next)
+    {
+        if (!auth()->check()) {
+            return $next($request);
+        }
 
-        return redirect()->route('login')->with('error', 'Your account has been deactivated.');
+        $user = auth()->user();
+
+        if (!$user->is_active) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('error', 'Your account has been deactivated.');
+        }
+
+        // Invalidate session when roles change so revoked access takes effect immediately
+        $rolesHash = md5($user->roles->pluck('name')->sort()->implode(','));
+        if ($request->session()->has('roles_hash') &&
+            $request->session()->get('roles_hash') !== $rolesHash) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('error', 'Your account permissions have changed. Please log in again.');
+        }
+        $request->session()->put('roles_hash', $rolesHash);
+
+        return $next($request);
     }
-
-    return $next($request);
-}
 
 
 }

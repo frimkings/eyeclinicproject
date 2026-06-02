@@ -58,45 +58,45 @@
             </tr>
         </thead>
         <tbody>
-            <tr class="heading"><td>Revenue</td><td class="amount">GH₵ {{ number_format($statement['revenue'], 2) }}</td></tr>
+            <tr class="heading"><td>Revenue</td><td class="amount">{{ currency() }} {{ number_format($statement['revenue'], 2) }}</td></tr>
             @foreach($revenue_lines as $line)
-                <tr><td>{{ $line['name'] }}</td><td class="amount">GH₵ {{ number_format($line['amount'], 2) }}</td></tr>
+                <tr><td>{{ $line['name'] }}</td><td class="amount">{{ currency() }} {{ number_format($line['amount'], 2) }}</td></tr>
             @endforeach
 
-            <tr class="heading"><td>Cost Of Sales</td><td class="amount">GH₵ {{ number_format($statement['cost_of_sales'], 2) }}</td></tr>
+            <tr class="heading"><td>Cost Of Sales</td><td class="amount">{{ currency() }} {{ number_format($statement['cost_of_sales'], 2) }}</td></tr>
             @foreach($cost_lines as $line)
-                <tr><td>{{ $line['name'] }}</td><td class="amount">GH₵ {{ number_format($line['amount'], 2) }}</td></tr>
+                <tr><td>{{ $line['name'] }}</td><td class="amount">{{ currency() }} {{ number_format($line['amount'], 2) }}</td></tr>
             @endforeach
 
-            <tr class="total"><td>Gross Profit</td><td class="amount">GH₵ {{ number_format($statement['gross_profit'], 2) }}</td></tr>
+            <tr class="total"><td>Gross Profit</td><td class="amount">{{ currency() }} {{ number_format($statement['gross_profit'], 2) }}</td></tr>
 
-            <tr class="heading"><td>Operating Expenses</td><td class="amount">GH₵ {{ number_format($statement['operating_expenses'], 2) }}</td></tr>
+            <tr class="heading"><td>Operating Expenses</td><td class="amount">{{ currency() }} {{ number_format($statement['operating_expenses'], 2) }}</td></tr>
             @foreach($operating_lines as $line)
                 <tr>
                     <td>
                         {{ $line['name'] }}
                         @if(!empty($line['notes']))<div class="line-note">{{ $line['notes'] }}</div>@endif
                     </td>
-                    <td class="amount">GH₵ {{ number_format($line['amount'], 2) }}</td>
+                    <td class="amount">{{ currency() }} {{ number_format($line['amount'], 2) }}</td>
                 </tr>
             @endforeach
 
-            <tr class="total"><td>Operating Profit</td><td class="amount">GH₵ {{ number_format($statement['operating_profit'], 2) }}</td></tr>
+            <tr class="total"><td>Operating Profit</td><td class="amount">{{ currency() }} {{ number_format($statement['operating_profit'], 2) }}</td></tr>
 
-            <tr class="heading"><td>Non-operating Expenses</td><td class="amount">GH₵ {{ number_format($statement['non_operating_expenses'], 2) }}</td></tr>
+            <tr class="heading"><td>Non-operating Expenses</td><td class="amount">{{ currency() }} {{ number_format($statement['non_operating_expenses'], 2) }}</td></tr>
             @foreach($non_operating_lines as $line)
                 <tr>
                     <td>
                         {{ $line['name'] }}
                         @if(!empty($line['notes']))<div class="line-note">{{ $line['notes'] }}</div>@endif
                     </td>
-                    <td class="amount">GH₵ {{ number_format($line['amount'], 2) }}</td>
+                    <td class="amount">{{ currency() }} {{ number_format($line['amount'], 2) }}</td>
                 </tr>
             @endforeach
 
-            <tr class="total"><td>Profit For The Period</td><td class="amount">GH₵ {{ number_format($statement['profit_for_period'], 2) }}</td></tr>
-            <tr><td>Tax ({{ number_format($statement['tax_rate'], 2) }}%)</td><td class="amount">GH₵ {{ number_format($statement['tax_amount'], 2) }}</td></tr>
-            <tr class="final"><td>Net Profit</td><td class="amount">GH₵ {{ number_format($statement['net_profit'], 2) }}</td></tr>
+            <tr class="total"><td>Profit For The Period</td><td class="amount">{{ currency() }} {{ number_format($statement['profit_for_period'], 2) }}</td></tr>
+            <tr><td>Tax ({{ number_format($statement['tax_rate'], 2) }}%)</td><td class="amount">{{ currency() }} {{ number_format($statement['tax_amount'], 2) }}</td></tr>
+            <tr class="final"><td>Net Profit</td><td class="amount">{{ currency() }} {{ number_format($statement['net_profit'], 2) }}</td></tr>
         </tbody>
     </table>
 </body>

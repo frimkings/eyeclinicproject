@@ -541,6 +541,25 @@ Alternatively, you can export the database from phpMyAdmin on the old
 computer and import it on the new computer.
 
 
+
+Step 4: The Clean Reset (If nothing else works)
+If the database engine refuses to boot and the data files are too heavily corrupted, you can revert MySQL back to its default factory state using XAMPP's pristine backup folder, then restore your tables.
+
+Ensure MySQL is completely stopped.
+
+Go to C:\xampp\mysql\.
+
+Rename your current data folder to data_corrupt.
+
+Create a brand new, empty folder named data.
+
+Open the backup folder inside C:\xampp\mysql\backup\. Copy everything inside it and paste it into your new, empty data folder.
+
+Now, go into your data_corrupt folder. Copy only your custom database folders (e.g., your specific Laravel project database folders) and paste them into the new data folder. Do not copy the mysql, performance_schema, or phpmyadmin folders.
+
+Finally, copy the file named ibdata1 from data_corrupt and paste it into the new data folder, replacing the default one.
+
+Start MySQL in the XAMPP Control Panel.
 ================================================================================
   SECTION 18 — IMPORTANT SECURITY NOTES
 ================================================================================

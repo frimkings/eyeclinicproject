@@ -9,11 +9,29 @@ class Setting extends Model
 {
     use HasFactory;
 
-    public const DEFAULT_CLINIC_NAME = 'My Eye Clinic';
+    public const DEFAULT_CLINIC_NAME    = 'My Eye Clinic';
     public const DEFAULT_CLINIC_ADDRESS = 'Your Address Here';
     public const DEFAULT_CLINIC_CONTACT = 'Your Contact Number';
-    public const DEFAULT_CLINIC_EMAIL = 'info@clinic.com';
-    public const DEFAULT_VA_NOTATION  = '6m';
+    public const DEFAULT_CLINIC_EMAIL   = 'info@clinic.com';
+    public const DEFAULT_VA_NOTATION    = '6m';
+    public const DEFAULT_CURRENCY       = 'GH₵';
+
+    public const CURRENCIES = [
+        'GH₵' => 'Ghana Cedi (GH₵)',
+        '$'   => 'US Dollar ($)',
+        '€'   => 'Euro (€)',
+        '£'   => 'British Pound (£)',
+        '₦'   => 'Nigerian Naira (₦)',
+        'KSh' => 'Kenyan Shilling (KSh)',
+        'R'   => 'South African Rand (R)',
+        'UGX' => 'Ugandan Shilling (UGX)',
+        'TZS' => 'Tanzanian Shilling (TZS)',
+        'XOF' => 'West African CFA (XOF)',
+        'EGP' => 'Egyptian Pound (EGP)',
+        'ETB' => 'Ethiopian Birr (ETB)',
+    ];
+
+    private static ?string $currencyCache = null;
 
     protected $table = 'settings';
 
@@ -37,6 +55,7 @@ class Setting extends Model
         'smtp_from_address',
         'smtp_from_name',
         'va_notation',
+        'currency_symbol',
         'sms_api_url',
         'sms_api_key',
         'sms_sender_id',
@@ -56,6 +75,7 @@ class Setting extends Model
         'whatsapp_recall_template',
         'whatsapp_renewal_template',
         'whatsapp_bulk_channel',
+        'trial_started_at',
     ];
 
     protected $casts = [
@@ -70,11 +90,22 @@ class Setting extends Model
         'spectacle_renewal_enabled'       => 'boolean',
         'spectacle_renewal_reminder_days' => 'integer',
         'whatsapp_enabled'                => 'boolean',
+        'trial_started_at'                => 'date',
     ];
 
-    /**
-     * Get the first (and should be only) settings record
-     */
+    public static function currency(): string
+    {
+        if (static::$currencyCache === null) {
+            static::$currencyCache = static::getSettings()->currency_symbol ?? self::DEFAULT_CURRENCY;
+        }
+        return static::$currencyCache;
+    }
+
+    public static function clearCurrencyCache(): void
+    {
+        static::$currencyCache = null;
+    }
+
     public static function getSettings()
     {
         return static::first() ?? static::create([
@@ -131,13 +162,17 @@ class Setting extends Model
             return null;
         }
 
-        // Use basename() to prevent path traversal (e.g. ../../etc/passwd)
-        $safe = basename($this->clinic_logo);
-        if (!preg_match('/^[\w\-\.]+$/', $safe)) {
+        // Block path traversal — no ".." segments allowed anywhere in the path
+        if (str_contains($this->clinic_logo, '..')) {
             return null;
         }
 
-        $path = public_path('storage/' . $safe);
+        // Allow only safe characters: alphanumerics, dashes, underscores, dots, forward slashes
+        if (!preg_match('/^[\w\-\.\/]+$/', $this->clinic_logo)) {
+            return null;
+        }
+
+        $path = public_path('storage/' . ltrim($this->clinic_logo, '/'));
 
         return file_exists($path) ? $path : null;
     }

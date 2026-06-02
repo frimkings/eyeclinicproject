@@ -10,7 +10,6 @@ use Livewire\Component;
 class DailyCashSummaryComponent extends Component
 {
     public $reportDate;
-    public $chartLoaded = false;
 
     public function mount()
     {
@@ -22,20 +21,12 @@ class DailyCashSummaryComponent extends Component
         $this->dispatchBrowserEvent('print-page');
     }
 
-    public function loadPaymentChart(): void
-    {
-        $this->chartLoaded = true;
-        $this->dispatchPaymentChart();
-    }
-
     public function updatedReportDate(): void
     {
-        if ($this->chartLoaded) {
-            $this->dispatchPaymentChart();
-        }
+        $this->dispatchBrowserEvent('update-payment-chart', $this->buildChartPayload());
     }
 
-    protected function dispatchPaymentChart(): void
+    protected function buildChartPayload(): array
     {
         $start    = Carbon::parse($this->reportDate)->startOfDay();
         $end      = Carbon::parse($this->reportDate)->endOfDay();
@@ -59,7 +50,7 @@ class DailyCashSummaryComponent extends Component
             $counts[] = (int) $p->cnt;
         }
 
-        $this->dispatchBrowserEvent('update-payment-chart', compact('labels', 'data', 'colors', 'counts'));
+        return compact('labels', 'data', 'colors', 'counts');
     }
 
     public function render()
@@ -73,16 +64,26 @@ class DailyCashSummaryComponent extends Component
             ->orderBy('payment_method')
             ->get();
 
-        $sales = Sales::whereBetween('created_at', [$start, $end])->get();
+        $agg = Sales::whereBetween('created_at', [$start, $end])
+            ->selectRaw('
+                COUNT(*) as sales_count,
+                COALESCE(SUM(total_amount), 0) as gross_sales,
+                COALESCE(SUM(amount_paid), 0) as amount_paid,
+                COALESCE(SUM(GREATEST(0, total_amount - amount_paid)), 0) as outstanding,
+                COUNT(CASE WHEN is_refunded = 1 THEN 1 END) as refunds_count,
+                COALESCE(SUM(CASE WHEN is_refunded = 1 THEN total_amount ELSE 0 END), 0) as refunds_total
+            ')
+            ->first();
 
         return view('livewire.admin.daily-cash-summary-component', [
-            'payments' => $payments,
-            'salesCount' => $sales->count(),
-            'grossSales' => $sales->sum('total_amount'),
-            'amountPaid' => $sales->sum('amount_paid'),
-            'outstandingCreated' => $sales->sum(fn ($sale) => max(0, (float) $sale->total_amount - (float) $sale->amount_paid)),
-            'refundsCount' => $sales->where('is_refunded', true)->count(),
-            'refundsTotal' => $sales->where('is_refunded', true)->sum('total_amount'),
+            'chartPayload'      => $this->buildChartPayload(),
+            'payments'          => $payments,
+            'salesCount'        => (int) $agg->sales_count,
+            'grossSales'        => $agg->gross_sales,
+            'amountPaid'        => $agg->amount_paid,
+            'outstandingCreated' => $agg->outstanding,
+            'refundsCount'      => (int) $agg->refunds_count,
+            'refundsTotal'      => $agg->refunds_total,
         ])->layout('layouts.admin.admin-layout');
     }
 }

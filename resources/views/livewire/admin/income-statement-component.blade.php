@@ -115,8 +115,8 @@
         @if($uncategorizedWarnings['revenue'] > 0 || $uncategorizedWarnings['cost'] > 0)
             <div class="alert alert-info">
                 Some sales are categorized as <strong>Uncategorized</strong>.
-                Revenue: GH₵ {{ number_format($uncategorizedWarnings['revenue'], 2) }},
-                Cost: GH₵ {{ number_format($uncategorizedWarnings['cost'], 2) }}.
+                Revenue: {{ currency() }} {{ number_format($uncategorizedWarnings['revenue'], 2) }},
+                Cost: {{ currency() }} {{ number_format($uncategorizedWarnings['cost'], 2) }}.
                 Assign categories to those products for a cleaner statement.
             </div>
         @endif
@@ -125,25 +125,25 @@
             <div class="col-xl-3 col-md-6 mb-3">
                 <div class="summary-card p-3">
                     <div class="summary-label">Revenue</div>
-                    <div class="summary-value text-primary">GH₵ {{ number_format($statement['revenue'], 2) }}</div>
+                    <div class="summary-value text-primary">{{ currency() }} {{ number_format($statement['revenue'], 2) }}</div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <div class="summary-card p-3">
                     <div class="summary-label">Gross Profit</div>
-                    <div class="summary-value {{ $statement['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}">GH₵ {{ number_format($statement['gross_profit'], 2) }}</div>
+                    <div class="summary-value {{ $statement['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}">{{ currency() }} {{ number_format($statement['gross_profit'], 2) }}</div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <div class="summary-card p-3">
                     <div class="summary-label">Operating Profit</div>
-                    <div class="summary-value {{ $statement['operating_profit'] >= 0 ? 'text-success' : 'text-danger' }}">GH₵ {{ number_format($statement['operating_profit'], 2) }}</div>
+                    <div class="summary-value {{ $statement['operating_profit'] >= 0 ? 'text-success' : 'text-danger' }}">{{ currency() }} {{ number_format($statement['operating_profit'], 2) }}</div>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <div class="summary-card p-3">
                     <div class="summary-label">Net Profit</div>
-                    <div class="summary-value {{ $statement['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">GH₵ {{ number_format($statement['net_profit'], 2) }}</div>
+                    <div class="summary-value {{ $statement['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">{{ currency() }} {{ number_format($statement['net_profit'], 2) }}</div>
                 </div>
             </div>
         </div>
@@ -169,15 +169,15 @@
                             <tbody>
                                 <tr class="statement-heading">
                                     <td>Revenue</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['revenue'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['revenue'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['revenue'] - $comparison['statement']['revenue'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['revenue'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['revenue'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['revenue'] - $comparison['statement']['revenue'], 2) }}</td>
                                     <td></td>
                                 </tr>
                                 @forelse($revenueLines as $line)
                                     <tr>
                                         <td>{{ $line->name }}</td>
-                                        <td class="amount-cell">GH₵ {{ number_format($line->amount, 2) }}</td>
+                                        <td class="amount-cell">{{ currency() }} {{ number_format($line->amount, 2) }}</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td></td>
@@ -188,15 +188,15 @@
 
                                 <tr class="statement-heading">
                                     <td>Cost Of Sales</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['cost_of_sales'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['cost_of_sales'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['cost_of_sales'] - $comparison['statement']['cost_of_sales'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['cost_of_sales'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['cost_of_sales'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['cost_of_sales'] - $comparison['statement']['cost_of_sales'], 2) }}</td>
                                     <td></td>
                                 </tr>
                                 @forelse($costOfSalesLines as $line)
                                     <tr>
                                         <td>{{ $line->name }}</td>
-                                        <td class="amount-cell">GH₵ {{ number_format($line->amount, 2) }}</td>
+                                        <td class="amount-cell">{{ currency() }} {{ number_format($line->amount, 2) }}</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td></td>
@@ -207,17 +207,17 @@
 
                                 <tr class="statement-total">
                                     <td>Gross Profit</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['gross_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['gross_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['gross_profit'] - $comparison['statement']['gross_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['gross_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['gross_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['gross_profit'] - $comparison['statement']['gross_profit'], 2) }}</td>
                                     <td></td>
                                 </tr>
 
                                 <tr class="statement-heading">
                                     <td>Operating Expenses</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['operating_expenses'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['operating_expenses'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['operating_expenses'] - $comparison['statement']['operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['operating_expenses'] - $comparison['statement']['operating_expenses'], 2) }}</td>
                                     <td></td>
                                 </tr>
                                 @forelse($statement['operating_lines'] as $line)
@@ -226,7 +226,7 @@
                                             {{ $line->name }} <span class="text-muted small">({{ $line->entry_date->format('M d') }})</span>
                                             @if($line->notes && trim($line->notes) !== 'Default recurring value from income statement setup.')<div class="text-muted small">{{ $line->notes }}</div>@endif
                                         </td>
-                                        <td class="amount-cell">GH₵ {{ number_format($line->amount, 2) }}</td>
+                                        <td class="amount-cell">{{ currency() }} {{ number_format($line->amount, 2) }}</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="line-actions">
@@ -243,17 +243,17 @@
 
                                 <tr class="statement-total">
                                     <td>Operating Profit</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['operating_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['operating_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['operating_profit'] - $comparison['statement']['operating_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['operating_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['operating_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['operating_profit'] - $comparison['statement']['operating_profit'], 2) }}</td>
                                     <td></td>
                                 </tr>
 
                                 <tr class="statement-heading">
                                     <td>Non-operating Expenses</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['non_operating_expenses'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['non_operating_expenses'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['non_operating_expenses'] - $comparison['statement']['non_operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['non_operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['non_operating_expenses'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['non_operating_expenses'] - $comparison['statement']['non_operating_expenses'], 2) }}</td>
                                     <td></td>
                                 </tr>
                                 @forelse($statement['non_operating_lines'] as $line)
@@ -262,7 +262,7 @@
                                             {{ $line->name }} <span class="text-muted small">({{ $line->entry_date->format('M d') }})</span>
                                             @if($line->notes && trim($line->notes) !== 'Default recurring value from income statement setup.')<div class="text-muted small">{{ $line->notes }}</div>@endif
                                         </td>
-                                        <td class="amount-cell">GH₵ {{ number_format($line->amount, 2) }}</td>
+                                        <td class="amount-cell">{{ currency() }} {{ number_format($line->amount, 2) }}</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="amount-cell text-muted">-</td>
                                         <td class="line-actions">
@@ -279,9 +279,9 @@
 
                                 <tr class="statement-total">
                                     <td>Profit For The Period</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['profit_for_period'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['profit_for_period'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['profit_for_period'] - $comparison['statement']['profit_for_period'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['profit_for_period'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['profit_for_period'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['profit_for_period'] - $comparison['statement']['profit_for_period'], 2) }}</td>
                                     <td></td>
                                 </tr>
                                 <tr>
@@ -293,9 +293,9 @@
                                             <span class="text-muted small">(0.00%)</span>
                                         @endif
                                     </td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['tax_amount'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['tax_amount'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['tax_amount'] - $comparison['statement']['tax_amount'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['tax_amount'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['tax_amount'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['tax_amount'] - $comparison['statement']['tax_amount'], 2) }}</td>
                                     <td class="line-actions">
                                         @if($statement['tax_entry'] && !$isLocked)
                                             <button type="button" wire:click="deleteEntry({{ $statement['tax_entry']->id }})" class="btn btn-sm btn-outline-danger" title="Delete">
@@ -306,9 +306,9 @@
                                 </tr>
                                 <tr class="statement-final">
                                     <td>Net Profit</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['net_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($comparison['statement']['net_profit'], 2) }}</td>
-                                    <td class="amount-cell">GH₵ {{ number_format($statement['net_profit'] - $comparison['statement']['net_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['net_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($comparison['statement']['net_profit'], 2) }}</td>
+                                    <td class="amount-cell">{{ currency() }} {{ number_format($statement['net_profit'] - $comparison['statement']['net_profit'], 2) }}</td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -428,7 +428,7 @@
                                 @if($template->section === \App\Models\IncomeStatementEntry::TAX)
                                     <div>{{ number_format($template->percentage, 2) }}%</div>
                                 @else
-                                    <div>GH₵ {{ number_format($template->amount, 2) }}</div>
+                                    <div>{{ currency() }} {{ number_format($template->amount, 2) }}</div>
                                 @endif
                                 <button type="button" wire:click="deleteTemplate({{ $template->id }})" class="btn btn-sm btn-link text-danger p-0">Remove</button>
                             </div>
@@ -523,7 +523,7 @@
                                     @if($entry->section === \App\Models\IncomeStatementEntry::TAX)
                                         <div>{{ number_format($entry->percentage, 2) }}%</div>
                                     @else
-                                        <div>GH₵ {{ number_format($entry->amount, 2) }}</div>
+                                        <div>{{ currency() }} {{ number_format($entry->amount, 2) }}</div>
                                     @endif
                                     @if(!$isLocked)
                                         <button type="button" wire:click="editEntry({{ $entry->id }})" class="btn btn-sm btn-link text-primary p-0 mr-2">Edit</button>
@@ -544,7 +544,7 @@
 {{-- Expense Import Preview Modal --}}
 @if($showImportModal)
 <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.55);">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header" style="background:#1f2933; color:#fff;">
                 <h5 class="modal-title">
@@ -580,7 +580,7 @@
                                     {{ $row['label'] }}
                                 </span>
                             </td>
-                            <td class="text-right font-weight-bold">GH₵ {{ number_format($row['total'], 2) }}</td>
+                            <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($row['total'], 2) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -588,7 +588,7 @@
                         <tr>
                             <td colspan="2" class="text-right font-weight-bold">Grand Total</td>
                             <td class="text-right font-weight-bold text-danger">
-                                GH₵ {{ number_format(collect($importPreview)->sum('total'), 2) }}
+                                {{ currency() }} {{ number_format(collect($importPreview)->sum('total'), 2) }}
                             </td>
                         </tr>
                     </tfoot>

@@ -3,8 +3,12 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\AuditTrail;
+use App\Models\AuditTrailArchive;
+use App\Services\LicenseService;
+use App\Support\Feature;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -16,6 +20,7 @@ class AuditTrailViewerComponent extends Component
 
     protected $paginationTheme = 'bootstrap';
 
+    public bool $showArchive = false;
     public $search = '';
     public $event = '';
     public $userId = '';
@@ -24,6 +29,8 @@ class AuditTrailViewerComponent extends Component
 
     public function mount()
     {
+        // Fix #12: generic 403 — don't reveal feature flag names
+        abort_if(!LicenseService::has(Feature::AUDIT_TRAIL), 403);
         $this->fromDate = Carbon::today()->subDays(30)->toDateString();
         $this->toDate = Carbon::today()->toDateString();
     }
@@ -33,6 +40,17 @@ class AuditTrailViewerComponent extends Component
     public function updatingUserId() { $this->resetPage(); }
     public function updatingFromDate() { $this->resetPage(); }
     public function updatingToDate() { $this->resetPage(); }
+
+    public function toggleArchive(): void
+    {
+        $this->showArchive = !$this->showArchive;
+        $this->search  = '';
+        $this->event   = '';
+        $this->userId  = '';
+        $this->fromDate = $this->showArchive ? '' : Carbon::today()->subDays(30)->toDateString();
+        $this->toDate   = $this->showArchive ? '' : Carbon::today()->toDateString();
+        $this->resetPage();
+    }
 
     public function resetFilters()
     {
@@ -45,22 +63,30 @@ class AuditTrailViewerComponent extends Component
 
     public function exportCsv()
     {
-        $events = $this->query()->get();
+        $query = $this->query();
         $filename = 'audit_trail_' . now()->format('Y-m-d_His') . '.csv';
 
-        $callback = function () use ($events) {
+        // Fix #2: sanitize values against CSV formula injection
+        $sanitize = static function ($v): string {
+            $v = (string) $v;
+            return ($v !== '' && preg_match('/^[=+\-@\t\r]/', $v)) ? "'" . $v : $v;
+        };
+
+        $callback = function () use ($query, $sanitize) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Time', 'User', 'Patient', 'Event', 'Description', 'IP Address']);
-            foreach ($events as $event) {
-                fputcsv($file, [
-                    $event->created_at->format('Y-m-d H:i:s'),
-                    $event->user->name ?? 'System',
-                    $event->patient->name ?? '',
-                    $event->event,
-                    $event->description,
-                    $event->ip_address,
-                ]);
-            }
+            $query->chunkById(500, function ($chunk) use ($file, $sanitize) {
+                foreach ($chunk as $event) {
+                    fputcsv($file, array_map($sanitize, [
+                        $event->created_at->format('Y-m-d H:i:s'),
+                        $event->user->name ?? 'System',
+                        $event->patient->name ?? '',
+                        $event->event,
+                        $event->description,
+                        $event->ip_address,
+                    ]));
+                }
+            });
             fclose($file);
         };
 
@@ -72,7 +98,7 @@ class AuditTrailViewerComponent extends Component
         return Str::headline(str_replace('.', ' ', $event));
     }
 
-    public function formatAuditChanges(AuditTrail $audit): array
+    public function formatAuditChanges(Model $audit): array
     {
         $oldValues = is_array($audit->old_values) ? $audit->old_values : [];
         $newValues = is_array($audit->new_values) ? $audit->new_values : [];
@@ -147,7 +173,7 @@ class AuditTrailViewerComponent extends Component
         }
 
         if (is_numeric($value) && Str::contains($key, ['amount', 'total', 'price', 'cost', 'paid', 'balance'])) {
-            return 'GH₵ ' . number_format((float) $value, 2);
+            return currency() . ' ' . number_format((float) $value, 2);
         }
 
         return (string) $value;
@@ -155,7 +181,9 @@ class AuditTrailViewerComponent extends Component
 
     private function query()
     {
-        return AuditTrail::with(['user', 'patient'])
+        $model = $this->showArchive ? new AuditTrailArchive : new AuditTrail;
+
+        return $model::with(['user', 'patient'])
             ->when($this->search, function ($query) {
                 $search = '%' . $this->search . '%';
                 $query->where(function ($q) use ($search) {
@@ -163,22 +191,25 @@ class AuditTrailViewerComponent extends Component
                         ->orWhere('event', 'like', $search)
                         ->orWhere('ip_address', 'like', $search)
                         ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', $search))
-                        ->orWhereHas('patient', fn ($pq) => $pq->where('name', 'like', $search)->orWhere('pxnumber', 'like', $search));
+                        ->orWhereHas('patient', fn ($pq) => $pq->where('name', 'like', $search));
                 });
             })
             ->when($this->event, fn ($query) => $query->where('event', $this->event))
             ->when($this->userId, fn ($query) => $query->where('user_id', $this->userId))
             ->when($this->fromDate, fn ($query) => $query->where('created_at', '>=', Carbon::parse($this->fromDate)->startOfDay()))
             ->when($this->toDate, fn ($query) => $query->where('created_at', '<=', Carbon::parse($this->toDate)->endOfDay()))
-            ->latest();
+            ->latest('created_at');
     }
 
     public function render()
     {
+        $eventModel = $this->showArchive ? AuditTrailArchive::class : AuditTrail::class;
+
         return view('livewire.admin.audit-trail-viewer-component', [
-            'audits' => $this->query()->paginate(20),
-            'users' => User::orderBy('name')->get(['id', 'name']),
-            'events' => AuditTrail::select('event')->distinct()->orderBy('event')->pluck('event'),
+            'audits'      => $this->query()->paginate(20),
+            'users'       => User::orderBy('name')->get(['id', 'name']),
+            'events'      => $eventModel::select('event')->distinct()->orderBy('event')->pluck('event'),
+            'showArchive' => $this->showArchive,
         ])->layout('layouts.admin.admin-layout');
     }
 }

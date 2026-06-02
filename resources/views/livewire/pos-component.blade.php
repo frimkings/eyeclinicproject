@@ -64,39 +64,39 @@ x-init="initTheme()"
                             <tr style="border-bottom:1px dotted #eee;">
                                 <td style="padding:3px 2px; font-size:10px;">{{ \Illuminate\Support\Str::limit($item['name'], 18) }}</td>
                                 <td style="text-align:center; padding:3px 2px; font-size:10px;">{{ $item['quantity'] }}</td>
-                                <td style="text-align:right; padding:3px 2px; font-size:10px;">GH₵ {{ number_format($item['selling_price'], 2) }}</td>
-                                <td style="text-align:right; padding:3px 2px; font-size:10px;">GH₵ {{ number_format($item['subtotal'], 2) }}</td>
+                                <td style="text-align:right; padding:3px 2px; font-size:10px;">{{ currency() }} {{ number_format($item['selling_price'], 2) }}</td>
+                                <td style="text-align:right; padding:3px 2px; font-size:10px;">{{ currency() }} {{ number_format($item['subtotal'], 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
                 <div style="border-top:2px solid #333; padding-top:6px; margin-top:4px;">
                     @if(isset($receiptData['discount_amount']) && $receiptData['discount_amount'] > 0)
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#777; margin-bottom:2px;"><span>SUBTOTAL</span><span>GH₵ {{ number_format($receiptData['gross_amount'], 2) }}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#777; margin-bottom:2px;"><span>SUBTOTAL</span><span>{{ currency() }} {{ number_format($receiptData['gross_amount'], 2) }}</span></div>
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#e67e22; font-weight:bold; margin-bottom:4px;">
-                            <span>DISCOUNT ({{ $receiptData['discount_type'] === 'percentage' ? number_format($receiptData['discount_value'], 0).'%' : 'GH₵ '.number_format($receiptData['discount_value'], 2) }})</span>
-                            <span>-GH₵ {{ number_format($receiptData['discount_amount'], 2) }}</span>
+                            <span>DISCOUNT ({{ $receiptData['discount_type'] === 'percentage' ? number_format($receiptData['discount_value'], 0).'%' : currency().' '.number_format($receiptData['discount_value'], 2) }})</span>
+                            <span>-{{ currency() }} {{ number_format($receiptData['discount_amount'], 2) }}</span>
                         </div>
                     @endif
-                    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:900;"><span>TOTAL</span><span>GH₵ {{ number_format($receiptData['total_amount'], 2) }}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:900;"><span>TOTAL</span><span>{{ currency() }} {{ number_format($receiptData['total_amount'], 2) }}</span></div>
                     @if(!empty($receiptData['payments']))
                         @foreach($receiptData['payments'] as $p)
                             <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:3px;">
                                 <span>PAID <span style="font-size:9px; color:#777; text-transform:uppercase;">({{ $p['method'] }})</span></span>
-                                <span>GH₵ {{ number_format($p['amount'], 2) }}</span>
+                                <span>{{ currency() }} {{ number_format($p['amount'], 2) }}</span>
                             </div>
                         @endforeach
                         @if(count($receiptData['payments']) > 1)
-                            <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px; font-weight:bold; border-top:1px dashed #ccc; padding-top:2px;"><span>TOTAL PAID</span><span>GH₵ {{ number_format($receiptData['amount_paid'], 2) }}</span></div>
+                            <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px; font-weight:bold; border-top:1px dashed #ccc; padding-top:2px;"><span>TOTAL PAID</span><span>{{ currency() }} {{ number_format($receiptData['amount_paid'], 2) }}</span></div>
                         @endif
                     @elseif(isset($receiptData['amount_paid']) && $receiptData['amount_paid'] > 0)
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:3px;"><span>PAID</span><span>GH₵ {{ number_format($receiptData['amount_paid'], 2) }}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:3px;"><span>PAID</span><span>{{ currency() }} {{ number_format($receiptData['amount_paid'], 2) }}</span></div>
                     @endif
                     @if($receiptData['change'] > 0)
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px; font-weight:bold; color:#1a7a4a;"><span>CHANGE</span><span>GH₵ {{ number_format($receiptData['change'], 2) }}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px; font-weight:bold; color:#1a7a4a;"><span>CHANGE</span><span>{{ currency() }} {{ number_format($receiptData['change'], 2) }}</span></div>
                     @endif
                     @if(isset($receiptData['balance']) && $receiptData['balance'] > 0)
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; font-weight:bold; color:#c0392b; border-top:1px dashed #ccc; padding-top:4px;"><span>BALANCE DUE</span><span>GH₵ {{ number_format($receiptData['balance'], 2) }}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; font-weight:bold; color:#c0392b; border-top:1px dashed #ccc; padding-top:4px;"><span>BALANCE DUE</span><span>{{ currency() }} {{ number_format($receiptData['balance'], 2) }}</span></div>
                     @endif
                 </div>
                 <div style="text-align:center; margin-top:10px; padding-top:6px; border-top:1px dashed #999; font-size:9px; color:#555;">
@@ -143,9 +143,9 @@ window.buildAndPrint = function(d) {
     var itemRows = '';
     d.items.forEach(function(item) {
         var name  = item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name;
-        var price = 'GH₵ ' + parseFloat(item.selling_price).toFixed(2);
-        var total = 'GH₵ ' + parseFloat(item.subtotal).toFixed(2);
-        itemRows += '<tr><td style="padding:3px 2px;">' + name + '</td><td style="text-align:center;padding:3px 2px;">' + item.quantity + '</td><td style="text-align:right;padding:3px 2px;">' + price + '</td><td style="text-align:right;padding:3px 2px;">' + total + '</td></tr>';
+        var price = '{{ currency() }} ' + parseFloat(item.selling_price).toFixed(2);
+        var total = '{{ currency() }} ' + parseFloat(item.subtotal).toFixed(2);
+        itemRows += '<tr><td style="padding:3px 2px;font-size:12px;font-weight:bold;">' + name + '</td><td style="text-align:center;padding:3px 2px;">' + item.quantity + '</td><td style="text-align:right;padding:3px 2px;">' + price + '</td><td style="text-align:right;padding:3px 2px;">' + total + '</td></tr>';
     });
     var patientBlock = '';
     if (d.patient) {
@@ -153,64 +153,60 @@ window.buildAndPrint = function(d) {
     }
     var subtotalRow = '', discountRow = '';
     if (d.discount_amount && parseFloat(d.discount_amount) > 0) {
-        subtotalRow = '<div style="display:flex;justify-content:space-between;font-size:11px;color:#777;margin-bottom:2px;"><span>SUBTOTAL</span><span>GH₵ ' + parseFloat(d.gross_amount).toFixed(2) + '</span></div>';
-        var discLabel = d.discount_type === 'percentage' ? 'DISCOUNT (' + parseFloat(d.discount_value).toFixed(0) + '%)' : 'DISCOUNT (GH₵ ' + parseFloat(d.discount_value).toFixed(2) + ')';
-        discountRow = '<div style="display:flex;justify-content:space-between;font-size:11px;color:#e67e22;font-weight:bold;margin-bottom:4px;"><span>' + discLabel + '</span><span>-GH₵ ' + parseFloat(d.discount_amount).toFixed(2) + '</span></div>';
+        subtotalRow = '<div style="display:flex;justify-content:space-between;font-size:12px;color:#777;margin-bottom:2px;"><span>SUBTOTAL</span><span>{{ currency() }} ' + parseFloat(d.gross_amount).toFixed(2) + '</span></div>';
+        var discLabel = d.discount_type === 'percentage' ? 'DISCOUNT (' + parseFloat(d.discount_value).toFixed(0) + '%)' : 'DISCOUNT ({{ currency() }} ' + parseFloat(d.discount_value).toFixed(2) + ')';
+        discountRow = '<div style="display:flex;justify-content:space-between;font-size:12px;color:#e67e22;font-weight:bold;margin-bottom:4px;"><span>' + discLabel + '</span><span>-{{ currency() }} ' + parseFloat(d.discount_amount).toFixed(2) + '</span></div>';
     }
     var paidRow = '';
     if (d.payments && d.payments.length > 0) {
         d.payments.forEach(function(p) {
-            paidRow += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:3px;"><span>PAID <span style="font-size:9px;color:#777;text-transform:uppercase;">(' + p.method + ')</span></span><span>GH₵ ' + parseFloat(p.amount).toFixed(2) + '</span></div>';
+            paidRow += '<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:3px;"><span>PAID <span style="font-size:10px;color:#777;text-transform:uppercase;">(' + p.method + ')</span></span><span>{{ currency() }} ' + parseFloat(p.amount).toFixed(2) + '</span></div>';
         });
         if (d.payments.length > 1) {
-            paidRow += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px;font-weight:bold;border-top:1px dashed #999;padding-top:2px;"><span>TOTAL PAID</span><span>GH₵ ' + parseFloat(d.amount_paid).toFixed(2) + '</span></div>';
+            paidRow += '<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;font-weight:bold;border-top:1px dashed #999;padding-top:2px;"><span>TOTAL PAID</span><span>{{ currency() }} ' + parseFloat(d.amount_paid).toFixed(2) + '</span></div>';
         }
     } else if (parseFloat(d.amount_paid) > 0) {
-        paidRow = '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:3px;"><span>PAID</span><span>GH₵ ' + parseFloat(d.amount_paid).toFixed(2) + '</span></div>';
+        paidRow = '<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:3px;"><span>PAID</span><span>{{ currency() }} ' + parseFloat(d.amount_paid).toFixed(2) + '</span></div>';
     }
-    var changeRow  = parseFloat(d.change) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px;font-weight:bold;"><span>CHANGE</span><span>GH₵ ' + parseFloat(d.change).toFixed(2) + '</span></div>' : '';
-    var balanceRow = d.balance && parseFloat(d.balance) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:4px;font-weight:bold;color:#c0392b;border-top:1px dashed #999;padding-top:4px;"><span>BALANCE DUE</span><span>GH₵ ' + parseFloat(d.balance).toFixed(2) + '</span></div>' : '';
+    var changeRow  = parseFloat(d.change) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;font-weight:bold;"><span>CHANGE</span><span>{{ currency() }} ' + parseFloat(d.change).toFixed(2) + '</span></div>' : '';
+    var balanceRow = d.balance && parseFloat(d.balance) > 0 ? '<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;font-weight:bold;color:#c0392b;border-top:1px dashed #999;padding-top:4px;"><span>BALANCE DUE</span><span>{{ currency() }} ' + parseFloat(d.balance).toFixed(2) + '</span></div>' : '';
     var contactLines = '';
     if (d.clinic_contact) contactLines += '<div>Tel: ' + d.clinic_contact + '</div>';
     if (d.clinic_email)   contactLines += '<div>' + d.clinic_email + '</div>';
     var addressLine = d.clinic_address ? '<div style="font-size:10px;">' + d.clinic_address + '</div>' : '';
     var logoLine = d.clinic_logo ? '<img src="' + d.clinic_logo + '" style="max-width:35mm;max-height:18mm;object-fit:contain;margin-bottom:4px;">' : '';
     var printedAt = d.printed_at || new Date().toLocaleString();
-    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt</title><style>@page { size: 80mm 200mm; margin: 0; } * { margin:0; padding:0; box-sizing:border-box; } html, body { width:80mm; min-width:80mm; max-width:80mm; margin:0; overflow-x:hidden; } body { font-family:\'Courier New\',monospace; font-size:11px; line-height:1.5; color:#000; background:#fff; padding:4mm; } table { width:100%; border-collapse:collapse; } thead tr { border-bottom:1px solid #000; } th { padding:4px 2px; font-size:10px; text-align:left; } td { padding:3px 2px; font-size:10px; vertical-align:top; } .center { text-align:center; } .dashed { border-top:1px dashed #000; margin:6px 0; } .double { border-top:2px dashed #000; margin:6px 0; } .footer { text-align:center; font-size:9px; border-top:1px dashed #000; padding-top:6px; margin-top:10px; } .total-section { border-top:2px solid #000; padding-top:6px; margin-top:4px; } .total-row { display:flex; justify-content:space-between; margin:3px 0; } .grand { font-size:13px; font-weight:bold; } @media screen { html, body { background:#fff; } } @media print { @page { size: 80mm 200mm; margin: 0; } html, body { width:80mm !important; min-width:80mm !important; max-width:80mm !important; margin:0 !important; } body { padding:4mm !important; } }</style></head><body>'
-        + '<div class="center">' + logoLine + '<div style="font-size:15px;font-weight:900;">' + d.clinic_name + '</div>' + addressLine + contactLines + '</div>'
-        + '<div class="double"></div>'
-        + '<div class="center"><strong>TXN#: ' + d.transaction_id + '</strong><br><span style="font-size:10px;">' + d.created_at + '</span></div>'
-        + '<div class="dashed"></div>'
+    var receiptContent =
+        '<div style="text-align:center;">' + logoLine + '<div style="font-size:15px;font-weight:900;">' + d.clinic_name + '</div>' + addressLine + contactLines + '</div>'
+        + '<div style="border-top:2px dashed #000;margin:6px 0;"></div>'
+        + '<div style="text-align:center;"><strong>TXN#: ' + d.transaction_id + '</strong><br><span style="font-size:12px;">' + d.created_at + '</span></div>'
+        + '<div style="border-top:1px dashed #000;margin:6px 0;"></div>'
         + patientBlock
-        + '<table><thead><tr><th style="width:48%">ITEM</th><th style="width:10%;text-align:center;">QTY</th><th style="width:21%;text-align:right;">PRICE</th><th style="width:21%;text-align:right;">TOTAL</th></tr></thead><tbody>' + itemRows + '</tbody></table>'
-        + '<div class="total-section">' + subtotalRow + discountRow + '<div class="total-row grand"><span>TOTAL</span><span>GH₵ ' + parseFloat(d.total_amount).toFixed(2) + '</span></div>' + paidRow + changeRow + balanceRow + '</div>'
-        + '<div class="footer"><p>Thank you for your business!</p><p>Please keep this receipt for your records.</p><br><p>Served by: <strong>' + d.served_by + '</strong></p><p>' + printedAt + '</p></div>'
-        + '</body></html>';
-    var printWindow = window.open('', 'POSReceipt80mm', 'width=360,height=700,toolbar=no,scrollbars=yes,resizable=yes');
+        + '<table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:1px solid #000;"><th style="padding:4px 2px;font-size:11px;text-align:left;width:48%;">ITEM</th><th style="padding:4px 2px;font-size:11px;text-align:center;width:10%;">QTY</th><th style="padding:4px 2px;font-size:11px;text-align:right;width:21%;">PRICE</th><th style="padding:4px 2px;font-size:11px;text-align:right;width:21%;">TOTAL</th></tr></thead><tbody>' + itemRows + '</tbody></table>'
+        + '<div style="border-top:2px solid #000;padding-top:6px;margin-top:4px;">' + subtotalRow + discountRow + '<div style="display:flex;justify-content:space-between;margin:3px 0;font-size:14px;font-weight:bold;"><span>TOTAL</span><span>{{ currency() }} ' + parseFloat(d.total_amount).toFixed(2) + '</span></div>' + paidRow + changeRow + balanceRow + '</div>'
+        + '<div style="text-align:center;font-size:11px;border-top:1px dashed #000;padding-top:6px;margin-top:10px;"><p>Thank you for your business!</p><p>Please keep this receipt for your records.</p><br><p>Served by: <strong>' + d.served_by + '</strong></p><p>' + printedAt + '</p></div>';
 
-    if (printWindow) {
-        printWindow.document.open();
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-
-        setTimeout(function() {
-            try {
-                printWindow.print();
-            } catch(e) {
-                alert('Print failed: ' + e.message);
-            }
-        }, 500);
-        return;
-    }
-
-    var iframe = document.getElementById('receipt-iframe');
-    if (!iframe) { alert('Print popup was blocked. Please allow popups and try again.'); return; }
-    var doc = iframe.contentWindow.document;
-    doc.open(); doc.write(html); doc.close();
+    ['__pos_receipt_print__', '__pos_receipt_print_style__'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.remove();
+    });
+    var printStyle = document.createElement('style');
+    printStyle.id = '__pos_receipt_print_style__';
+    printStyle.textContent = '@media print { @page { size: 80mm 200mm; margin: 0; } body > *:not(#__pos_receipt_print__) { display: none !important; visibility: hidden !important; } #__pos_receipt_print__ { display: block !important; visibility: visible !important; } }';
+    document.head.appendChild(printStyle);
+    var printDiv = document.createElement('div');
+    printDiv.id = '__pos_receipt_print__';
+    printDiv.style.cssText = 'display:none;';
+    printDiv.innerHTML = '<div style="font-family:\'Courier New\',monospace;font-size:12px;line-height:1.5;color:#000;background:#fff;width:80mm;padding:4mm;">' + receiptContent + '</div>';
+    document.body.appendChild(printDiv);
     setTimeout(function() {
-        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e) { alert('Print failed: ' + e.message); }
-    }, 600);
+        window.print();
+        setTimeout(function() {
+            var el = document.getElementById('__pos_receipt_print__');
+            var st = document.getElementById('__pos_receipt_print_style__');
+            if (el) el.remove();
+            if (st) st.remove();
+        }, 1000);
+    }, 300);
 };
 window.printReceiptFromDom = function(event) {
     if (event) {
@@ -309,7 +305,7 @@ window.printReceiptFromDom = function(event) {
                             <i class="fas fa-pills"></i>
                         </div>
                         <div class="pos-product__name">{{ Str::limit($product->name, 28) }}</div>
-                        <div class="pos-product__price">GH₵ {{ number_format($product->selling_price, 2) }}</div>
+                        <div class="pos-product__price">{{ currency() }} {{ number_format($product->selling_price, 2) }}</div>
                         <div class="pos-product__stock">
                             @if($product->quantity > 10)
                                 <span class="pos-stock pos-stock--ok">{{ $product->quantity }}</span>
@@ -407,7 +403,7 @@ window.printReceiptFromDom = function(event) {
                                             </span>
                                         @endif
                                         <span class="pos-cart-item__name">{{ Str::limit($product->name, 30) }}</span>
-                                        <span class="pos-cart-item__total">GH₵ {{ number_format($quantity * $product->selling_price, 2) }}</span>
+                                        <span class="pos-cart-item__total">{{ currency() }} {{ number_format($quantity * $product->selling_price, 2) }}</span>
                                         @if($isLocked)
                                             {{-- Locked: show padlock, no remove --}}
                                             <span class="pos-lock-icon" title="Prescription item — cannot be removed"><i class="fas fa-lock"></i></span>
@@ -419,7 +415,7 @@ window.printReceiptFromDom = function(event) {
                                         @endif
                                     </div>
                                     <div class="pos-cart-item__row2">
-                                        <span class="pos-cart-item__price">GH₵ {{ number_format($product->selling_price, 2) }} ea.</span>
+                                        <span class="pos-cart-item__price">{{ currency() }} {{ number_format($product->selling_price, 2) }} ea.</span>
                                         @if($isLocked)
                                             {{-- Locked: quantity read-only --}}
                                             <span class="pos-qty-locked">Qty: {{ $quantity }}</span>
@@ -490,7 +486,7 @@ window.printReceiptFromDom = function(event) {
                                     @endif
                                 </span>
                                 <span class="pos-frame-adder__option-meta">
-                                    GH₵ {{ number_format($fr['price'], 2) }}
+                                    {{ currency() }} {{ number_format($fr['price'], 2) }}
                                     &nbsp;·&nbsp;
                                     <span class="{{ $fr['stock'] <= 3 ? 'text-warning' : '' }}">{{ $fr['stock'] }} in stock</span>
                                 </span>
@@ -516,7 +512,7 @@ window.printReceiptFromDom = function(event) {
                     {{-- Subtotal / discount rows --}}
                     <div class="pos-sum-row pos-sum-row--sub">
                         <span>Subtotal</span>
-                        <span>GH₵ {{ number_format($totalAmount, 2) }}</span>
+                        <span>{{ currency() }} {{ number_format($totalAmount, 2) }}</span>
                     </div>
 
                     {{-- Discount --}}
@@ -528,7 +524,7 @@ window.printReceiptFromDom = function(event) {
                                         {{ $discountApproved ? 'disabled' : '' }}>%</button>
                                 <button class="{{ $discountType === 'fixed' ? 'active' : '' }}"
                                         wire:click="$set('discountType', 'fixed')"
-                                        {{ $discountApproved ? 'disabled' : '' }}>GH₵</button>
+                                        {{ $discountApproved ? 'disabled' : '' }}>{{ currency() }}</button>
                             </div>
                             <input class="pos-disc-input"
                                    type="number"
@@ -559,19 +555,19 @@ window.printReceiptFromDom = function(event) {
                             <div class="pos-disc-status {{ $discountApproved ? 'pos-disc-status--ok' : 'pos-disc-status--pending' }}">
                                 @if($discountApproved)
                                     <i class="fas fa-check-circle"></i> Approved by {{ $discountApprovedBy }}
-                                    <span class="ms-auto">−GH₵ {{ number_format($discountAmount, 2) }}</span>
+                                    <span class="ms-auto">−{{ currency() }} {{ number_format($discountAmount, 2) }}</span>
                                 @elseif($pendingDiscountApprovalId && $pendingDiscountApprovalStatus === 'pending')
                                     <i class="fas fa-clock"></i> Sent to Manager/Super Admin
                                     <button type="button" class="pos-disc-remove" wire:click="removeDiscount">
                                         Sell without discount
                                     </button>
-                                    <span class="ms-auto">−GH₵ {{ number_format($discountAmount, 2) }}</span>
+                                    <span class="ms-auto">−{{ currency() }} {{ number_format($discountAmount, 2) }}</span>
                                 @else
                                     <i class="fas fa-lock"></i> Manager approval required
                                     <button type="button" class="pos-disc-remove" wire:click="removeDiscount">
                                         Remove discount
                                     </button>
-                                    <span class="ms-auto">−GH₵ {{ number_format($discountAmount, 2) }}</span>
+                                    <span class="ms-auto">−{{ currency() }} {{ number_format($discountAmount, 2) }}</span>
                                 @endif
                             </div>
                         @endif
@@ -594,7 +590,7 @@ window.printReceiptFromDom = function(event) {
                     {{-- Total --}}
                     <div class="pos-sum-row pos-sum-row--total">
                         <span>Total</span>
-                        <span>GH₵ {{ number_format($finalAmount, 2) }}</span>
+                        <span>{{ currency() }} {{ number_format($finalAmount, 2) }}</span>
                     </div>
 
                 </div>
@@ -638,7 +634,7 @@ window.printReceiptFromDom = function(event) {
                             @foreach($payments as $i => $payment)
                                 <div class="pos-pay-entry">
                                     <span class="pos-pay-entry__method">{{ strtoupper($payment['method']) }}</span>
-                                    <span class="pos-pay-entry__amount">GH₵ {{ number_format($payment['amount'], 2) }}</span>
+                                    <span class="pos-pay-entry__amount">{{ currency() }} {{ number_format($payment['amount'], 2) }}</span>
                                     <button class="pos-icon-btn pos-icon-btn--ghost"
                                             wire:click="removePayment({{ $i }})">
                                         <i class="fas fa-times"></i>
@@ -648,7 +644,7 @@ window.printReceiptFromDom = function(event) {
                             <div class="pos-pay-subtotal">
                                 <span>Total Paid</span>
                                 <span class="{{ $totalPaid >= $finalAmount ? 'pos-paid--ok' : 'pos-paid--short' }}">
-                                    GH₵ {{ number_format($totalPaid, 2) }}
+                                    {{ currency() }} {{ number_format($totalPaid, 2) }}
                                 </span>
                             </div>
                         </div>
@@ -657,21 +653,21 @@ window.printReceiptFromDom = function(event) {
                             <div class="pos-change-pill pos-change-pill--change">
                                 <i class="fas fa-coins"></i>
                                 <span>Change</span>
-                                <span class="ms-auto">GH₵ {{ number_format($change, 2) }}</span>
+                                <span class="ms-auto">{{ currency() }} {{ number_format($change, 2) }}</span>
                             </div>
                         @elseif($totalPaid > 0 && $totalPaid < $finalAmount)
                             @php $remaining = round($finalAmount - $totalPaid, 2); @endphp
                             <div class="pos-change-pill pos-change-pill--balance">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <span>{{ $isPartPayment ? 'Balance (Held)' : 'Still Needed' }}</span>
-                                <span class="ms-auto">GH₵ {{ number_format($remaining, 2) }}</span>
+                                <span class="ms-auto">{{ currency() }} {{ number_format($remaining, 2) }}</span>
                             </div>
                         @endif
 
                         @if($isPartPayment && count($payments) > 0 && $totalPaid < $finalAmount)
                             <p class="pos-part-note">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Deposit GH₵ {{ number_format($totalPaid, 2) }} recorded. Balance GH₵ {{ number_format($finalAmount - $totalPaid, 2) }} due on pickup.
+                                Deposit {{ currency() }} {{ number_format($totalPaid, 2) }} recorded. Balance {{ currency() }} {{ number_format($finalAmount - $totalPaid, 2) }} due on pickup.
                             </p>
                         @endif
                     @else
@@ -798,7 +794,7 @@ window.printReceiptFromDom = function(event) {
                                             </div>
                                             <div class="col-md-1 text-center">
                                                 <h5 class="mb-0" :class="expandedCart === index ? 'text-white' : 'text-success'">
-                                                    <span x-text="'GH₵ ' + cart.total_amount.toFixed(2)"></span>
+                                                    <span x-text="'{{ currency() }} ' + cart.total_amount.toFixed(2)"></span>
                                                 </h5>
                                             </div>
                                             <div class="col-md-2 text-end">
@@ -845,15 +841,15 @@ window.printReceiptFromDom = function(event) {
                                                                 <template x-if="item.eye"><span class="badge" :class="{ 'badge-primary': item.eye === 'OD', 'badge-info': item.eye === 'OS', 'badge-success': item.eye === 'OU' }" x-text="item.eye"></span></template>
                                                                 <template x-if="!item.eye"><small class="text-muted">—</small></template>
                                                             </td>
-                                                            <td class="text-end"><span x-text="'GH₵ ' + item.price.toFixed(2)"></span></td>
-                                                            <td class="text-end"><strong x-text="'GH₵ ' + item.total.toFixed(2)"></strong></td>
+                                                            <td class="text-end"><span x-text="'{{ currency() }} ' + item.price.toFixed(2)"></span></td>
+                                                            <td class="text-end"><strong x-text="'{{ currency() }} ' + item.total.toFixed(2)"></strong></td>
                                                         </tr>
                                                     </template>
                                                 </tbody>
                                                 <tfoot class="table-light">
                                                     <tr>
                                                         <th colspan="6" class="text-end">Cart Total:</th>
-                                                        <th class="text-end"><h5 class="mb-0 text-success"><span x-text="'GH₵ ' + cart.total_amount.toFixed(2)"></span></h5></th>
+                                                        <th class="text-end"><h5 class="mb-0 text-success"><span x-text="'{{ currency() }} ' + cart.total_amount.toFixed(2)"></span></h5></th>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -936,11 +932,11 @@ window.printReceiptFromDom = function(event) {
                                             </div>
                                             <div class="col-md-2">
                                                 <small :class="expandedDiscount === index ? 'text-white-50' : 'text-muted'">Gross</small>
-                                                <div :class="expandedDiscount === index ? 'text-white' : 'text-muted'" x-text="'GH₵ ' + discount.gross_amount.toFixed(2)"></div>
+                                                <div :class="expandedDiscount === index ? 'text-white' : 'text-muted'" x-text="'{{ currency() }} ' + discount.gross_amount.toFixed(2)"></div>
                                             </div>
                                             <div class="col-md-2">
                                                 <small :class="expandedDiscount === index ? 'text-white-50' : 'text-muted'">Discount</small>
-                                                <h5 class="mb-0" :class="expandedDiscount === index ? 'text-white' : 'text-success'" x-text="'GH₵ ' + discount.discount_amount.toFixed(2)"></h5>
+                                                <h5 class="mb-0" :class="expandedDiscount === index ? 'text-white' : 'text-success'" x-text="'{{ currency() }} ' + discount.discount_amount.toFixed(2)"></h5>
                                             </div>
                                             <div class="col-md-1">
                                                 <small :class="expandedDiscount === index ? 'text-white-50' : 'text-muted'" x-text="discount.approved_at_human"></small>
@@ -969,7 +965,7 @@ window.printReceiptFromDom = function(event) {
                                                         <tr>
                                                             <td><strong x-text="item.name"></strong></td>
                                                             <td class="text-center"><span class="badge badge-info" x-text="item.quantity"></span></td>
-                                                            <td class="text-end"><strong x-text="'GH₵ ' + item.total.toFixed(2)"></strong></td>
+                                                            <td class="text-end"><strong x-text="'{{ currency() }} ' + item.total.toFixed(2)"></strong></td>
                                                         </tr>
                                                     </template>
                                                 </tbody>
@@ -1008,9 +1004,9 @@ window.printReceiptFromDom = function(event) {
             <div class="pos-approval-disc-info">
                 <i class="fas fa-tag me-1"></i>
                 <strong>Discount:</strong>
-                {{ $discountType === 'percentage' ? number_format($discountValue, 0).'% off' : 'GH₵ '.number_format($discountValue, 2).' off' }}
+                {{ $discountType === 'percentage' ? number_format($discountValue, 0).'% off' : currency().' '.number_format($discountValue, 2).' off' }}
                 &nbsp;&rarr;&nbsp;
-                <strong>−GH₵ {{ number_format($discountAmount, 2) }}</strong>
+                <strong>−{{ currency() }} {{ number_format($discountAmount, 2) }}</strong>
             </div>
             <p class="pos-approval-hint">A <strong>Manager</strong> or <strong>Super Admin</strong> must sign in to authorise this discount.</p>
 
@@ -2353,6 +2349,8 @@ window._receiptData = null;
 
 window.addEventListener('receipt-data-ready', function(event) {
     window._receiptData = event.detail;
+    var autoPrintData = Object.assign({}, event.detail, { clinic_logo: null });
+    window.buildAndPrint(autoPrintData);
 });
 
 

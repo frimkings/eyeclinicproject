@@ -9,7 +9,7 @@ Thank you for your payment. Please find your receipt details below.
 | | |
 |:--|:--|
 | **Clinic** | {{ $clinic }} |
-| **Amount Paid** | GHS {{ $amount }} |
+| **Amount Paid** | {{ currency() }} {{ $amount }} |
 | **Transaction ID** | {{ $transactionId }} |
 | **Date** | {{ $paymentDate }} |
 </x-mail::table>

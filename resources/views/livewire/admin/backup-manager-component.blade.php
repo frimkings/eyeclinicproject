@@ -1,23 +1,5 @@
 <div class="container-fluid py-4">
 
-    {{-- Result banners (shown after run) --}}
-    @if($lastResult === 'success')
-        <div class="alert alert-success alert-dismissible fade show">
-            <i class="fas fa-check-circle mr-2"></i>{{ $lastMessage ?: 'Backup completed successfully. The file appears in the list below.' }}
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
-    @elseif($lastResult === 'warning')
-        <div class="alert alert-warning alert-dismissible fade show">
-            <i class="fas fa-exclamation-triangle mr-2"></i>{{ $lastMessage ?: 'Backup finished but the output was unexpected. Check storage manually.' }}
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
-    @elseif($lastResult === 'error')
-        <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-times-circle mr-2"></i>{{ $lastMessage ?: 'Backup failed. Check your database connection and mysqldump configuration.' }}
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
-    @endif
-
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -130,7 +112,7 @@
                                     <i class="fas fa-download"></i>
                                 </a>
                                 <button type="button"
-                                        wire:click="requestRestore('{{ $backup['path'] }}')"
+                                        wire:click="requestRestore({{ $loop->index }})"
                                         class="btn btn-sm btn-outline-warning ml-1"
                                         title="Restore"
                                         {{ $isRestoring ? 'disabled' : '' }}>
@@ -141,7 +123,7 @@
                                     @endif
                                 </button>
                                 <button type="button"
-                                        wire:click="requestDeleteBackup('{{ $backup['path'] }}')"
+                                        wire:click="requestDeleteBackup({{ $loop->index }})"
                                         class="btn btn-sm btn-outline-danger ml-1"
                                         title="Delete">
                                     <i class="fas fa-trash"></i>
@@ -573,8 +555,8 @@
 
     <script>
         window.addEventListener('show-backup-restore-confirmation', function(event) {
-            var path = event.detail.path;
-            var name = event.detail.name;
+            var index = event.detail.index;
+            var name  = event.detail.name;
             Swal.fire({
                 title: 'Restore this backup?',
                 html: 'This will <strong>overwrite</strong> the current database and all uploaded files with:<br><br><code>' + name + '</code>',
@@ -585,16 +567,17 @@
                 cancelButtonText: 'Cancel',
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    @this.call('restoreBackup', path);
+                    @this.call('restoreBackup', index);
                 }
             });
         });
 
         window.addEventListener('show-backup-delete-confirmation', function(event) {
-            var path = event.detail.path;
+            var index = event.detail.index;
+            var name  = event.detail.name;
             Swal.fire({
                 title: 'Delete this backup?',
-                text: 'This cannot be undone.',
+                html: '<code>' + name + '</code><br><small class="text-muted">This cannot be undone.</small>',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -602,7 +585,7 @@
                 cancelButtonText: 'Cancel',
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    @this.call('deleteBackup', path);
+                    @this.call('deleteBackup', index);
                 }
             });
         });

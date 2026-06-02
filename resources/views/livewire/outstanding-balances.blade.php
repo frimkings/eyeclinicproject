@@ -91,9 +91,9 @@
                                             <small class="text-muted">+{{ $sale->items->count() - 2 }} more</small>
                                         @endif
                                     </td>
-                                    <td class="text-right font-weight-bold">GH₵ {{ number_format($sale->total_amount, 2) }}</td>
-                                    <td class="text-right text-success font-weight-bold">GH₵ {{ number_format($sale->amount_paid, 2) }}</td>
-                                    <td class="text-right text-danger font-weight-bold">GH₵ {{ number_format($balance, 2) }}</td>
+                                    <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($sale->total_amount, 2) }}</td>
+                                    <td class="text-right text-success font-weight-bold">{{ currency() }} {{ number_format($sale->amount_paid, 2) }}</td>
+                                    <td class="text-right text-danger font-weight-bold">{{ currency() }} {{ number_format($balance, 2) }}</td>
                                     <td style="min-width:110px;">
                                         <div class="progress" style="height:8px;">
                                             <div class="progress-bar bg-warning" style="width:{{ min(100, $pct) }}%"></div>
@@ -155,19 +155,19 @@
                     <div class="row mb-4">
                         <div class="col-md-4 mb-2 mb-md-0">
                             <div class="border bg-light text-center p-3">
-                                <div class="h5 font-weight-bold text-dark mb-0">GH₵ {{ number_format($historyForSale->total_amount, 2) }}</div>
+                                <div class="h5 font-weight-bold text-dark mb-0">{{ currency() }} {{ number_format($historyForSale->total_amount, 2) }}</div>
                                 <small class="text-muted">Order Total</small>
                             </div>
                         </div>
                         <div class="col-md-4 mb-2 mb-md-0">
                             <div class="border text-center p-3" style="background:#eaf7ee;">
-                                <div class="h5 font-weight-bold text-success mb-0">GH₵ {{ number_format($historyForSale->amount_paid, 2) }}</div>
+                                <div class="h5 font-weight-bold text-success mb-0">{{ currency() }} {{ number_format($historyForSale->amount_paid, 2) }}</div>
                                 <small class="text-muted">Total Paid</small>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border text-center p-3" style="background:#fdecee;">
-                                <div class="h5 font-weight-bold text-danger mb-0">GH₵ {{ number_format(max(0, $historyForSale->total_amount - $historyForSale->amount_paid), 2) }}</div>
+                                <div class="h5 font-weight-bold text-danger mb-0">{{ currency() }} {{ number_format(max(0, $historyForSale->total_amount - $historyForSale->amount_paid), 2) }}</div>
                                 <small class="text-muted">Remaining</small>
                             </div>
                         </div>
@@ -212,7 +212,7 @@
                                         </td>
                                         <td>{{ $txn->collectedBy->name ?? '—' }}</td>
                                         <td class="text-muted small">{{ $txn->notes ?? '—' }}</td>
-                                        <td class="text-right font-weight-bold text-success">+GH₵ {{ number_format($txn->amount, 2) }}</td>
+                                        <td class="text-right font-weight-bold text-success">+{{ currency() }} {{ number_format($txn->amount, 2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -220,7 +220,7 @@
                                     <tr>
                                         <td colspan="5" class="text-right font-weight-bold text-muted small">Total Paid</td>
                                         <td class="text-right font-weight-bold text-success">
-                                            GH₵ {{ number_format($historyForSale->paymentTransactions->sum('amount'), 2) }}
+                                            {{ currency() }} {{ number_format($historyForSale->paymentTransactions->sum('amount'), 2) }}
                                         </td>
                                     </tr>
                                 </tfoot>
@@ -256,19 +256,19 @@
                     <div class="row mb-4">
                         <div class="col-md-4 mb-2 mb-md-0">
                             <div class="border bg-light text-center p-3">
-                                <div class="h4 font-weight-bold text-dark mb-0">GH₵ {{ number_format($selectedSale->total_amount, 2) }}</div>
+                                <div class="h4 font-weight-bold text-dark mb-0">{{ currency() }} {{ number_format($selectedSale->total_amount, 2) }}</div>
                                 <small class="text-muted">Order Total</small>
                             </div>
                         </div>
                         <div class="col-md-4 mb-2 mb-md-0">
                             <div class="border text-center p-3" style="background:#eaf7ee;">
-                                <div class="h4 font-weight-bold text-success mb-0">GH₵ {{ number_format($selectedSale->amount_paid, 2) }}</div>
+                                <div class="h4 font-weight-bold text-success mb-0">{{ currency() }} {{ number_format($selectedSale->amount_paid, 2) }}</div>
                                 <small class="text-muted">Already Paid</small>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border text-center p-3" style="background:#fdecee;">
-                                <div class="h4 font-weight-bold text-danger mb-0">GH₵ {{ number_format(max(0, (float) $selectedSale->total_amount - (float) $selectedSale->amount_paid), 2) }}</div>
+                                <div class="h4 font-weight-bold text-danger mb-0">{{ currency() }} {{ number_format(max(0, (float) $selectedSale->total_amount - (float) $selectedSale->amount_paid), 2) }}</div>
                                 <small class="text-muted">Balance Due</small>
                             </div>
                         </div>
@@ -306,8 +306,8 @@
                                     <tr>
                                         <td>{{ $item->product->name ?? 'N/A' }}</td>
                                         <td class="text-center">{{ $item->prescribed_quantity }}</td>
-                                        <td class="text-right">GH₵ {{ number_format($item->selling_price, 2) }}</td>
-                                        <td class="text-right">GH₵ {{ number_format($item->subtotal, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($item->selling_price, 2) }}</td>
+                                        <td class="text-right">{{ currency() }} {{ number_format($item->subtotal, 2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -330,7 +330,7 @@
                                         <em class="text-muted"> | {{ $txn->notes }}</em>
                                     @endif
                                 </span>
-                                <span class="font-weight-bold text-success">+GH₵ {{ number_format($txn->amount, 2) }}</span>
+                                <span class="font-weight-bold text-success">+{{ currency() }} {{ number_format($txn->amount, 2) }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -343,7 +343,7 @@
                             <label class="form-label font-weight-bold">Amount to Collect <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text">GH₵</span>
+                                    <span class="input-group-text">{{ currency() }}</span>
                                 </div>
                                 <input type="number"
                                        class="form-control @error('collectAmount') is-invalid @enderror"
@@ -383,7 +383,7 @@
                             <strong>Fully paid!</strong> Items will be released to the customer.
                         @else
                             <i class="fas fa-info-circle mr-1"></i>
-                            Remaining balance after this payment: <strong>GH₵ {{ number_format($newBalance, 2) }}</strong>
+                            Remaining balance after this payment: <strong>{{ currency() }} {{ number_format($newBalance, 2) }}</strong>
                         @endif
                     </div>
                     @endif

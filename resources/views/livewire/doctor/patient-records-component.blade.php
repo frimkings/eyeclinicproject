@@ -882,7 +882,7 @@
                                                             </small>
                                                         </div>
                                                         <span class="badge badge-primary badge-pill px-3 py-2">
-                                                            GH₵ {{ number_format($product->selling_price, 2) }}
+                                                            {{ currency() }} {{ number_format($product->selling_price, 2) }}
                                                         </span>
                                                     </div>
                                                     <small class="text-muted d-block mt-1">
@@ -1170,9 +1170,9 @@
                                                     @endif
                                                 </td>
                                                 
-                                                <td><small>GH₵ {{ number_format($item['price'], 2) }}</small></td>
+                                                <td><small>{{ currency() }} {{ number_format($item['price'], 2) }}</small></td>
                                                 <td>
-                                                    <strong class="{{ $isLocked ? 'text-muted' : '' }}">GH₵ {{ number_format($billableLineTotal, 2) }}</strong>
+                                                    <strong class="{{ $isLocked ? 'text-muted' : '' }}">{{ currency() }} {{ number_format($billableLineTotal, 2) }}</strong>
                                                     @if($isLocked && (float) ($item['total'] ?? 0) > 0)
                                                         <small class="d-block text-muted">{{ $isRefunded ? 'refunded' : 'already dispensed' }}</small>
                                                     @endif
@@ -1198,7 +1198,7 @@
                                             <th colspan="6" class="text-right">Grand Total:</th>
                                             <th>
                                                 <h5 class="mb-0 text-success">
-                                                    GH₵ {{ number_format($this->calculateTotal(), 2) }}
+                                                    {{ currency() }} {{ number_format($this->calculateTotal(), 2) }}
                                                 </h5>
                                             </th>
                                             <th></th>
@@ -1314,7 +1314,7 @@
                                                 <option value="">Choose a lens to add to prescription...</option>
                                                 @foreach($lensProducts as $product)
                                                     <option value="{{ $product->id }}">
-                                                        {{ $product->name }} - GH₵ {{ number_format($product->selling_price, 2) }}
+                                                        {{ $product->name }} - {{ currency() }} {{ number_format($product->selling_price, 2) }}
                                                     </option>
                                                 @endforeach
                                             </select>

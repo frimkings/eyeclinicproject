@@ -193,7 +193,7 @@
 {{-- All interactive buttons use onclick + @this.call() — wire:click is unreliable    --}}
 {{-- after Bootstrap moves the modal element to <body>.                               --}}
 <div wire:ignore.self class="modal fade" id="roleModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="roleModalTitle">

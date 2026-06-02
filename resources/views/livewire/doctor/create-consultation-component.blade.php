@@ -6,14 +6,6 @@
                 <i class="fa fa-plus-circle mr-1"></i>Add SRX</button>
         </div> --}}
         <style>
-            .first {
-                background-color: blue;
-            }
-
-            .second {
-                background-color: yellow;
-            }
-
             .specs {
                 text-align: center;
             }
@@ -26,13 +18,13 @@
         </style>
         <div class="row mr-2">
 
-            <div class="col-6  first">
+            <div class="col-12 col-md-6">
                 <demographics>
 
                     <div class="row">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <div class="form-group row">
-                               
+
                                 <div class="col-sm-12">
                                     <input type="text" class="form-control form-control-sm" id="colFormLabelSm"
                                         placeholder="col-form-label-sm" value="{{ $demographics->patient->name }}"
@@ -40,7 +32,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <div class="form-group row">
                                 <div class="col-sm-12">
                                     <input type="text" class="form-control form-control-sm" id="colFormLabelSm"
@@ -133,8 +125,8 @@
                     </div>
                     <div class="row">
                         <div class="col-12 specs mt-3">
-
-                            <table class="table table-hover  responsive">
+                            <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
                                 <style>
                                     .visualAcuity {
                                         width: 50%;
@@ -180,14 +172,15 @@
 
                                 </tbody>
                             </table>
+                            </div>{{-- /table-responsive --}}
 
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-12 specs mt-2">
-
-                            <table class="table table-hover  responsive">
+                            <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
                                 <style>
                                     /* .currentSRX {
                         width: 50%;
@@ -215,6 +208,7 @@
 
                                 </tbody>
                             </table>
+                            </div>{{-- /table-responsive --}}
 
                         </div>
                     </div>
@@ -238,10 +232,11 @@
                     
                 </history>
             </div>
-            <div class="col-6   second">
+            <div class="col-12 col-md-6">
                 <div class="row">
-                    <div class="col-12 externals mt-0">
-                        <table class="table table-hover  responsive table-bordered border-primary">
+                    <div class="col-12 mt-0">
+                        <div class="table-responsive">
+                        <table class="table table-hover table-bordered border-primary">
                             <style>
                                 .externals {
                                     width: 100%;
@@ -401,10 +396,13 @@
                             </tbody>
                         </table>
 
+                        </div>{{-- /table-responsive --}}
                     </div>
                 </div>
-                <div class="row ">
-                    <table class="externals table table-hover  responsive table-bordered border-secondary">
+                <div class="row">
+                    <div class="col-12">
+                    <div class="table-responsive">
+                    <table class="table table-hover table-bordered border-secondary">
                         <tr>
                             <th rowspan="2">Drug Name</th>
                             <th colspan="3">Dosage</th>
@@ -423,12 +421,14 @@
                         </tr>
 
                     </table>
-                    <div class="footer">
-                        <button type="submit" class="btn btn-success  float-right  btn btn-block"> <i
-                                class="fa fa-save mr-2"><br><span>Save Record</span></i>
-
+                    </table>
+                    </div>{{-- /table-responsive --}}
                     </div>
-
+                    <div class="col-12 mt-2">
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fa fa-save mr-2"></i>Save Record
+                        </button>
+                    </div>
                 </div>
 
 
@@ -451,13 +451,14 @@
 {{-- modal --}}
 <form autocomplete="off" wire.submit.prevent="addSpectaclePrescription">
     <div class="modal fade" id="modal-info">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content bg-info">
 
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-12 ">
-                            <table class="table table-hover  responsive table-bordered border-info">
+                        <div class="col-12">
+                            <div class="table-responsive">
+                            <table class="table table-hover table-bordered border-info">
                                 <thead>
                                     <td colspan="7">
                                         <label for="" class="col-sm-12 col-form-label  ">
@@ -551,10 +552,11 @@
                                     </td>
                                 </tbody>
                             </table>
+                            </div>{{-- /table-responsive --}}
                         </div>
                     </div>
                     <div class="row lens-order">
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <label for="name">PD</label>
                             <div class="form-group">
                                 <input type="number" class="form-control" value="588-12-22">

@@ -6,8 +6,23 @@
             <h5 class="font-weight-bold mb-0"><i class="fas fa-comment-dots text-primary mr-2"></i> SMS Delivery Logs</h5>
             <small class="text-muted">Every outgoing SMS attempt is recorded here.</small>
         </div>
+        <ul class="nav nav-tabs border-bottom-0 mb-0">
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', false)"
+                   class="nav-link {{ !$showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-list mr-1"></i> Active
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" wire:click.prevent="$set('showArchive', true)"
+                   class="nav-link {{ $showArchive ? 'active font-weight-bold' : 'text-muted' }}">
+                    <i class="fas fa-archive mr-1"></i> Archived
+                </a>
+            </li>
+        </ul>
     </div>
 
+    @if(!$showArchive)
     <div class="row mb-4">
         <div class="col-sm-4">
             <div class="info-box mb-0 shadow-sm border-0">
@@ -37,6 +52,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Filters --}}
     <div class="card border-0 shadow-sm rounded-lg mb-4">

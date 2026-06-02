@@ -75,7 +75,7 @@
                                     {{ optional($log->sale)->transaction_id ?? 'N/A' }}
                                 </span>
                                 <div class="small text-muted">
-                                    GH₵ {{ number_format(optional($log->sale)->total_amount ?? 0, 2) }}
+                                    {{ currency() }} {{ number_format(optional($log->sale)->total_amount ?? 0, 2) }}
                                 </div>
                             </td>
                             <td class="small">{{ optional($log->initiator)->name ?? '—' }}</td>
@@ -173,7 +173,7 @@
 {{-- Preview & Approve Modal --}}
 {{-- Populated entirely by openRefundPreview() — no Livewire round-trip needed. --}}
 <div wire:ignore.self class="modal fade" id="previewModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title"><i class="fas fa-eye mr-2"></i>Review Refund Request</h5>
@@ -217,7 +217,7 @@
                         <tfoot>
                             <tr class="font-weight-bold bg-light">
                                 <td colspan="3" class="text-right">Total</td>
-                                <td class="text-right">GH₵ <span id="pm-total"></span></td>
+                                <td class="text-right">{{ currency() }} <span id="pm-total"></span></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -320,8 +320,8 @@
                     '<tr>' +
                         '<td>' + name + '</td>' +
                         '<td class="text-center">' + qty + '</td>' +
-                        '<td class="text-right">GH&#8373; ' + price + '</td>' +
-                        '<td class="text-right">GH&#8373; ' + sub + '</td>' +
+                        '<td class="text-right">{{ currency() }} ' + price + '</td>' +
+                        '<td class="text-right">{{ currency() }} ' + sub + '</td>' +
                     '</tr>'
                 );
             });

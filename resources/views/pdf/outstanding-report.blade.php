@@ -54,16 +54,16 @@
                     <td>{{ $order->refraction->consultation->patient->phone }}</td>
                     <td>{{ $order->order_id }}</td>
                     <td>{{ $order->status }}</td>
-                    <td class="text-right">GH₵ {{ number_format($bill, 2) }}</td>
-                    <td class="text-right">GH₵ {{ number_format($order->paid_amount, 2) }}</td>
-                    <td class="text-right" style="color: red; font-weight: bold;">GH₵ {{ number_format($due, 2) }}</td>
+                    <td class="text-right">{{ currency() }} {{ number_format($bill, 2) }}</td>
+                    <td class="text-right">{{ currency() }} {{ number_format($order->paid_amount, 2) }}</td>
+                    <td class="text-right" style="color: red; font-weight: bold;">{{ currency() }} {{ number_format($due, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="footer">
-        TOTAL ACCOUNTS RECEIVABLE: GH₵ {{ number_format($totalDue, 2) }}
+        TOTAL ACCOUNTS RECEIVABLE: {{ currency() }} {{ number_format($totalDue, 2) }}
     </div>
 </body>
 </html>

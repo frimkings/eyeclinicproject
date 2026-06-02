@@ -274,15 +274,15 @@
                             </tr>
                             <tr>
                                 <th>Total Amount:</th>
-                                <td>GH₵ ${details.totalAmount}</td>
+                                <td>{{ currency() }} ${details.totalAmount}</td>
                             </tr>
                             <tr>
                                 <th>Amount Paid:</th>
-                                <td>GH₵ ${details.amountPaid}</td>
+                                <td>{{ currency() }} ${details.amountPaid}</td>
                             </tr>
                             <tr class="table-success">
                                 <th>Change:</th>
-                                <td><strong>GH₵ ${details.change}</strong></td>
+                                <td><strong>{{ currency() }} ${details.change}</strong></td>
                             </tr>
                         </table>
                     </div>
