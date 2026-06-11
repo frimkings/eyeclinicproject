@@ -93,6 +93,11 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a href="{{ route('admin.sales-records') }}" class="nav-link {{ request()->is('admin/sales-records') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-success"></i><p>Sales Records</p>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a href="{{ route('admin.income-statement') }}" class="nav-link {{ request()->is('admin/income-statement*') ? 'active' : '' }}">
                   <i class="far fa-circle nav-icon text-success"></i><p>Income Statement</p>
                 </a>

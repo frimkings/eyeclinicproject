@@ -406,9 +406,13 @@ class SalesRecordsComponent extends Component
                 ->sum('total_amount');
         }
 
+        $layout = request()->routeIs('admin.*')
+            ? 'layouts.admin.admin-layout'
+            : 'layouts.secretary.secretary-layout';
+
         return view('livewire.cashier.sales-records-component', [
             'sales' => $query->orderBy($this->sortColumn, $this->sortDirection)->paginate(10),
             'totalSales' => $totalSales
-        ])->layout('layouts.secretary.secretary-layout');
+        ])->layout($layout);
     }
 }

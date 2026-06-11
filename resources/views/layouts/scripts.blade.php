@@ -15,6 +15,7 @@
             'admin.settings'                => 'Settings',
             'admin.users'                   => 'User Management',
             'admin.reports'                 => 'Reports',
+            'admin.sales-records'           => 'Sales Records',
             'admin.income-statement'        => 'Income Statement',
             'admin.diagnoses'               => 'Diagnoses',
             'admin.inventory-alerts'        => 'Inventory Alerts',
