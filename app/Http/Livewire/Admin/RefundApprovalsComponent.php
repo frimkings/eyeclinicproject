@@ -25,6 +25,7 @@ class RefundApprovalsComponent extends Component
     // Reject modal state
     public ?int    $rejectingId      = null;
     public string  $rejectionReason  = '';
+    public bool    $showRejectModal  = false;
 
     protected $queryString = [
         'activeTab' => ['except' => 'pending'],
@@ -94,16 +95,16 @@ class RefundApprovalsComponent extends Component
     {
         $this->rejectingId     = $id;
         $this->rejectionReason = '';
+        $this->showRejectModal = true;
         $this->resetErrorBag();
-        $this->dispatchBrowserEvent('show-rejectModal');
     }
 
     public function closeRejectModal(): void
     {
         $this->rejectingId     = null;
         $this->rejectionReason = '';
+        $this->showRejectModal = false;
         $this->resetErrorBag();
-        $this->dispatchBrowserEvent('hide-rejectModal');
     }
 
     public function confirmReject(): void

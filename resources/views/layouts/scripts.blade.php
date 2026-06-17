@@ -10,6 +10,7 @@
             // Admin
             'admin.dashboard'               => 'Admin Dashboard',
             'admin.category'                => 'Categories',
+            'admin.plans'                   => 'Plans',
             'admin.product'                 => 'Products',
             'admin.suppliers'               => 'Suppliers',
             'admin.settings'                => 'Settings',
@@ -42,6 +43,10 @@
             'cashier.sales-records'         => 'Sales Records',
             'cashier.receipt.show'          => 'Receipt',
             'refunds.logs'                  => 'Refund Logs',
+            'orders.index'                  => 'Orders',
+            'orders.new'                    => 'New Order',
+            'payments.index'                => 'Payments',
+            'pickup-delivery.index'         => 'Pickup & Delivery',
             'cart'                          => 'Cart',
 
             // Doctor
@@ -64,7 +69,7 @@
             $clinicName = config('app.name');
         }
     @endphp
-    <title>{{ $pageTitle ? $pageTitle . ' — ' : '' }}{{ $clinicName }}</title>
+    <title>{{ $pageTitle ? $pageTitle . ' - ' : '' }}{{ $clinicName }}</title>
 
 
 

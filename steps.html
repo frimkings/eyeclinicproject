@@ -99,9 +99,9 @@ php artisan migrate:refresh --seed
 php artisan migrate:fresh --seed
 
 
-php artisan make:seeder RoleSeeder
+php artisan make:seeder Rol
 
-php artisan db:seed --class=RolesAndPermissionsSeeder
+php artisan db:seed --class=StressTestSeeder
 // "laravel/framework": "^8.75",
 "nunomaduro/collision": "^5.10",
 // "facade/ignition": "^2.5",
@@ -145,7 +145,6 @@ Products
 
 
 composer install --ignore-platform-req=php --ignore-platform-req=ext-zip
-
 
 
 When the wizard reaches the "Start a Program" screen, you'll see exactly 3 fields. Here is what to type in each one:

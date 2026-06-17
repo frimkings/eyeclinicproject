@@ -191,14 +191,16 @@ window.buildAndPrint = function(d) {
     });
     var printStyle = document.createElement('style');
     printStyle.id = '__pos_receipt_print_style__';
-    printStyle.textContent = '@media print { @page { size: 80mm 200mm; margin: 0; } body > *:not(#__pos_receipt_print__) { display: none !important; visibility: hidden !important; } #__pos_receipt_print__ { display: block !important; visibility: visible !important; } }';
+    printStyle.textContent = '@media print { @page { size: 80mm auto; margin: 0; } html, body { width: 80mm !important; margin: 0 !important; background: #fff !important; } body > *:not(#__pos_receipt_print__) { display: none !important; visibility: hidden !important; } #__pos_receipt_print__ { display: block !important; visibility: visible !important; position: static !important; width: 80mm !important; margin: 0 !important; background: #fff !important; color: #000 !important; } }';
     document.head.appendChild(printStyle);
     var printDiv = document.createElement('div');
     printDiv.id = '__pos_receipt_print__';
-    printDiv.style.cssText = 'display:none;';
+    printDiv.style.cssText = 'display:block; position:fixed; left:-10000px; top:0; width:80mm; background:#fff; color:#000; z-index:-1;';
     printDiv.innerHTML = '<div style="font-family:\'Courier New\',monospace;font-size:12px;line-height:1.5;color:#000;background:#fff;width:80mm;padding:4mm;">' + receiptContent + '</div>';
     document.body.appendChild(printDiv);
     setTimeout(function() {
+        printDiv.style.left = '0';
+        printDiv.style.position = 'static';
         window.print();
         setTimeout(function() {
             var el = document.getElementById('__pos_receipt_print__');

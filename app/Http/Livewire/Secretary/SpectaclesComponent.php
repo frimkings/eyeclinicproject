@@ -34,6 +34,7 @@ class SpectaclesComponent extends Component
     public $doctorFilter = '';
     public $sortField      = 'created_at';
     public $sortDirection  = 'desc';
+    public $activeRefractionId = null;
 
     // Bulk selection
     public $selectedOrders = [];
@@ -130,6 +131,11 @@ class SpectaclesComponent extends Component
         $this->sortDirection = ($this->sortField === $field && $this->sortDirection === 'asc') ? 'desc' : 'asc';
         $this->sortField     = $field;
         $this->resetPage();
+    }
+
+    public function selectRefraction($refractionId): void
+    {
+        $this->activeRefractionId = (int) $refractionId;
     }
 
     /* =================== BULK SELECTION =================== */
@@ -285,6 +291,19 @@ class SpectaclesComponent extends Component
 
     public function openOrderModal($refractionId)
     {
+        $refraction = Refractions::with([
+            'consultation.cartItems.product.category',
+            'consultation.sale.items.product.category',
+        ])->findOrFail($refractionId);
+
+        if (!$this->canCreateOrderFromPos($this->posOrderSummary($refraction))) {
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'error',
+                'message' => 'Record a part or full payment at POS before creating a spectacle order.',
+            ]);
+            return;
+        }
+
         $this->selectedRefractionId = $refractionId;
         $this->showOrderModal       = true;
         $this->pickUpDate           = now()->addDays(7)->format('Y-m-d');
@@ -320,6 +339,15 @@ class SpectaclesComponent extends Component
 
         if ($refraction->lensOrder) {
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'An order already exists for this refraction.']);
+            return;
+        }
+
+        $posSummary = $this->posOrderSummary($refraction);
+        if (!$this->canCreateOrderFromPos($posSummary)) {
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'error',
+                'message' => 'Record a part or full payment at POS before creating a spectacle order.',
+            ]);
             return;
         }
 
@@ -689,9 +717,15 @@ class SpectaclesComponent extends Component
         if ($sale && $saleItems->isNotEmpty()) {
             $isPaid          = $sale->payment_status === 'paid';
             $opticalSubtotal = (float) $saleItems->sum('subtotal');
+            if ($opticalSubtotal <= 0) {
+                $opticalSubtotal = (float) $opticalCarts->sum('total');
+            }
+            if ($opticalSubtotal <= 0) {
+                $opticalSubtotal = (float) $sale->total_amount;
+            }
             $allSubtotal     = (float) ($sale->items ? $sale->items->sum('subtotal') : 0);
             // Apply the sale-level discount proportionally to optical items
-            $discountRatio   = $allSubtotal > 0 ? ((float) $sale->total_amount / $allSubtotal) : 1.0;
+            $discountRatio   = $allSubtotal > 0 && (float) $sale->total_amount > 0 ? ((float) $sale->total_amount / $allSubtotal) : 1.0;
             $amount          = round($opticalSubtotal * $discountRatio, 2);
             $paid            = (float) $sale->total_amount > 0
                 ? min($amount, round(((float) $sale->amount_paid / (float) $sale->total_amount) * $amount, 2))
@@ -752,6 +786,12 @@ class SpectaclesComponent extends Component
         ];
     }
 
+    public function canCreateOrderFromPos(array $posSummary): bool
+    {
+        return in_array($posSummary['status'] ?? null, ['partial', 'sold'], true)
+            || (float) ($posSummary['paid'] ?? 0) > 0;
+    }
+
     private function appendOrderNote(LensOrder $order, string $note): void
     {
         $order->notes = trim((string) $order->notes . "\n[" . $note . "]");
@@ -789,6 +829,7 @@ class SpectaclesComponent extends Component
         ];
 
         $spectacles = $this->getFilteredQuery()->paginate(12);
+        $activeRefraction = $spectacles->firstWhere('id', $this->activeRefractionId) ?? $spectacles->first();
 
         $frameSearchResults = [];
         $lensSearchResults  = [];
@@ -825,6 +866,7 @@ class SpectaclesComponent extends Component
 
         return view('livewire.secretary.spectacle-component', [
             'spectacles'         => $spectacles,
+            'activeRefraction'   => $activeRefraction,
             'stats'              => $stats,
             'frameSearchResults' => $frameSearchResults,
             'lensSearchResults'  => $lensSearchResults,

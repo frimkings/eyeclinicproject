@@ -1302,22 +1302,7 @@ public function cancelAppointmentEdit()
             return 0;
         }
 
-        $currentCartId = $item['cart_id'] ?? null;
-        $existingQuantity = 0;
-        $reservedQuantity = Cart::where('product_id', $product->id)
-            ->where('is_dispensed', false)
-            ->where('purchased', false)
-            ->sum('quantity');
-
-        if (!empty($currentCartId)) {
-            $cartItem = Cart::find($currentCartId);
-
-            if ($cartItem && !$cartItem->is_dispensed && !$cartItem->purchased) {
-                $existingQuantity = (int) $cartItem->quantity;
-            }
-        }
-
-        return max(0, (int) $product->quantity - (int) $reservedQuantity + $existingQuantity);
+        return max(0, (int) $product->quantity);
     }
 
     private function validatePrescriptionItems(): bool

@@ -43,6 +43,11 @@ class IncomeStatementComponent extends Component
     public $editingDate = '';
     public $editingNotes = '';
 
+    protected $queryString = [
+        'fromDate' => ['except' => ''],
+        'toDate' => ['except' => ''],
+    ];
+
     protected $entryPresets = [
         IncomeStatementEntry::OPERATING_EXPENSE => [
             "Doctor's Salary",
@@ -76,8 +81,8 @@ class IncomeStatementComponent extends Component
         $user = auth()->user();
         abort_if(!$user?->hasRole('Super Admin') && !$user?->can('manage billing'), 403);
         AuditTrail::record('report.accessed', 'Accessed income statement page');
-        $this->fromDate = now()->startOfMonth()->format('Y-m-d');
-        $this->toDate = now()->endOfMonth()->format('Y-m-d');
+        $this->fromDate = $this->normalizeDate($this->fromDate, now()->startOfMonth());
+        $this->toDate = $this->normalizeDate($this->toDate, now()->endOfMonth());
         $this->entryDate = now()->format('Y-m-d');
     }
 

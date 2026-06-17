@@ -598,8 +598,8 @@
 
         function printClearanceReceipt() {
             var w = window.open(_clrPrintUrl, '_blank', 'width=302,height=600');
-            if (w) {
-                w.addEventListener('load', function() { setTimeout(function() { w.print(); }, 250); });
+            if (!w) {
+                alert('Please allow popups for this site to print receipts.');
             }
         }
 

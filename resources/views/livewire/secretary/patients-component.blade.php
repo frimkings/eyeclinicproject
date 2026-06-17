@@ -117,6 +117,13 @@
                     <h5 class="mb-0 font-weight-bold"><i class="fas {{ $isEditing ? 'fa-user-edit' : 'fa-user-plus' }} mr-2"></i> {{ $isEditing ? 'Update Profile' : 'Registration' }}</h5>
                 </div>
                 <div class="card-body">
+                    @if($formMessage)
+                        <div class="alert alert-{{ $formMessageType }} py-2 mb-3 small font-weight-bold">
+                            <i class="fas {{ $formMessageType === 'success' ? 'fa-check-circle' : ($formMessageType === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle') }} mr-1"></i>
+                            {{ $formMessage }}
+                        </div>
+                    @endif
+
                     <form wire:submit.prevent="saveEntry">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">PX NUMBER</label>
@@ -126,6 +133,7 @@
                         <div class="form-group position-relative">
                             <label class="small font-weight-bold text-muted">FULL NAME</label>
                             <input type="text" wire:model.debounce.300ms="nameSearch" class="form-control bg-light border-0 @error('name') is-invalid @enderror" placeholder="Enter patient name...">
+                            @error('name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             @if(!empty($suggestions))
                                 <div class="list-group position-absolute w-100 shadow-lg mt-1" style="z-index: 1050;">
                                     @foreach($suggestions as $s)
@@ -137,50 +145,57 @@
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">EMAIL ADDRESS</label>
-                            <input type="email" wire:model.defer="state.email" class="form-control bg-light border-0">
+                            <input type="email" wire:model.defer="state.email" class="form-control bg-light border-0 @error('email') is-invalid @enderror">
+                            @error('email') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="row">
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">CONTACT</label>
-                                <input type="text" wire:model.defer="state.contact" class="form-control bg-light border-0">
+                                <input type="text" wire:model.defer="state.contact" class="form-control bg-light border-0 @error('contact') is-invalid @enderror">
+                                @error('contact') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">CIVIL STATUS</label>
-                                <select wire:model.defer="state.civil_status" class="form-control bg-light border-0">
+                                <select wire:model.defer="state.civil_status" class="form-control bg-light border-0 @error('civil_status') is-invalid @enderror">
                                     <option value="">Select</option>
                                     <option value="Single">Single</option>
                                     <option value="Married">Married</option>
                                     <option value="Widowed">Widowed</option>
                                     <option value="Divorced">Divorced</option>
                                 </select>
+                                @error('civil_status') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">BIRTHDAY</label>
-                                <input type="date" wire:model="state.dob" class="form-control bg-light border-0">
+                                <input type="date" wire:model="state.dob" class="form-control bg-light border-0 @error('dob') is-invalid @enderror">
+                                @error('dob') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">GENDER</label>
-                                <select wire:model.defer="state.gender" class="form-control bg-light border-0">
+                                <select wire:model.defer="state.gender" class="form-control bg-light border-0 @error('gender') is-invalid @enderror">
                                     <option value="">Select</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                     <option value="Other">Other</option>
                                 </select>
+                                @error('gender') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">OCCUPATION</label>
-                            <input type="text" wire:model.defer="state.occupation" class="form-control bg-light border-0">
+                            <input type="text" wire:model.defer="state.occupation" class="form-control bg-light border-0 @error('occupation') is-invalid @enderror">
+                            @error('occupation') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">ADDRESS</label>
-                            <textarea wire:model.defer="state.address" class="form-control bg-light border-0" rows="3"></textarea>
+                            <textarea wire:model.defer="state.address" class="form-control bg-light border-0 @error('address') is-invalid @enderror" rows="3"></textarea>
+                            @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- Insurance Details (optional) --}}
@@ -191,25 +206,28 @@
                             </div>
                             <div class="form-group mb-2">
                                 <label class="small text-muted">Insurer</label>
-                                <select wire:model.defer="state.insurer_id" class="form-control form-control-sm bg-light border-0">
+                                <select wire:model.defer="state.insurer_id" class="form-control form-control-sm bg-light border-0 @error('insurer_id') is-invalid @enderror">
                                     <option value="">— None / Cash Patient —</option>
                                     @foreach($insurers as $ins)
                                         <option value="{{ $ins->id }}">{{ $ins->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('insurer_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                             <div class="row">
                                 <div class="col-6 form-group mb-0">
                                     <label class="small text-muted">Member ID</label>
                                     <input type="text" wire:model.defer="state.insurance_member_id"
-                                           class="form-control form-control-sm bg-light border-0"
+                                           class="form-control form-control-sm bg-light border-0 @error('insurance_member_id') is-invalid @enderror"
                                            placeholder="e.g. NHIS-123456">
+                                    @error('insurance_member_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-6 form-group mb-0">
                                     <label class="small text-muted">Policy Number</label>
                                     <input type="text" wire:model.defer="state.insurance_policy_number"
-                                           class="form-control form-control-sm bg-light border-0"
+                                           class="form-control form-control-sm bg-light border-0 @error('insurance_policy_number') is-invalid @enderror"
                                            placeholder="Policy #">
+                                    @error('insurance_policy_number') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                             </div>
                         </div>
@@ -357,7 +375,14 @@
                                                         <i class="fas fa-birthday-cake text-warning"></i>
                                                     </a>
                                                 @endif
-                                                <button wire:click="edit({{ $px->id }})" class="btn btn-sm btn-white border shadow-sm"><i class="fas fa-edit text-primary"></i></button>
+                                                <button type="button"
+                                                        wire:click="edit({{ $px->id }})"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="edit({{ $px->id }})"
+                                                        class="btn btn-sm btn-white border shadow-sm"
+                                                        title="Edit patient">
+                                                    <i class="fas fa-edit text-primary"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

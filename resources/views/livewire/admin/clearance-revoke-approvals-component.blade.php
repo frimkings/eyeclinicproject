@@ -120,7 +120,8 @@
                                     @else
                                         <button type="button"
                                                 class="btn btn-sm btn-success shadow-none mr-1"
-                                                onclick="confirmApproveRevoke({{ $log->id }}, '{{ addslashes($patient->name ?? 'this patient') }}')">
+                                                wire:click="approve({{ $log->id }})"
+                                                onclick="return confirm('Approve this clearance revoke request? The clearance will be permanently removed.')">
                                             <i class="fas fa-check mr-1"></i>Approve
                                         </button>
                                         <button wire:click="openRejectModal({{ $log->id }})"
@@ -155,12 +156,12 @@
 </div>
 
 {{-- Reject Modal --}}
-<div wire:ignore.self class="modal fade" id="rejectRevokeModal" tabindex="-1" role="dialog">
+<div class="modal fade {{ $showRejectModal ? 'show' : '' }}" id="rejectRevokeModal" tabindex="-1" role="dialog" style="{{ $showRejectModal ? 'display:block; background:rgba(0,0,0,.45);' : 'display:none;' }}" aria-modal="{{ $showRejectModal ? 'true' : 'false' }}">
     <div class="modal-dialog" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title"><i class="fas fa-times-circle mr-2"></i>Reject Revoke Request</h5>
-                <button type="button" class="close text-white" onclick="@this.call('closeRejectModal')"><span>&times;</span></button>
+                <button type="button" class="close text-white" wire:click="closeRejectModal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
                 <div class="form-group mb-0">
@@ -175,8 +176,8 @@
                 </div>
             </div>
             <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" onclick="@this.call('closeRejectModal')">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="@this.call('confirmReject')">
+                <button type="button" class="btn btn-secondary" wire:click="closeRejectModal">Cancel</button>
+                <button type="button" class="btn btn-danger" wire:click="confirmReject">
                     <i class="fas fa-times mr-1"></i> Confirm Rejection
                 </button>
             </div>
@@ -185,9 +186,6 @@
 </div>
 
 <script>
-    window.addEventListener('show-rejectRevokeModal', () => $('#rejectRevokeModal').modal('show'));
-    window.addEventListener('hide-rejectRevokeModal', () => $('#rejectRevokeModal').modal('hide'));
-
     function confirmApproveRevoke(logId, patientName) {
         Swal.fire({
             title: 'Approve Revoke?',

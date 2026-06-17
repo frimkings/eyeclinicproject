@@ -108,6 +108,12 @@
                         </button>
 
                         <div class="ml-auto d-flex" style="gap:6px;">
+                            @if($canUseIncomeStatement)
+                            <a href="{{ route('admin.income-statement', ['fromDate' => $fromDate, 'toDate' => $toDate]) }}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-file-invoice-dollar mr-1"></i>Income Statement
+                            </a>
+                            @endif
                             <button wire:click="exportCsv" class="btn btn-outline-success btn-sm">
                                 <i class="fas fa-file-csv mr-1"></i>Export CSV
                             </button>
@@ -238,7 +244,14 @@
                     <i class="fas fa-tags mr-2"></i>Expense Categories
                     <small class="text-muted ml-2">— set Income Statement section per category</small>
                 </h6>
-                <i class="fas fa-chevron-{{ $showCategoryPanel ? 'up' : 'down' }} ml-auto"></i>
+                @if($canUseIncomeStatement)
+                <a href="{{ route('admin.income-statement', ['fromDate' => $fromDate, 'toDate' => $toDate]) }}"
+                   onclick="event.stopPropagation();"
+                   class="btn btn-xs btn-outline-primary ml-auto mr-2">
+                    <i class="fas fa-file-invoice-dollar mr-1"></i>Open Income Statement
+                </a>
+                @endif
+                <i class="fas fa-chevron-{{ $showCategoryPanel ? 'up' : 'down' }} {{ $canUseIncomeStatement ? '' : 'ml-auto' }}"></i>
             </div>
             @if($showCategoryPanel)
             <div class="card-body p-0">

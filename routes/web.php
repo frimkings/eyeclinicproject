@@ -5,6 +5,7 @@ use App\Http\Controllers\Cashier\ReceiptController;
 use App\Http\Controllers\Doctor\DoctorDashboardController;
 use App\Http\Controllers\Secretary\SecretaryDashboardController;
 use App\Http\Livewire\Admin\CategoryComponent;
+use App\Http\Livewire\Admin\PlansComponent;
 use App\Http\Livewire\Admin\ProductsComponent;
 use App\Http\Livewire\CartComponent;
 use App\Http\Livewire\Cashier\CashierDashboardComponent;
@@ -51,6 +52,10 @@ use App\Http\Livewire\Admin\BackupManagerComponent;
 use App\Http\Livewire\Admin\ReportDeliveryComponent;
 use App\Http\Livewire\Admin\MailSettingsComponent;
 use App\Http\Livewire\Admin\SmsLogsComponent;
+use App\Http\Livewire\Orders\NewOrderComponent;
+use App\Http\Livewire\Orders\OrdersComponent;
+use App\Http\Livewire\Payments\PaymentsComponent;
+use App\Http\Livewire\PickupDelivery\PickupDeliveryComponent;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -126,6 +131,10 @@ Route::get('secretary/patient-clearance', CashierPatientClearanceComponent::clas
 Route::middleware(['auth', 'role:Secretary|Cashier|Manager|Super Admin'])->group(function () {
  //cashier
 Route::get('cashier/dashboard', CashierDashboardComponent::class)->name('cashier.dashboard');
+Route::get('orders', OrdersComponent::class)->name('orders.index');
+Route::get('orders/new', NewOrderComponent::class)->name('orders.new');
+Route::get('payments', PaymentsComponent::class)->name('payments.index');
+Route::get('pickup-delivery', PickupDeliveryComponent::class)->name('pickup-delivery.index');
 Route::get('cashier/seller-desk', POSComponent::class)->name('cashier.seller-desk');
 Route::get('cashier/outstanding-balances', OutstandingBalancesComponent::class)->name('cashier.outstanding-balances')->middleware('feature:outstanding_balances');
 Route::get('/livewire/ajax-patients', [POSComponent::class, 'getPatientsJson']);
@@ -200,6 +209,7 @@ Route::get('/admin/expenses/receipt/{filename}', function (string $filename) {
 })->name('admin.expenses.receipt')->middleware(['auth']);
 Route::get('admin/dashboard', AdminDashboardController::class)->name('admin.dashboard');
 Route::get('admin/category', CategoryComponent::class)->name('admin.category');
+Route::get('admin/plans', PlansComponent::class)->name('admin.plans');
 Route::get('admin/product', ProductsComponent::class)->name('admin.product');
 Route::get('admin/suppliers', \App\Http\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers')->middleware('feature:inventory');
 Route::get('admin/quotations', \App\Http\Livewire\Admin\QuotationComponent::class)->name('admin.quotations');

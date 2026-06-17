@@ -53,6 +53,11 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a href="{{ route('admin.plans') }}" class="nav-link {{ request()->is('admin/plans*') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-info"></i><p>Plans</p>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a href="{{ route('admin.product') }}" class="nav-link {{ request()->is('admin/product') ? 'active' : '' }}">
                   <i class="far fa-circle nav-icon"></i><p>Products</p>
                 </a>
@@ -87,6 +92,26 @@
               <p>Finances <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{{ route('orders.index') }}" class="nav-link {{ request()->is('orders') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-info"></i><p>Orders</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('orders.new') }}" class="nav-link {{ request()->is('orders/new') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-success"></i><p>New Order</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('payments.index') }}" class="nav-link {{ request()->is('payments') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-success"></i><p>Payments</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('pickup-delivery.index') }}" class="nav-link {{ request()->is('pickup-delivery') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-warning"></i><p>Pickup &amp; Delivery</p>
+                </a>
+              </li>
               <li class="nav-item">
                 <a href="{{ route('admin.reports') }}" class="nav-link {{ request()->is('admin/reports') ? 'active' : '' }}">
                   <i class="far fa-circle nav-icon"></i><p>Sales Reports</p>
