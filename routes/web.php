@@ -174,6 +174,7 @@ Route::get('/reports/export/pdf', [\App\Http\Controllers\ReportExportController:
 Route::middleware(['auth', 'role:Super Admin|Manager'])->group(function () {
  //admin
 Route::get('/admin/reports', ReportsComponent::class)->name('admin.reports');
+Route::get('/admin/sales-records', SalesRecordsComponent::class)->name('admin.sales-records');
 Route::get('/admin/income-statement', \App\Http\Livewire\Admin\IncomeStatementComponent::class)->name('admin.income-statement')->middleware('feature:advanced_reports');
 Route::get('/admin/income-statement/export/csv', [IncomeStatementExportController::class, 'exportCsv'])->name('admin.income-statement.export.csv')->middleware('feature:advanced_reports');
 Route::get('/admin/income-statement/export/pdf', [IncomeStatementExportController::class, 'exportPdf'])->name('admin.income-statement.export.pdf')->middleware('feature:advanced_reports');

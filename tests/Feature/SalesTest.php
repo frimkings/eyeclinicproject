@@ -110,6 +110,16 @@ class SalesTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_admin_can_view_sales_records_page(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Super Admin');
+
+        $this->actingAs($admin)
+            ->get(route('admin.sales-records'))
+            ->assertOk();
+    }
+
     public function test_search_filters_by_transaction_id(): void
     {
         $txnId = 'TXN-FINDME12345';

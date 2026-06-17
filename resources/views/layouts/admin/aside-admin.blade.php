@@ -118,6 +118,11 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a href="{{ route('cashier.sales-records') }}" class="nav-link {{ request()->is('cashier/sales-records') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-success"></i><p>Sales Records</p>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a href="{{ route('admin.income-statement') }}" class="nav-link {{ request()->is('admin/income-statement*') ? 'active' : '' }}">
                   <i class="far fa-circle nav-icon text-success"></i><p>Income Statement</p>
                 </a>
@@ -288,3 +293,4 @@
         </div>
       </div>
   </aside>
+
