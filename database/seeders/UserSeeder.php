@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class UserSeeder extends Seeder
 {
@@ -15,51 +17,58 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        // 0: Admin
-        User::updateOrCreate(
-            ['email' => 'admin@eyeclinic.com'],
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        foreach (['Super Admin', 'Doctor', 'Cashier', 'Staff', 'Manager', 'Secretary'] as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        }
+
+        $users = [
             [
+                'email' => 'admin@eyeclinic.com',
                 'name' => 'System Administrator',
-                'password' => Hash::make('password'),
-                // 'role' => 0,
-                'email_verified_at' => now(),
-            ]
-        );
-
-        
-        // 1: Doctor
-        User::updateOrCreate(
-            ['email' => 'frimkings@gmail.com'],
+                'password' => 'password',
+                'role' => 'Super Admin',
+            ],
             [
+                'email' => 'frimkings@gmail.com',
                 'name' => 'Dr. Kingsford',
-                'password' => Hash::make('password'),
-            
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // 2: Cashier
-        User::updateOrCreate(
-            ['email' => 'secretary@gmail.com'],
+                'password' => 'password',
+                'role' => 'Doctor',
+            ],
             [
+                'email' => 'secretary@gmail.com',
                 'name' => 'Secretary',
-                'password' => Hash::make('password'),
-         
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // 3: Staff / Receptionist
-        User::updateOrCreate(
-            ['email' => 'staff@eyeclinic.com'],
+                'password' => 'password',
+                'role' => 'Secretary',
+            ],
             [
+                'email' => 'staff@eyeclinic.com',
                 'name' => 'Front Desk Staff',
-                'password' => Hash::make('staff123'),
-              
-                'email_verified_at' => now(),
-            ]
-        );
+                'password' => 'staff123',
+                'role' => 'Staff',
+            ],
+        ];
 
-        $this->command->info('User roles (0-3) seeded successfully!');
+        foreach ($users as $seedUser) {
+            $user = User::updateOrCreate(
+                ['email' => $seedUser['email']],
+                [
+                    'name' => $seedUser['name'],
+                    'password' => Hash::make($seedUser['password']),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            $user->forceFill(['is_active' => true])->save();
+
+            if (!$user->hasRole($seedUser['role'])) {
+                $user->assignRole($seedUser['role']);
+            }
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->command->info('Default users seeded with current Spatie roles successfully.');
     }
 }
