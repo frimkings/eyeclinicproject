@@ -36,6 +36,7 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             // Fix H1: invalidates sessions when a user's password changes
             \Illuminate\Session\Middleware\AuthenticateSession::class,
+            \App\Http\Middleware\LogoutInactiveUsers::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,

@@ -450,7 +450,7 @@
                                 <div>
                                     <div class="font-weight-bold">Limited editing mode</div>
                                     <div>{{ $consultationEditLockReason }}</div>
-                                    <small>Only Clinical Notes can be updated for this visit.</small>
+                                    <small>Original clinical fields stay unchanged. Add a signed clinical addendum instead.</small>
                                 </div>
                             </div>
                         </div>
@@ -726,13 +726,54 @@
                     <label class="font-weight-bold">
                         Clinical Notes
                         @if($consultationFieldsLocked)
-                            <span class="badge badge-success ml-2"><i class="fas fa-edit"></i> Editable</span>
+                            <span class="badge badge-info ml-2"><i class="fas fa-plus-circle"></i> Addendum</span>
                         @endif
                     </label>
-                    <textarea wire:model.defer="state.notes" class="form-control clinical-notes-textarea" rows="8"
-                        placeholder="Enter additional clinical observations, management plans, or notes..."></textarea>
+
                     @if($consultationFieldsLocked)
-                        <small class="text-success">This field remains open for addenda, management updates, and follow-up notes.</small>
+                        <div class="clinical-original-note mb-3">
+                            <div class="clinical-original-note__label">Original note</div>
+                            <div class="clinical-original-note__body">
+                                {{ filled($consultation->notes ?? null) ? $consultation->notes : 'No original clinical note was recorded.' }}
+                            </div>
+                        </div>
+
+                        @if($consultation && $consultation->addenda->count() > 0)
+                            <div class="clinical-addenda-list mb-3">
+                                @foreach($consultation->addenda as $addendum)
+                                    <div class="clinical-addendum-item">
+                                        <div class="clinical-addendum-item__meta">
+                                            <span><i class="fas fa-user-md"></i> {{ $addendum->user->name ?? 'Unknown user' }}</span>
+                                            <span>{{ $addendum->created_at->format('d M Y h:i A') }}</span>
+                                        </div>
+                                        <div class="clinical-addendum-item__note">{{ $addendum->note }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <textarea wire:model.defer="clinicalAddendum"
+                            class="form-control clinical-notes-textarea @error('clinicalAddendum') is-invalid @enderror"
+                            rows="5"
+                            placeholder="Add a signed addendum, management update, or follow-up note..."></textarea>
+                        @error('clinicalAddendum') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <small class="text-success">Addenda are stored separately with the author and timestamp. They do not overwrite the original note.</small>
+                    @else
+                        <textarea wire:model.defer="state.notes" class="form-control clinical-notes-textarea" rows="8"
+                            placeholder="Enter additional clinical observations, management plans, or notes..."></textarea>
+                        @if($consultation && $consultation->addenda->count() > 0)
+                            <div class="clinical-addenda-list mt-3">
+                                @foreach($consultation->addenda as $addendum)
+                                    <div class="clinical-addendum-item">
+                                        <div class="clinical-addendum-item__meta">
+                                            <span><i class="fas fa-user-md"></i> {{ $addendum->user->name ?? 'Unknown user' }}</span>
+                                            <span>{{ $addendum->created_at->format('d M Y h:i A') }}</span>
+                                        </div>
+                                        <div class="clinical-addendum-item__note">{{ $addendum->note }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -805,7 +846,7 @@
                                 <span wire:loading.remove
                                     wire:target="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
                                     <i class="fas fa-save"></i>
-                                    {{ $consultationFieldsLocked ? 'Save Clinical Notes' : ($isEditMode ? 'Update' : 'Save') . ' Consultation' }}
+                                    {{ $consultationFieldsLocked ? 'Add Clinical Addendum' : ($isEditMode ? 'Update' : 'Save') . ' Consultation' }}
                                 </span>
                                 <span wire:loading
                                     wire:target="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
@@ -2011,6 +2052,13 @@
     .consultation-section-locked textarea:disabled { background: #eef1f4; border-color: #d4d9df; color: #6c757d; cursor: not-allowed; }
     .clinical-notes-active { background: #f5fff7; border: 1px solid #b7e4c7; border-radius: 8px; padding: 12px; }
     .clinical-notes-textarea { border-color: #8fd19e; }
+    .clinical-original-note { background: #ffffff; border: 1px solid #d7eadc; border-radius: 6px; padding: 10px 12px; }
+    .clinical-original-note__label { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+    .clinical-original-note__body { color: #0f172a; font-size: 13px; margin-top: 4px; white-space: pre-line; }
+    .clinical-addenda-list { display: grid; gap: 8px; max-height: 220px; overflow-y: auto; }
+    .clinical-addendum-item { background: #fff; border-left: 3px solid #16a34a; border-radius: 6px; box-shadow: 0 1px 2px rgba(15, 23, 42, .06); padding: 9px 11px; }
+    .clinical-addendum-item__meta { color: #64748b; display: flex; flex-wrap: wrap; font-size: 11px; font-weight: 600; gap: 8px; justify-content: space-between; margin-bottom: 5px; }
+    .clinical-addendum-item__note { color: #0f172a; font-size: 13px; white-space: pre-line; }
     .consultation-actions {
         background: #fff; border-top: 1px solid #e9ecef;
         margin-top: 16px; padding-top: 14px;

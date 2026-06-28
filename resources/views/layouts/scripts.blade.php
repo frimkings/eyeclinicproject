@@ -398,48 +398,107 @@
 @auth
 <script>
 (function () {
-    var IDLE_LIMIT   = 30 * 60 * 1000; // 30 minutes
-    var WARN_BEFORE  = 60 * 1000;       // warn 1 minute before
-    var warningShown = false;
-    var warnTimer, logoutTimer;
+    var IDLE_LIMIT = 30 * 60 * 1000; // 30 minutes
+    var WARN_BEFORE = 60 * 1000;     // warn 1 minute before
+    var ACTIVITY_KEY = 'eyeclinic:lastActivityAt';
+    var LOGOUT_KEY = 'eyeclinic:forceLogoutAt';
+    var warnTimer;
+    var logoutTimer;
+    var warningOpen = false;
+
+    function now() {
+        return Date.now();
+    }
+
+    function lastActivityAt() {
+        return parseInt(localStorage.getItem(ACTIVITY_KEY) || '0', 10) || now();
+    }
+
+    function submitLogout() {
+        localStorage.setItem(LOGOUT_KEY, String(now()));
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route("logout") }}';
+        form.style.display = 'none';
+
+        var token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = '{{ csrf_token() }}';
+
+        form.appendChild(token);
+        document.body.appendChild(form);
+        form.submit();
+    }
 
     function resetTimers() {
         clearTimeout(warnTimer);
         clearTimeout(logoutTimer);
-        warningShown = false;
+        warningOpen = false;
+
+        if (window.Swal && Swal.isVisible()) {
+            Swal.close();
+        }
+
+        var remaining = Math.max(0, IDLE_LIMIT - (now() - lastActivityAt()));
+        var warnIn = Math.max(0, remaining - WARN_BEFORE);
 
         warnTimer = setTimeout(function () {
-            warningShown = true;
-            Swal.fire({
-                title: 'Session Expiring',
-                html: 'Your session will expire in <strong>1 minute</strong> due to inactivity.',
-                icon: 'warning',
-                timer: WARN_BEFORE,
-                timerProgressBar: true,
-                showCancelButton: false,
-                confirmButtonText: 'Stay Logged In',
-                confirmButtonColor: '#3085d6',
-            }).then(function () {
-                if (warningShown) resetTimers();
-            });
+            warningOpen = true;
+
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Session Expiring',
+                    html: 'Your session will expire in <strong>1 minute</strong> due to inactivity.',
+                    icon: 'warning',
+                    timer: WARN_BEFORE,
+                    timerProgressBar: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Stay Logged In',
+                    confirmButtonColor: '#3085d6',
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        markActivity();
+                    }
+                });
+            }
 
             logoutTimer = setTimeout(function () {
-                window.location.href = '{{ route("logout") }}?_token={{ csrf_token() }}';
-                fetch('{{ route("logout") }}', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-                }).finally(function () {
-                    window.location.href = '/';
-                });
+                if ((now() - lastActivityAt()) >= IDLE_LIMIT) {
+                    submitLogout();
+                    return;
+                }
+
+                resetTimers();
             }, WARN_BEFORE);
-        }, IDLE_LIMIT - WARN_BEFORE);
+        }, warnIn);
     }
 
-    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (evt) {
+    function markActivity() {
+        localStorage.setItem(ACTIVITY_KEY, String(now()));
+        resetTimers();
+    }
+
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'pointerdown'].forEach(function (evt) {
         document.addEventListener(evt, function () {
-            if (!warningShown) resetTimers();
+            markActivity();
         }, { passive: true });
     });
+
+    window.addEventListener('storage', function (event) {
+        if (event.key === ACTIVITY_KEY) {
+            resetTimers();
+        }
+
+        if (event.key === LOGOUT_KEY) {
+            submitLogout();
+        }
+    });
+
+    if (!localStorage.getItem(ACTIVITY_KEY)) {
+        localStorage.setItem(ACTIVITY_KEY, String(now()));
+    }
 
     resetTimers();
 })();

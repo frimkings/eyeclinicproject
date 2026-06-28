@@ -109,6 +109,11 @@ class Consultations extends Model
         return $this->hasMany(PatientDocument::class, 'consultation_id');
     }
 
+    public function addenda()
+    {
+        return $this->hasMany(ConsultationNote::class, 'consultation_id')->latest();
+    }
+
     /**
      * Get only dispensed cart items
      */

@@ -470,10 +470,20 @@
                         </div>
                         @endif
 
-                        @if($consultation->notes)
+                        @if($consultation->notes || $consultation->addenda->count())
                         <div class="field-group">
                             <span class="field-label">Notes:</span>
-                            <span class="field-value">{{ $consultation->notes }}</span>
+                            <span class="field-value">
+                                @if($consultation->notes)
+                                    {{ $consultation->notes }}
+                                @endif
+                                @if($consultation->addenda->count())
+                                    <br><strong>Clinical Addenda:</strong>
+                                    @foreach($consultation->addenda as $addendum)
+                                        <br>{{ $addendum->created_at->format('d M Y h:i A') }} by {{ $addendum->user->name ?? 'Unknown user' }}: {{ $addendum->note }}
+                                    @endforeach
+                                @endif
+                            </span>
                         </div>
                         @endif
 

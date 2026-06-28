@@ -8,6 +8,21 @@
         </div>
         <div class="d-flex" style="gap:.5rem">
             <button type="button"
+                    wire:click="retryPending"
+                    wire:loading.attr="disabled"
+                    wire:target="retryPending"
+                    class="btn btn-outline-primary font-weight-bold">
+                <span wire:loading.remove wire:target="retryPending">
+                    <i class="fas fa-redo mr-1"></i> Retry Pending
+                    @if($pendingDeliveriesCount > 0)
+                        <span class="badge badge-primary ml-1">{{ $pendingDeliveriesCount }}</span>
+                    @endif
+                </span>
+                <span wire:loading wire:target="retryPending">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Retrying...
+                </span>
+            </button>
+            <button type="button"
                     wire:click="sendNow"
                     wire:loading.attr="disabled"
                     wire:target="sendNow"
@@ -189,6 +204,66 @@
             </div>
         </div>
 
+    </div>
+
+    {{-- Delivery outbox --}}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <div class="font-weight-bold">
+                <i class="fas fa-paper-plane mr-1 text-primary"></i> Delivery Outbox
+                @if($pendingDeliveriesCount > 0)
+                    <span class="badge badge-warning ml-1">{{ $pendingDeliveriesCount }} pending</span>
+                @endif
+            </div>
+            <small class="text-muted">Failed reports retry automatically every minute while the scheduler is running.</small>
+        </div>
+        <div class="card-body p-0">
+            @if($recentDeliveries->count())
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Report</th>
+                                <th>Status</th>
+                                <th>Recipients</th>
+                                <th>Attempts</th>
+                                <th>Last Attempt</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentDeliveries as $delivery)
+                                @php
+                                    $statusClass = [
+                                        'sent' => 'success',
+                                        'failed' => 'danger',
+                                        'pending' => 'warning',
+                                    ][$delivery->status] ?? 'secondary';
+                                    $sentCount = count($delivery->sent_recipients ?? []);
+                                    $recipientCount = count($delivery->recipients ?? []);
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="font-weight-bold small">{{ $delivery->subject }}</div>
+                                        <div class="text-muted small">{{ $delivery->period_start?->format('d M Y') }} - {{ $delivery->period_end?->format('d M Y') }}</div>
+                                    </td>
+                                    <td><span class="badge badge-{{ $statusClass }}">{{ ucfirst($delivery->status) }}</span></td>
+                                    <td class="small">{{ $sentCount }}/{{ $recipientCount }} sent</td>
+                                    <td class="small">{{ $delivery->attempts }}</td>
+                                    <td class="small text-muted">{{ $delivery->last_attempt_at ? $delivery->last_attempt_at->format('d M h:i A') : 'Not tried yet' }}</td>
+                                    <td class="small text-muted" style="max-width:260px">{{ \Illuminate\Support\Str::limit($delivery->last_error ?? '', 90) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox d-block mb-2" style="font-size:1.5rem;opacity:.35"></i>
+                    <span class="small">No report deliveries have been queued yet.</span>
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- Preview card --}}

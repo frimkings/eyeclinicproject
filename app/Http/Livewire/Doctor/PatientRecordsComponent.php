@@ -6,6 +6,7 @@ use App\Models\Consultations;
 use App\Models\Appointments;
 use App\Models\Cart;
 use App\Models\AuditTrail;
+use App\Models\ConsultationNote;
 use App\Models\PatientDocument;
 use App\Models\Referral;
 use Livewire\Component;
@@ -48,6 +49,7 @@ class PatientRecordsComponent extends Component
     public $consultation;
     public $consultationID;
     public $isEditMode = false;
+    public $clinicalAddendum = '';
 
     // Product management
     public $availableProducts = [];
@@ -108,7 +110,7 @@ public $isEditingAppointment = false;
     public function addDiagnosis($id, $name)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Clinical Notes remain editable.']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -121,7 +123,7 @@ public $isEditingAppointment = false;
     public function removeDiagnosis($index)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Clinical Notes remain editable.']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -215,6 +217,7 @@ public $isEditingAppointment = false;
         $this->isEditMode = false;
         $this->consultation = null;
         $this->consultationID = null;
+        $this->clinicalAddendum = '';
         $this->resetValidation();
         $this->productsList = [];
         $this->resetProductForm();
@@ -332,7 +335,7 @@ public $isEditingAppointment = false;
     public function toggleAppointmentSection()
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation. Clinical Notes remain editable.']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -1191,9 +1194,10 @@ public function cancelAppointmentEdit()
 
     public function editConsultation($consultationId)
     {
-        $this->consultation = Consultations::with(['cartItems.product.category', 'diagnoses'])->findOrFail($consultationId);
+        $this->consultation = Consultations::with(['cartItems.product.category', 'diagnoses', 'addenda.user'])->findOrFail($consultationId);
         $this->consultationID = $this->consultation->id;
         $this->isEditMode = true;
+        $this->clinicalAddendum = '';
 
         $this->state = $this->consultation->toArray();
 
@@ -1444,7 +1448,7 @@ public function cancelAppointmentEdit()
     public function updateConsultation()
     {
         if ($this->consultationFieldsLocked) {
-            $this->updateClinicalNotesOnly();
+            $this->addClinicalAddendum();
             return;
         }
 
@@ -1558,37 +1562,40 @@ public function cancelAppointmentEdit()
         }
     }
 
-    private function updateClinicalNotesOnly(): void
+    private function addClinicalAddendum(): void
     {
         $this->validate([
-            'state.notes' => 'nullable|string',
+            'clinicalAddendum' => 'required|string|min:2',
         ]);
 
         DB::beginTransaction();
         try {
-            $oldNotes = $this->consultation->notes;
-
-            $this->consultation->update([
-                'notes' => $this->state['notes'] ?? null,
+            $note = ConsultationNote::create([
+                'consultation_id' => $this->consultation->id,
+                'patient_id' => $this->consultation->patient_id,
+                'user_id' => Auth::id(),
+                'note_type' => 'clinical_addendum',
+                'note' => $this->clinicalAddendum,
             ]);
 
             AuditTrail::record(
-                'consultation.notes_updated',
-                'Updated clinical notes for locked consultation #' . $this->consultation->id,
-                $this->consultation,
-                ['notes' => $oldNotes],
-                ['notes' => $this->consultation->notes],
+                'consultation.addendum_added',
+                'Added clinical addendum to consultation #' . $this->consultation->id,
+                $note,
+                [],
+                ['note' => $note->note, 'note_type' => $note->note_type],
                 $this->patient->id
             );
 
             DB::commit();
 
-            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Clinical notes updated successfully.']);
-            $this->resetForm();
-            $this->activeTab = 'history';
+            $this->consultation->load('addenda.user');
+            $this->clinicalAddendum = '';
+            $this->resetValidation(['clinicalAddendum']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Clinical addendum added successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Failed to update clinical notes: ' . $e->getMessage()]);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Failed to add clinical addendum: ' . $e->getMessage()]);
         }
     }
     

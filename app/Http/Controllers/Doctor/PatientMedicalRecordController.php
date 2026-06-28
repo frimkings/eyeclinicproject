@@ -28,7 +28,7 @@ class PatientMedicalRecordController extends Controller
 
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
-            ->with(['user', 'doctor'])
+            ->with(['user', 'doctor', 'addenda.user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -65,6 +65,7 @@ class PatientMedicalRecordController extends Controller
     public function generateConsultationPDF(Consultations $consultation)
     {
         $patient = $consultation->patient;
+        $consultation->load(['user', 'addenda.user']);
         
         // Get refraction if exists
         $refraction = Refractions::where('consultation_id', $consultation->id)->first();
@@ -86,7 +87,7 @@ class PatientMedicalRecordController extends Controller
 
     public function visitSummary(Consultations $consultation)
     {
-        $consultation->load(['patient', 'doctor', 'diagnoses', 'cartItems.product', 'refraction', 'documents']);
+        $consultation->load(['patient', 'doctor', 'diagnoses', 'cartItems.product', 'refraction', 'documents', 'addenda.user']);
 
         return view('doctor.visit-summary-print', [
             'consultation' => $consultation,
@@ -107,7 +108,7 @@ class PatientMedicalRecordController extends Controller
 
         abort_if($ids->isEmpty(), 404, 'No visit summaries selected.');
 
-        $query = Consultations::with(['patient', 'doctor', 'diagnoses', 'cartItems.product', 'refraction', 'documents'])
+        $query = Consultations::with(['patient', 'doctor', 'diagnoses', 'cartItems.product', 'refraction', 'documents', 'addenda.user'])
             ->whereIn('id', $ids);
 
         $consultations = $query->orderBy('created_at', 'desc')->get();
@@ -163,7 +164,7 @@ class PatientMedicalRecordController extends Controller
     {
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
-            ->with(['user', 'doctor'])
+            ->with(['user', 'doctor', 'addenda.user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
