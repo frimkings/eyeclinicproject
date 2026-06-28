@@ -138,11 +138,7 @@ public $isEditingAppointment = false;
     public function mount(CashierPatientClearance $clearance)
     {
         if (auth()->user()->hasRole('Doctor')) {
-            $allowed = !$clearance->doctor_status
-                || Consultations::where('clearance_id', $clearance->id)
-                    ->where('user_id', auth()->id())
-                    ->exists();
-            abort_unless($allowed, 403);
+            abort_unless($clearance->patient()->exists(), 403);
         }
 
         $this->clearance = $clearance;
@@ -1638,6 +1634,11 @@ public function cancelAppointmentEdit()
 
     public function saveRefraction()
     {
+        if ($this->consultationFieldsLocked) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Only the doctor who created this consultation can edit refraction data.']);
+            return;
+        }
+
         $this->validate([
             'state.pd' => 'required|numeric',
             'state.lensType' => 'required|string',

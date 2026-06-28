@@ -1,167 +1,21 @@
-php artisan make:controller Secretary/SecretaryDashboardController --invokable
-php artisan make:controller Doctor/DoctorDashboardController --invokable
 
-
-php artisan make:controller Cashier/ReceiptController
-
-
-
-php artisan make:controller Administrator/AdminDashboardController --invokable
-
-
-
-php artisan make:provider AdminBladeComponentServiceProvider
-
-php artisan livewire:make secretary.patients-component
-php artisan livewire:make admin.category-component
-
-php artisan livewire:make secretary.patients-clearance-component
-php artisan livewire:make cashier.cashier-patient-clearance-component
-php artisan livewire:make doctor.patient-awaiting-component
-php artisan livewire:make doctor.CreateConsultationComponent
-php artisan livewire:make doctor.UsersComponent
-
-php artisan livewire:make point-of-sale-component
-php artisan livewire:make cashier.SalesRecordsComponent
-
-
-point-of-sale-component.blade.
-
-
-
-
-php artisan livewire:make doctor.PatientRecordsComponent
-
-php artisan livewire:make admin.DiagnosisComponent
-
-
-php artisan livewire:make admin.ProductsComponent
-php artisan livewire:make secretary.AppointmentsComponent
-
-php artisan make:controller UsersController  --resource --model=Photo
-
-php artisan livewire:make secretary.Spectacles-component
-
-
-
-php artisan livewire:make doctor.patients-component
-php artisan livewire:make doctor.update-consultation-component
-php artisan livewire:make doctor.show-consultation-component
-
-php artisan optimize:clear
-
-php artisan livewire:make doctor.allrecords-component
-
-
-
-php artisan make:model Refractions -m
-php artisan make:model Order -m
-php artisan make:model Appointments -m
-
-
-php artisan make:model Product -m
-php artisan make:model SaleItem -m
-
-
-php artisan make:model CashierPatientClearance -m
-
-php artisan make:model Consultations -m
-php artisan make:model Diagnosis -m
-php artisan make:model Drugs -m
-
-php artisan migrate:fresh --path=database/migrations/2022_09_29_072408_create_products_table.php
-php artisan migrate:fresh --path=database/migrations/2022_02_07_181517_create_refractions_table.php
-php artisan migrate:rollback --path=ddatabase/migrations/2022_09_29_072408_create_products_table.php
-php artisan migrate:fresh --path=ddatabase/migrations/2022_09_29_072408_create_products_table.php
-
-php artisan migrate:fresh --path=database/migrations/2022_01_18_123029_create_consultations_table.php
-php artisan migrate:fresh --path=database/migrations/2022_01_18_093243_create_cashier_patient_clearances_table.php
-database\migrations\2022_01_18_123029_create_consultations_table.php
-database\migrations\2022_02_07_181517_create_refractions_table.php
-
-
-INSERT INTO `consultations` (`id`, `user_id`, `cashier_patient_clearances_id`, `chiefComplaint`, `odq`, `others`, `vaOD6m`, `vaOD4m`, `pHOD6m`, `phOD4m`, `vaOS6m`, `vaOS4m`, `currentSrxOD`, `currentSrxOS`, `lidsOD`, `lidsOS`, `conjunctivaOD`, `conjunctivaOS`, `corneaOD`, `corneaOS`, `acOD`, `acOS`, `irisOD`, `pupilOD`, `pupilOS`, `lensOD`, `lensOS`, `vitreousOD`, `vitreousOS`, `fundusOD`, `fundusOS`, `cdrOD`, `cdrOS`, `IOPOD`, `IOPOS`, `diagnosis`, `notes`, `drug_id`, `created_at`, `updated_at`) VALUES (NULL, '1', '2', 'headaches', NULL, 'headaches, vomitting', 'OD', 'OD4M', NULL, NULL, 'OS', 'OD4M', 'currentOD', 'currentOS', 'lidsOD', 'LIDSOS', 'CONJOD', 'CONJOS', 'CORNEAOD', 'CORNEAOS', 'ACOD', 'ACOS', 'IRISOD', 'PUPILOD', 'PUPIL OS', 'lens od', 'lens os', 'vitreous od', 'vitreos os', 'fundus od', 'fundus os', 'cdr od', 'cdr os', '20', '21', '\"des\"', NULL, NULL, '2022-01-28 10:48:50', '2022-01-28 11:42:25');
-
-php artisan make:model ProductType -m
-php artisan make:model Product -m
-php artisan make:model Stock -m
-php artisan make:model RefundLog -m
-
-
-php artisan make:model Cart -m
-
-php artisan make:livewire UserProfileComponent
-php artisan make:livewire admin.
-
-
-
-php artisan migrate:refresh --seed
-php artisan migrate:fresh --seed
-
-
-php artisan make:seeder Rol
-
-php artisan db:seed --class=StressTestSeeder
-// "laravel/framework": "^8.75",
-"nunomaduro/collision": "^5.10",
-// "facade/ignition": "^2.5",
-
-
-php artisan make:middleware CheckAccountStatusMiddleware
-
-php artisan make:factory CategoryFactory
-
-
-php artisan make:migration " add role to users table"
 php artisan cache:clear
-
-
-INSERT INTO `drugs` (`id`, `name`, `quantity`, `price`, `expiryDate`, `created_at`, `updated_at`, `deleted_at`) VALUES (NULL, 'Dexatrol', '15', '20', '2022-09-24', NULL, NULL, NULL);
-https://gist.github.com/Splode/94bfa9071625e38f7fd76ae210520d94........... run backup
-
-
-categories
-INSERT INTO `categories` (`id`, `user_id`, `name`, `deleted_at`, `created_at`, `updated_at`) VALUES (NULL, '1', 'Drugs', NULL, '2023-05-31 10:35:03', '2023-05-31 10:35:03');
-INSERT INTO `categories` (`id`, `user_id`, `name`, `deleted_at`, `created_at`, `updated_at`) VALUES (NULL, '1', 'Frames', NULL, '2023-05-31 10:35:03', '2023-05-31 10:35:03');
-INSERT INTO `categories` (`id`, `user_id`, `name`, `deleted_at`, `created_at`, `updated_at`) VALUES (NULL, '1', 'Lenses', NULL, '2023-05-31 10:35:03', '2023-05-31 10:35:03');
-products
-INSERT INTO `products` (`id`, `name`, `user_id`, `category_id`, `batch_number`, `quantity`, `cost_price`, `selling_price`, `expiry_date`, `created_at`, `updated_at`) VALUES (NULL, 'Olopatadine eye drops', '1', '1', '10010', '300', '15.5', '35', '2025-05-09', '2023-05-31 12:42:21', NULL);
-INSERT INTO `products` (`id`, `name`, `user_id`, `category_id`, `batch_number`, `quantity`, `cost_price`, `selling_price`, `expiry_date`, `created_at`, `updated_at`) VALUES (NULL, 'Dexatrol eye drops', '1', '1', '100120', '300', '15.5', '35', '2025-05-09', '2023-05-31 12:42:21', NULL);
-INSERT INTO `products` (`id`, `name`, `user_id`, `category_id`, `batch_number`, `quantity`, `cost_price`, `selling_price`, `expiry_date`, `created_at`, `updated_at`) VALUES (NULL, 'Gentamicin eye drops', '1', '1', '10w010', '300', '15.5', '35', '2025-05-09', '2023-05-31 12:42:21', NULL);
-
-
-php artisan make:controller PhotoController
-php artisan make:middleware Secretary
-
-php artisan make:controller ReportExportController
-
-
-Products
-1.name
-2. initial_quantity
-3. cost_price
-4.selling_price
-5.
 
 
 composer install --ignore-platform-req=php --ignore-platform-req=ext-zip
 
 
-When the wizard reaches the "Start a Program" screen, you'll see exactly 3 fields. Here is what to type in each one:
 
-Field 1 — "Program/script"
-
-
-C:\xampp\php\php.exe
-Field 2 — "Add arguments (optional)"
-
-
-C:\xampp\htdocs\eyeclinicproject\artisan schedule:run
-(this is where the artisan command goes)
-
-Field 3 — "Start in (optional)"
-
-
-C:\xampp\htdocs\eyeclinicproject
 
 php artisan db:seed --class=UserSeeder
+
+
+<VirtualHost 192.168.100.4:80>
+    DocumentRoot "C:/laragon/www/eyeclinicproject/public"
+    ServerName 192.168.100.4
+    ServerAlias eyeclinicproject.test *.eyeclinicproject.test
+    <Directory "C:/laragon/www/eyeclinicproject/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
