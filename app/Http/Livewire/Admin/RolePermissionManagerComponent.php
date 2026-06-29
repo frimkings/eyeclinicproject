@@ -3,6 +3,8 @@
 namespace App\Http\Livewire\Admin;
 
 use App\Models\AuditTrail;
+use App\Models\User;
+use Illuminate\Support\Facades\File;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -17,13 +19,64 @@ class RolePermissionManagerComponent extends Component
     public string $roleName            = '';
     public string $dashboardRoute      = '';
     public array  $selectedPermissions = [];
+    public array  $originalRolePermissions = [];
+
+    public ?int $managingRoleId = null;
+    public string $managingRoleName = '';
+    public ?int $userToAssign = null;
 
     // ── Permission form ────────────────────────────────────────────────────────
     public ?int  $editingPermissionId = null;
     public string $permissionName     = '';
 
-    // These roles cannot be renamed or deleted
-    protected array $protectedRoles = ['Super Admin'];
+    // These roles are referenced by routes, layouts, and dashboards.
+    protected array $protectedRoles = ['Super Admin', 'Manager', 'Doctor', 'Secretary', 'Cashier', 'Staff'];
+
+    protected array $permissionPresets = [
+        'Clinical' => [
+            'view consultations',
+            'perform refraction',
+            'view medical records',
+            'manage referrals',
+        ],
+        'Billing' => [
+            'manage billing',
+            'process refunds',
+            'view sales records',
+            'view outstanding balances',
+        ],
+        'Approvals' => [
+            'approve discounts',
+            'approve refunds',
+            'approve clearance revoke',
+        ],
+        'Inventory' => [
+            'manage inventory',
+            'receive stock',
+            'manage suppliers',
+            'manage purchase orders',
+        ],
+        'Reports' => [
+            'view reports',
+            'view income statement',
+            'export reports',
+        ],
+        'System' => [
+            'manage users',
+            'manage settings',
+            'manage backups',
+            'view audit trail',
+        ],
+    ];
+
+    protected array $roleTemplates = [
+        'Doctor' => ['view consultations', 'perform refraction', 'view medical records', 'manage referrals'],
+        'Cashier' => ['manage billing', 'view sales records', 'view outstanding balances'],
+        'Secretary' => ['view consultations', 'view sales records'],
+        'Manager' => ['manage billing', 'view reports', 'view income statement', 'approve discounts', 'approve refunds', 'approve clearance revoke'],
+        'Inventory Staff' => ['manage inventory', 'receive stock', 'manage suppliers', 'manage purchase orders'],
+        'Accountant' => ['manage billing', 'view reports', 'view income statement', 'export reports', 'view sales records'],
+    ];
 
     public function mount(): void
     {
@@ -38,6 +91,7 @@ class RolePermissionManagerComponent extends Component
         $this->roleName             = '';
         $this->dashboardRoute       = '';
         $this->selectedPermissions  = [];
+        $this->originalRolePermissions = [];
         $this->resetErrorBag();
         $this->dispatchBrowserEvent('show-roleModal', ['isEdit' => false]);
     }
@@ -49,8 +103,32 @@ class RolePermissionManagerComponent extends Component
         $this->roleName             = $role->name;
         $this->dashboardRoute       = $role->dashboard_route ?? '';
         $this->selectedPermissions  = $role->permissions->pluck('id')->map(fn ($i) => (string) $i)->toArray();
+        $this->originalRolePermissions = $role->permissions->pluck('name')->sort()->values()->all();
         $this->resetErrorBag();
         $this->dispatchBrowserEvent('show-roleModal', ['isEdit' => true]);
+    }
+
+    public function applyRoleTemplate(string $template): void
+    {
+        if (!array_key_exists($template, $this->roleTemplates)) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Role template not found.']);
+            return;
+        }
+
+        $ids = [];
+        foreach ($this->roleTemplates[$template] as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
+            $ids[] = (string) $permission->id;
+        }
+
+        $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $ids)));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        cache()->forget('role_permission_manager.permission_usage');
+
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "{$template} template applied. Review and save the role."]);
     }
 
     public function saveRole(): void
@@ -131,6 +209,61 @@ class RolePermissionManagerComponent extends Component
         $this->dispatchBrowserEvent('notify', ['type' => 'info', 'message' => "Role \"{$name}\" deleted."]);
     }
 
+    public function openRoleUsers(int $id): void
+    {
+        $role = Role::findOrFail($id);
+        $this->managingRoleId = $role->id;
+        $this->managingRoleName = $role->name;
+        $this->userToAssign = null;
+        $this->resetErrorBag();
+        $this->dispatchBrowserEvent('show-roleUsersModal');
+    }
+
+    public function assignUserToManagedRole(): void
+    {
+        abort_if(!$this->managingRoleId, 404);
+        $this->validate(['userToAssign' => 'required|exists:users,id']);
+
+        $role = Role::findOrFail($this->managingRoleId);
+        $user = User::findOrFail($this->userToAssign);
+        $oldRoles = $user->getRoleNames()->all();
+
+        $user->assignRole($role);
+
+        AuditTrail::record('role.user_assigned', "Assigned {$user->name} to role \"{$role->name}\".", $user, [
+            'roles' => $oldRoles,
+        ], [
+            'roles' => $user->fresh()->getRoleNames()->all(),
+        ]);
+
+        $this->userToAssign = null;
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "{$user->name} assigned to {$role->name}."]);
+    }
+
+    public function removeUserFromManagedRole(int $userId): void
+    {
+        abort_if(!$this->managingRoleId, 404);
+
+        $role = Role::findOrFail($this->managingRoleId);
+        $user = User::findOrFail($userId);
+
+        if ($role->name === 'Super Admin' && $user->id === auth()->id()) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'You cannot remove your own Super Admin role.']);
+            return;
+        }
+
+        $oldRoles = $user->getRoleNames()->all();
+        $user->removeRole($role);
+
+        AuditTrail::record('role.user_removed', "Removed {$user->name} from role \"{$role->name}\".", $user, [
+            'roles' => $oldRoles,
+        ], [
+            'roles' => $user->fresh()->getRoleNames()->all(),
+        ]);
+
+        $this->dispatchBrowserEvent('notify', ['type' => 'info', 'message' => "{$user->name} removed from {$role->name}."]);
+    }
+
     // ── Permissions ────────────────────────────────────────────────────────────
 
     public function openCreatePermission(): void
@@ -178,6 +311,7 @@ class RolePermissionManagerComponent extends Component
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        cache()->forget('role_permission_manager.permission_usage');
         $this->dispatchBrowserEvent('hide-permissionModal');
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => $msg]);
     }
@@ -189,17 +323,135 @@ class RolePermissionManagerComponent extends Component
         $name = $perm->name;
         $perm->delete();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        cache()->forget('role_permission_manager.permission_usage');
         AuditTrail::record('permission.deleted', "Deleted permission \"{$name}\".");
         $this->dispatchBrowserEvent('notify', ['type' => 'info', 'message' => "Permission \"{$name}\" deleted and removed from all roles."]);
+    }
+
+    public function createPermissionPreset(string $group): void
+    {
+        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+
+        if (!array_key_exists($group, $this->permissionPresets)) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Permission preset not found.']);
+            return;
+        }
+
+        $created = 0;
+        foreach ($this->permissionPresets[$group] as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
+
+            if ($permission->wasRecentlyCreated) {
+                $created++;
+            }
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        cache()->forget('role_permission_manager.permission_usage');
+        AuditTrail::record('permission.preset_created', "Applied {$group} permission preset.", null, [], [
+            'group' => $group,
+            'created' => $created,
+        ]);
+
+        $this->dispatchBrowserEvent('notify', [
+            'type' => 'success',
+            'message' => $created > 0
+                ? "{$group} preset added {$created} new permission(s)."
+                : "{$group} preset already exists.",
+        ]);
     }
 
     // ── Render ─────────────────────────────────────────────────────────────────
 
     public function render()
     {
+        $permissions = Permission::with('roles')->orderBy('name')->get();
+        $permissionUsage = $this->permissionUsageMap($permissions->pluck('name')->all());
+        $rolePermissionPreview = $this->rolePermissionPreview($permissions);
+        $managingRole = $this->managingRoleId
+            ? Role::with('users.roles')->find($this->managingRoleId)
+            : null;
+
         return view('livewire.admin.role-permission-manager-component', [
-            'roles'       => Role::withCount(['users', 'permissions'])->orderBy('name')->get(),
-            'permissions' => Permission::with('roles')->orderBy('name')->get(),
+            'roles' => Role::with(['permissions'])
+                ->withCount(['users', 'permissions'])
+                ->orderBy('name')
+                ->get(),
+            'permissions' => $permissions,
+            'protectedRoles' => $this->protectedRoles,
+            'permissionPresets' => $this->permissionPresets,
+            'roleTemplates' => $this->roleTemplates,
+            'permissionUsage' => $permissionUsage,
+            'rolePermissionPreview' => $rolePermissionPreview,
+            'managingRole' => $managingRole,
+            'assignableUsers' => User::with('roles')->orderBy('name')->get(),
         ])->layout('layouts.admin.admin-layout');
+    }
+
+    private function rolePermissionPreview($permissions): array
+    {
+        $selectedNames = $permissions
+            ->whereIn('id', collect($this->selectedPermissions)->map(fn ($id) => (int) $id)->all())
+            ->pluck('name')
+            ->sort()
+            ->values()
+            ->all();
+
+        return [
+            'added' => array_values(array_diff($selectedNames, $this->originalRolePermissions)),
+            'removed' => array_values(array_diff($this->originalRolePermissions, $selectedNames)),
+        ];
+    }
+
+    private function permissionUsageMap(array $permissionNames): array
+    {
+        return cache()->remember('role_permission_manager.permission_usage', now()->addMinutes(10), function () use ($permissionNames) {
+            $map = array_fill_keys($permissionNames, []);
+            $folders = [
+                app_path(),
+                base_path('routes'),
+                resource_path('views'),
+            ];
+
+            foreach ($folders as $folder) {
+                if (!is_dir($folder)) {
+                    continue;
+                }
+
+                foreach (File::allFiles($folder) as $file) {
+                    $path = str_replace('\\', '/', $file->getPathname());
+                    if (str_contains($path, 'RolePermissionManagerComponent.php') ||
+                        str_contains($path, 'role-permission-manager-component.blade.php')) {
+                        continue;
+                    }
+
+                    $contents = @file_get_contents($path);
+                    if ($contents === false) {
+                        continue;
+                    }
+
+                    foreach ($permissionNames as $permissionName) {
+                        if ($this->permissionIsEnforcedIn($contents, $permissionName)) {
+                            $map[$permissionName][] = str_replace('\\', '/', $file->getRelativePathname());
+                        }
+                    }
+                }
+            }
+
+            return $map;
+        });
+    }
+
+    private function permissionIsEnforcedIn(string $contents, string $permissionName): bool
+    {
+        $quoted = preg_quote($permissionName, '/');
+
+        return preg_match("/can\\(['\"]{$quoted}['\"]\\)/", $contents) === 1
+            || preg_match("/@can\\(['\"]{$quoted}['\"]\\)/", $contents) === 1
+            || preg_match("/permission:[^'\"\\]\\)]*{$quoted}/", $contents) === 1
+            || preg_match("/role_or_permission:[^'\"\\]\\)]*{$quoted}/", $contents) === 1;
     }
 }

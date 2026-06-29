@@ -17,6 +17,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('system:health-heartbeat')->everyMinute()->withoutOverlapping();
+
         if (LicenseService::has(Feature::SCHEDULED_BACKUPS)) {
             // DB-only snapshot every 5 minutes (fast, small)
             $schedule->command('backup:run --only-db')->everyFiveMinutes();

@@ -24,6 +24,10 @@
                     <i class="fas fa-key mr-1"></i> Permissions
                     <span class="badge badge-{{ $activeTab === 'permissions' ? 'light text-primary' : 'secondary' }} ml-1">{{ $permissions->count() }}</span>
                 </button>
+                <button wire:click="$set('activeTab', 'matrix')"
+                    class="btn {{ $activeTab === 'matrix' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                    <i class="fas fa-table mr-1"></i> Matrix
+                </button>
             </div>
         </div>
     </div>
@@ -66,7 +70,7 @@
                                     </div>
                                     <div>
                                         <div class="font-weight-bold">{{ $role->name }}</div>
-                                        @if(in_array($role->name, ['Super Admin']))
+                                        @if(in_array($role->name, $protectedRoles))
                                             <span class="badge badge-pill" style="background:#6610f222;color:#6610f2;font-size:0.7rem;">Protected</span>
                                         @endif
                                     </div>
@@ -92,7 +96,12 @@
                                         title="Edit role &amp; permissions">
                                     <i class="fas fa-edit mr-1"></i> Edit
                                 </button>
-                                @if(!in_array($role->name, ['Super Admin']))
+                                <button wire:click="openRoleUsers({{ $role->id }})"
+                                        class="btn btn-sm btn-outline-info shadow-none mr-1"
+                                        title="Assign users">
+                                    <i class="fas fa-users mr-1"></i> Users
+                                </button>
+                                @if(!in_array($role->name, $protectedRoles))
                                     <button onclick="confirmDeleteRole({{ $role->id }}, {{ json_encode($role->name) }}, {{ $role->users_count }})"
                                             class="btn btn-sm btn-outline-danger shadow-none"
                                             title="Delete role">
@@ -121,6 +130,38 @@
 
     {{-- ══ PERMISSIONS TAB ════════════════════════════════════════════════════ --}}
     @if($activeTab === 'permissions')
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="font-weight-bold text-dark"><i class="fas fa-layer-group mr-1 text-primary"></i> Permission Presets</div>
+            <div class="text-muted small mt-1">Create standard permission groups, then assign them from the Roles tab.</div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @foreach($permissionPresets as $group => $presetPermissions)
+                    @php
+                        $existing = $permissions->whereIn('name', $presetPermissions)->count();
+                        $missing = count($presetPermissions) - $existing;
+                    @endphp
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="border rounded p-3 h-100" style="background:#f8fafc">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="font-weight-bold">{{ $group }}</div>
+                                <span class="badge badge-{{ $missing > 0 ? 'warning' : 'success' }}">
+                                    {{ $missing > 0 ? $missing . ' missing' : 'Ready' }}
+                                </span>
+                            </div>
+                            <div class="small text-muted mb-3">{{ implode(', ', $presetPermissions) }}</div>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    wire:click="createPermissionPreset('{{ $group }}')">
+                                <i class="fas fa-plus mr-1"></i> Apply Preset
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
             <div>
@@ -137,6 +178,7 @@
                     <tr class="small text-uppercase font-weight-bold text-muted">
                         <th class="pl-4 border-0">Permission</th>
                         <th class="border-0">Assigned to Roles</th>
+                        <th class="border-0">Enforced In App</th>
                         <th class="border-0 text-right pr-4">Actions</th>
                     </tr>
                 </thead>
@@ -159,6 +201,18 @@
                                     <span class="text-muted small">Not assigned</span>
                                 @endforelse
                             </td>
+                            <td>
+                                @php $usage = $permissionUsage[$perm->name] ?? []; @endphp
+                                @if(count($usage) > 0)
+                                    <span class="badge badge-success badge-pill px-2" title="{{ implode(', ', $usage) }}">
+                                        Used {{ count($usage) }}x
+                                    </span>
+                                @else
+                                    <span class="badge badge-warning badge-pill px-2" title="This permission exists but is not checked by route middleware, @@can, or user can() calls yet.">
+                                        Not enforced yet
+                                    </span>
+                                @endif
+                            </td>
                             <td class="pr-4 text-right text-nowrap">
                                 <button wire:click="openEditPermission({{ $perm->id }})"
                                         class="btn btn-sm btn-outline-primary shadow-none mr-1"
@@ -174,8 +228,62 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center py-5 text-muted">
+                            <td colspan="4" class="text-center py-5 text-muted">
                                 <i class="fas fa-key fa-2x mb-2 d-block opacity-50"></i>
+                                No permissions defined yet.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    @if($activeTab === 'matrix')
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="font-weight-bold text-dark"><i class="fas fa-table mr-1 text-primary"></i> Role Permission Matrix</div>
+            <div class="text-muted small mt-1">Green means the permission is assigned to that role. Use the Roles tab to make changes.</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0 role-matrix-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="text-nowrap">Permission</th>
+                        @foreach($roles as $role)
+                            <th class="text-center text-nowrap">
+                                {{ $role->name }}
+                                @if(in_array($role->name, $protectedRoles))
+                                    <i class="fas fa-lock text-muted ml-1" title="Protected role"></i>
+                                @endif
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($permissions as $perm)
+                        <tr>
+                            <td class="text-nowrap">
+                                <code>{{ $perm->name }}</code>
+                                @if(empty($permissionUsage[$perm->name] ?? []))
+                                    <span class="badge badge-warning ml-2">Not enforced</span>
+                                @endif
+                            </td>
+                            @foreach($roles as $role)
+                                @php $hasPermission = $role->permissions->contains('id', $perm->id); @endphp
+                                <td class="text-center">
+                                    @if($hasPermission)
+                                        <span class="matrix-check"><i class="fas fa-check"></i></span>
+                                    @else
+                                        <span class="text-muted">&mdash;</span>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ $roles->count() + 1 }}" class="text-center text-muted py-5">
                                 No permissions defined yet.
                             </td>
                         </tr>
@@ -231,6 +339,27 @@
                     <small class="text-muted">Only applies to custom roles; built-in roles always use their own dashboard.</small>
                 </div>
 
+                @if($editingRoleId && in_array($roleName, $protectedRoles))
+                    <div class="alert alert-warning small border-0">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        <strong>{{ $roleName }}</strong> is a protected system role. Its name and deletion are locked, but permission changes can still affect access throughout the app.
+                    </div>
+                @endif
+
+                <div class="form-group">
+                    <label class="font-weight-bold small d-block mb-2">Role Templates</label>
+                    <div class="d-flex flex-wrap" style="gap:.4rem">
+                        @foreach($roleTemplates as $template => $templatePermissions)
+                            <button type="button" class="btn btn-xs btn-outline-secondary"
+                                    wire:click="applyRoleTemplate('{{ $template }}')"
+                                    title="{{ implode(', ', $templatePermissions) }}">
+                                <i class="fas fa-magic mr-1"></i>{{ $template }}
+                            </button>
+                        @endforeach
+                    </div>
+                    <small class="text-muted d-block mt-1">Templates add recommended permissions to the current selection. Review before saving.</small>
+                </div>
+
                 <div class="form-group mb-0">
                     <label class="font-weight-bold small d-block mb-2">
                         Permissions
@@ -266,6 +395,24 @@
                         </div>
                     @endif
                 </div>
+
+                @if($editingRoleId && (count($rolePermissionPreview['added']) || count($rolePermissionPreview['removed'])))
+                    <div class="mt-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
+                        <div class="font-weight-bold small mb-2"><i class="fas fa-clipboard-list mr-1 text-primary"></i> Save Preview</div>
+                        @if(count($rolePermissionPreview['added']))
+                            <div class="small mb-1">
+                                <span class="badge badge-success mr-1">Added</span>
+                                {{ implode(', ', $rolePermissionPreview['added']) }}
+                            </div>
+                        @endif
+                        @if(count($rolePermissionPreview['removed']))
+                            <div class="small">
+                                <span class="badge badge-danger mr-1">Removed</span>
+                                {{ implode(', ', $rolePermissionPreview['removed']) }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -279,6 +426,65 @@
 </div>
 
 {{-- ══ PERMISSION MODAL ════════════════════════════════════════════════════════ --}}
+<div wire:ignore.self class="modal fade" id="roleUsersModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-users mr-2"></i> Users in {{ $managingRoleName ?: 'Role' }}
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row align-items-end mb-3">
+                    <div class="col">
+                        <label class="font-weight-bold small">Assign User</label>
+                        <select wire:model.defer="userToAssign" class="form-control @error('userToAssign') is-invalid @enderror">
+                            <option value="">Choose staff member...</option>
+                            @foreach($assignableUsers as $user)
+                                <option value="{{ $user->id }}">
+                                    {{ $user->name }} - {{ $user->email }} @if($user->roles->isNotEmpty())({{ $user->roles->pluck('name')->implode(', ') }})@endif
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('userToAssign')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-info font-weight-bold" wire:click="assignUserToManagedRole">
+                            <i class="fas fa-user-plus mr-1"></i> Assign
+                        </button>
+                    </div>
+                </div>
+
+                <div class="list-group">
+                    @forelse(($managingRole?->users ?? collect()) as $user)
+                        <div class="list-group-item d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="font-weight-bold">{{ $user->name }}</div>
+                                <div class="text-muted small">{{ $user->email }} | {{ $user->roles->pluck('name')->implode(', ') ?: 'No role' }}</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    wire:click="removeUserFromManagedRole({{ $user->id }})"
+                                    @if($managingRoleName === 'Super Admin' && auth()->id() === $user->id) disabled @endif>
+                                <i class="fas fa-user-minus mr-1"></i> Remove
+                            </button>
+                        </div>
+                    @empty
+                        <div class="list-group-item text-center text-muted py-4">
+                            No users assigned to this role.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div wire:ignore.self class="modal fade" id="permissionModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content border-0 shadow">
@@ -346,6 +552,7 @@
     });
 
     window.addEventListener('hide-permissionModal', function () { $('#permissionModal').modal('hide'); });
+    window.addEventListener('show-roleUsersModal', function () { $('#roleUsersModal').modal('show'); });
 
     // ── Save actions (called from modal buttons) ──────────────────────────────
     function submitRole() {
@@ -417,5 +624,24 @@
         });
     }
 </script>
+
+<style>
+    .role-matrix-table th,
+    .role-matrix-table td {
+        vertical-align: middle;
+        font-size: .84rem;
+    }
+    .matrix-check {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: .75rem;
+    }
+</style>
 
 </div>{{-- end single Livewire root --}}

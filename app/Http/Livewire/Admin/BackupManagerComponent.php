@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Admin;
 
 use App\Models\Setting;
 use App\Services\LicenseService;
+use App\Support\BackupDiagnostics;
 use App\Support\Feature;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
@@ -237,9 +238,30 @@ class BackupManagerComponent extends Component
     {
         $this->isRunning   = true;
         $this->copyResults = [];
+        cache()->forget('backup_last_error');
 
+        $this->runBackupCommand(
+            'backup:run --only-db --disable-notifications',
+            'Database backup completed successfully. The file appears in the list below.'
+        );
+    }
+
+    public function runFullBackup(): void
+    {
+        $this->isRunning   = true;
+        $this->copyResults = [];
+        cache()->forget('backup_last_error');
+
+        $this->runBackupCommand(
+            'backup:run --disable-notifications',
+            'Full backup completed successfully. Database, uploads, and configured files were archived.'
+        );
+    }
+
+    private function runBackupCommand(string $command, string $successMessage): void
+    {
         try {
-            Artisan::call('backup:run --only-db --disable-notifications');
+            Artisan::call($command);
             $output = Artisan::output();
             $success = str_contains($output, 'Backup completed');
 
@@ -249,10 +271,15 @@ class BackupManagerComponent extends Component
             }
 
             $this->dispatchBrowserEvent('notify', $success
-                ? ['type' => 'success', 'message' => 'Backup completed successfully. The file appears in the list below.']
+                ? ['type' => 'success', 'message' => $successMessage]
                 : ['type' => 'warning', 'message' => 'Backup finished but the output was unexpected. Check storage manually.']
             );
+
+            if (!$success) {
+                cache()->put('backup_last_error', trim($output) ?: 'Backup output was unexpected.', now()->addDays(7));
+            }
         } catch (\Throwable $e) {
+            cache()->put('backup_last_error', $e->getMessage(), now()->addDays(7));
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Backup failed. Check your database connection and mysqldump configuration.']);
         }
 
@@ -375,6 +402,7 @@ class BackupManagerComponent extends Component
         return view('livewire.admin.backup-manager-component', [
             'backups'   => $backups,
             'totalSize' => $this->humanFileSize($backups->sum('size')),
+            'diagnostics' => BackupDiagnostics::check(),
         ])->layout('layouts.admin.admin-layout');
     }
 

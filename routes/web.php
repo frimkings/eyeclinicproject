@@ -5,6 +5,8 @@ use App\Http\Controllers\Cashier\ReceiptController;
 use App\Http\Controllers\Doctor\DoctorDashboardController;
 use App\Http\Controllers\Secretary\SecretaryDashboardController;
 use App\Http\Livewire\Admin\CategoryComponent;
+use App\Http\Livewire\Admin\ClinicalTaskCenterComponent;
+use App\Http\Livewire\Admin\OfflineHealthDashboardComponent;
 use App\Http\Livewire\Admin\ProductsComponent;
 use App\Http\Livewire\CartComponent;
 use App\Http\Livewire\Cashier\CashierDashboardComponent;
@@ -155,7 +157,7 @@ Route::get('/cashier/clearance-receipt/{id}', function ($id) {
 
 
 Route::get('/reports/export/pdf', [\App\Http\Controllers\ReportExportController::class, 'exportPdf'])
-    ->middleware(['auth', 'role:Super Admin', 'feature:advanced_reports'])
+    ->middleware(['auth', 'role_or_permission:Super Admin|export reports', 'feature:advanced_reports'])
     ->name('reports.export.pdf');
 
 
@@ -200,6 +202,7 @@ Route::get('/admin/expenses/receipt/{filename}', function (string $filename) {
     return response()->file(\Illuminate\Support\Facades\Storage::disk('public')->path($path));
 })->name('admin.expenses.receipt')->middleware(['auth']);
 Route::get('admin/dashboard', AdminDashboardController::class)->name('admin.dashboard');
+Route::get('admin/clinical-task-center', ClinicalTaskCenterComponent::class)->name('admin.clinical-task-center');
 Route::get('admin/category', CategoryComponent::class)->name('admin.category');
 Route::get('admin/product', ProductsComponent::class)->name('admin.product');
 Route::get('admin/suppliers', \App\Http\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers')->middleware('feature:inventory');
@@ -232,11 +235,13 @@ Route::get('/admin/patient-recall', \App\Http\Livewire\Admin\PatientRecallCompon
 
 });
 
-Route::get('admin/users', UserRoleManagerComponent::class)->middleware(['auth', 'role:Super Admin'])->name('admin.users');
+Route::get('admin/users', UserRoleManagerComponent::class)->middleware(['auth', 'role_or_permission:Super Admin|manage users'])->name('admin.users');
 Route::get('admin/roles-permissions', RolePermissionManagerComponent::class)->middleware(['auth', 'role:Super Admin'])->name('admin.roles-permissions');
 Route::get('admin/password-reset-approvals', fn() => redirect()->route('admin.approvals', ['type' => 'password_reset']))->middleware(['auth', 'role:Super Admin'])->name('admin.password-reset-approvals');
 
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
+    Route::get('admin/offline-health', OfflineHealthDashboardComponent::class)->name('admin.offline-health');
+
     // Legacy URLs redirect to the unified settings page with the correct tab
     Route::get('admin/backups',          fn() => redirect()->route('admin.settings', ['tab' => 'backup']))->name('admin.backups');
     Route::get('admin/report-delivery',  fn() => redirect()->route('admin.settings', ['tab' => 'report']))->name('admin.report-delivery')->middleware('feature:report_delivery');
@@ -265,7 +270,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     })->name('admin.backup.download')->middleware('feature:manual_backup');
 });
 
-Route::middleware(['auth', 'role:Manager|Super Admin', 'feature:approvals'])->group(function () {
+Route::middleware(['auth', 'role_or_permission:Manager|Super Admin|manage billing|approve clearance revoke', 'feature:approvals'])->group(function () {
     Route::get('admin/approvals', AllApprovalsComponent::class)->name('admin.approvals');
     Route::get('admin/discount-approvals', fn() => redirect()->route('admin.approvals', ['type' => 'discount']))->name('admin.discount-approvals');
     Route::get('admin/refund-approvals', fn() => redirect()->route('admin.approvals', ['type' => 'refund']))->name('admin.refund-approvals');

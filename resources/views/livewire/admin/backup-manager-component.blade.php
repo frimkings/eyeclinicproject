@@ -10,19 +10,32 @@
             <button type="button"
                     wire:click="runBackup"
                     wire:loading.attr="disabled"
-                    wire:target="runBackup"
+                    wire:target="runBackup,runFullBackup"
                     class="btn btn-primary font-weight-bold shadow-sm">
-                <span wire:loading.remove wire:target="runBackup">
-                    <i class="fas fa-play mr-1"></i> Run Backup Now
+                <span wire:loading.remove wire:target="runBackup,runFullBackup">
+                    <i class="fas fa-database mr-1"></i> DB Backup
                 </span>
                 <span wire:loading wire:target="runBackup">
                     <i class="fas fa-spinner fa-spin mr-1"></i> Running… please wait
                 </span>
             </button>
             <button type="button"
+                    wire:click="runFullBackup"
+                    wire:loading.attr="disabled"
+                    wire:target="runBackup,runFullBackup"
+                    class="btn btn-success font-weight-bold shadow-sm"
+                    title="Back up the database plus uploaded pictures, documents, PDFs, and configured files">
+                <span wire:loading.remove wire:target="runBackup,runFullBackup">
+                    <i class="fas fa-archive mr-1"></i> Full Backup
+                </span>
+                <span wire:loading wire:target="runFullBackup">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Runningâ€¦ please wait
+                </span>
+            </button>
+            <button type="button"
                     wire:click="cleanBackups"
                     wire:loading.attr="disabled"
-                    wire:target="cleanBackups"
+                    wire:target="cleanBackups,runBackup,runFullBackup"
                     class="btn btn-outline-secondary"
                     title="Remove old backups per retention policy">
                 <span wire:loading.remove wire:target="cleanBackups"><i class="fas fa-broom mr-1"></i> Prune Now</span>
@@ -68,6 +81,64 @@
                 </div>
                 <div class="icon"><i class="fas fa-calendar-check"></i></div>
             </div>
+        </div>
+    </div>
+
+    {{-- Backup diagnostics --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+            <span class="font-weight-bold"><i class="fas fa-stethoscope mr-1 text-info"></i> Backup Diagnostics</span>
+            <span class="badge badge-{{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] ? 'success' : 'danger' }}">
+                {{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] ? 'Ready' : 'Needs Attention' }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6 mb-3">
+                    <div class="p-3 h-100 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
+                        <div class="font-weight-bold mb-2"><i class="fas fa-terminal mr-1 text-primary"></i> MySQL Dump Tool</div>
+                        <div class="diag-row"><span>Configured path</span><code>{{ $diagnostics['configured_path'] }}</code></div>
+                        <div class="diag-row"><span>Detected path</span><code>{{ $diagnostics['resolved_path'] }}</code></div>
+                        <div class="diag-row"><span>Executable</span><code>{{ $diagnostics['executable'] }}</code></div>
+                        <div class="diag-row"><span>Version</span><strong>{{ \Illuminate\Support\Str::limit($diagnostics['binary_version'], 120) }}</strong></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                    <div class="p-3 h-100 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
+                        <div class="font-weight-bold mb-2"><i class="fas fa-server mr-1 text-success"></i> Database & Storage</div>
+                        <div class="diag-row"><span>MySQL server</span><strong>{{ $diagnostics['server_version'] }}</strong></div>
+                        <div class="diag-row"><span>Backup folder</span><code>{{ $diagnostics['backup_root'] }}</code></div>
+                        <div class="diag-row">
+                            <span>Folder writable</span>
+                            <strong class="text-{{ $diagnostics['backup_root_writable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_root_writable'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Backup disk readable</span>
+                            <strong class="text-{{ $diagnostics['backup_disk_readable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_disk_readable'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if($diagnostics['last_error'])
+                <div class="alert alert-danger mb-3">
+                    <strong><i class="fas fa-exclamation-triangle mr-1"></i> Last backup error:</strong>
+                    <div class="small mt-1">{{ $diagnostics['last_error'] }}</div>
+                </div>
+            @endif
+
+            <div class="collapse" id="backupDiagnosticCandidates">
+                <div class="small text-muted mb-2">Auto-detect checks these folders in order for <code>mysqldump.exe</code>:</div>
+                <div class="d-flex flex-column" style="gap:.25rem">
+                    @foreach($diagnostics['candidates'] as $candidate)
+                        <code class="d-block p-2 rounded" style="background:#f1f5f9">{{ $candidate }}</code>
+                    @endforeach
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#backupDiagnosticCandidates">
+                <i class="fas fa-list mr-1"></i> Show Detection Paths
+            </button>
         </div>
     </div>
 
@@ -609,5 +680,25 @@
 }
 .fb-folder-row:hover .fa-folder {
     color: #e6911a;
+}
+.diag-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #edf2f7;
+    padding: 7px 0;
+    font-size: .84rem;
+}
+.diag-row:last-child {
+    border-bottom: 0;
+}
+.diag-row span {
+    color: #64748b;
+    flex: 0 0 130px;
+}
+.diag-row code,
+.diag-row strong {
+    text-align: right;
+    word-break: break-all;
 }
 </style>

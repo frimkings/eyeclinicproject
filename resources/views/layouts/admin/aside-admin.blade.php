@@ -15,6 +15,13 @@
             </a>
           </li>
 
+          <li class="nav-item">
+            <a href="{{ route('admin.clinical-task-center') }}" class="nav-link {{ request()->is('admin/clinical-task-center') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-clipboard-check"></i>
+              <p>Clinical Task Center</p>
+            </a>
+          </li>
+
           {{-- Clinical --}}
           <li class="nav-item">
             <a href="#" class="nav-link">
@@ -235,6 +242,11 @@
               <li class="nav-item">
                 <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->is('admin/settings*') ? 'active' : '' }}">
                   <i class="far fa-circle nav-icon"></i><p>Settings</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('admin.offline-health') }}" class="nav-link {{ request()->is('admin/offline-health') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon text-success"></i><p>Offline Health</p>
                 </a>
               </li>
               <li class="nav-item">

@@ -9,6 +9,8 @@
         $routeTitles = [
             // Admin
             'admin.dashboard'               => 'Admin Dashboard',
+            'admin.clinical-task-center'    => 'Clinical Task Center',
+            'admin.offline-health'          => 'Offline Health Dashboard',
             'admin.category'                => 'Categories',
             'admin.product'                 => 'Products',
             'admin.suppliers'               => 'Suppliers',
@@ -405,6 +407,7 @@
     var warnTimer;
     var logoutTimer;
     var warningOpen = false;
+    var warningTitle = 'Session Expiring';
 
     function now() {
         return Date.now();
@@ -435,11 +438,11 @@
     function resetTimers() {
         clearTimeout(warnTimer);
         clearTimeout(logoutTimer);
-        warningOpen = false;
 
-        if (window.Swal && Swal.isVisible()) {
+        if (warningOpen && window.Swal && Swal.isVisible() && Swal.getTitle()?.textContent === warningTitle) {
             Swal.close();
         }
+        warningOpen = false;
 
         var remaining = Math.max(0, IDLE_LIMIT - (now() - lastActivityAt()));
         var warnIn = Math.max(0, remaining - WARN_BEFORE);
@@ -449,7 +452,7 @@
 
             if (window.Swal) {
                 Swal.fire({
-                    title: 'Session Expiring',
+                    title: warningTitle,
                     html: 'Your session will expire in <strong>1 minute</strong> due to inactivity.',
                     icon: 'warning',
                     timer: WARN_BEFORE,
@@ -458,6 +461,8 @@
                     confirmButtonText: 'Stay Logged In',
                     confirmButtonColor: '#3085d6',
                 }).then(function (result) {
+                    warningOpen = false;
+
                     if (result.isConfirmed) {
                         markActivity();
                     }
