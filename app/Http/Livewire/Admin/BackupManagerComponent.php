@@ -261,9 +261,9 @@ class BackupManagerComponent extends Component
     private function runBackupCommand(string $command, string $successMessage): void
     {
         try {
-            Artisan::call($command);
+            $exitCode = Artisan::call($command);
             $output = Artisan::output();
-            $success = str_contains($output, 'Backup completed');
+            $success = $exitCode === 0 && str_contains($output, 'Backup completed');
 
             if ($success && !empty($this->extraPaths)) {
                 Artisan::call('backup:copy-to-drives');
@@ -276,10 +276,21 @@ class BackupManagerComponent extends Component
             );
 
             if (!$success) {
-                cache()->put('backup_last_error', trim($output) ?: 'Backup output was unexpected.', now()->addDays(7));
+                cache()->put('backup_last_error', trim($output) ?: "Backup command exited with code {$exitCode}.", now()->addDays(7));
             }
         } catch (\Throwable $e) {
-            cache()->put('backup_last_error', $e->getMessage(), now()->addDays(7));
+            $output = trim(Artisan::output());
+            $message = get_class($e) . ': ' . $e->getMessage();
+
+            if ($output !== '') {
+                $message .= "\n\nCommand output:\n" . $output;
+            }
+
+            if ($e->getPrevious()) {
+                $message .= "\n\nPrevious error:\n" . get_class($e->getPrevious()) . ': ' . $e->getPrevious()->getMessage();
+            }
+
+            cache()->put('backup_last_error', $message, now()->addDays(7));
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Backup failed. Check your database connection and mysqldump configuration.']);
         }
 

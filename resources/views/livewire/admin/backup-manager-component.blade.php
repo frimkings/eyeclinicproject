@@ -88,8 +88,8 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
             <span class="font-weight-bold"><i class="fas fa-stethoscope mr-1 text-info"></i> Backup Diagnostics</span>
-            <span class="badge badge-{{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] ? 'success' : 'danger' }}">
-                {{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] ? 'Ready' : 'Needs Attention' }}
+            <span class="badge badge-{{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] && $diagnostics['temporary_directory_ready'] && $diagnostics['zip_extension_loaded'] && $diagnostics['proc_open_enabled'] ? 'success' : 'danger' }}">
+                {{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] && $diagnostics['temporary_directory_ready'] && $diagnostics['zip_extension_loaded'] && $diagnostics['proc_open_enabled'] ? 'Ready' : 'Needs Attention' }}
             </span>
         </div>
         <div class="card-body">
@@ -107,14 +107,29 @@
                     <div class="p-3 h-100 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
                         <div class="font-weight-bold mb-2"><i class="fas fa-server mr-1 text-success"></i> Database & Storage</div>
                         <div class="diag-row"><span>MySQL server</span><strong>{{ $diagnostics['server_version'] }}</strong></div>
+                        <div class="diag-row"><span>Database</span><strong>{{ $diagnostics['database_name'] }}</strong></div>
+                        <div class="diag-row"><span>DB user</span><strong>{{ $diagnostics['database_user'] }}</strong></div>
                         <div class="diag-row"><span>Backup folder</span><code>{{ $diagnostics['backup_root'] }}</code></div>
                         <div class="diag-row">
                             <span>Folder writable</span>
                             <strong class="text-{{ $diagnostics['backup_root_writable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_root_writable'] ? 'Yes' : 'No' }}</strong>
                         </div>
+                        <div class="diag-row"><span>Temp folder</span><code>{{ $diagnostics['temporary_directory'] }}</code></div>
+                        <div class="diag-row">
+                            <span>Temp writable</span>
+                            <strong class="text-{{ $diagnostics['temporary_directory_ready'] ? 'success' : 'danger' }}">{{ $diagnostics['temporary_directory_ready'] ? 'Yes' : 'No' }}</strong>
+                        </div>
                         <div class="diag-row">
                             <span>Backup disk readable</span>
                             <strong class="text-{{ $diagnostics['backup_disk_readable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_disk_readable'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>PHP zip</span>
+                            <strong class="text-{{ $diagnostics['zip_extension_loaded'] ? 'success' : 'danger' }}">{{ $diagnostics['zip_extension_loaded'] ? 'Enabled' : 'Missing' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Process runner</span>
+                            <strong class="text-{{ $diagnostics['proc_open_enabled'] ? 'success' : 'danger' }}">{{ $diagnostics['proc_open_enabled'] ? 'Enabled' : 'Disabled' }}</strong>
                         </div>
                     </div>
                 </div>
@@ -123,7 +138,7 @@
             @if($diagnostics['last_error'])
                 <div class="alert alert-danger mb-3">
                     <strong><i class="fas fa-exclamation-triangle mr-1"></i> Last backup error:</strong>
-                    <div class="small mt-1">{{ $diagnostics['last_error'] }}</div>
+                    <pre class="small mt-2 mb-0 p-2 rounded" style="white-space:pre-wrap;background:#fff5f5;border:1px solid #f5c2c7">{{ $diagnostics['last_error'] }}</pre>
                 </div>
             @endif
 

@@ -14,6 +14,9 @@ class BackupDiagnostics
         $resolved = MysqlDumpPath::resolve($configured);
         $executable = MysqlDumpPath::executable($resolved);
         $backupRoot = storage_path('app/backups');
+        $temporaryDirectory = config('backup.backup.temporary_directory') ?? storage_path('app/backup-temp');
+        $database = config('database.connections.mysql.database');
+        $username = config('database.connections.mysql.username');
 
         return [
             'configured_path' => $configured ?: 'Auto-detect',
@@ -22,9 +25,15 @@ class BackupDiagnostics
             'binary_exists' => $executable !== null,
             'binary_version' => $executable ? static::binaryVersion($executable) : 'mysqldump.exe was not found.',
             'server_version' => static::serverVersion(),
+            'database_name' => $database ?: 'Not configured',
+            'database_user' => $username ?: 'Not configured',
             'backup_root' => $backupRoot,
             'backup_root_writable' => is_dir($backupRoot) && is_writable($backupRoot),
             'backup_disk_readable' => static::backupDiskReadable(),
+            'temporary_directory' => $temporaryDirectory,
+            'temporary_directory_ready' => static::directoryReady($temporaryDirectory),
+            'zip_extension_loaded' => extension_loaded('zip'),
+            'proc_open_enabled' => static::procOpenEnabled(),
             'last_error' => cache('backup_last_error'),
             'candidates' => MysqlDumpPath::candidatePaths(),
         ];
@@ -63,5 +72,25 @@ class BackupDiagnostics
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private static function directoryReady(string $path): bool
+    {
+        if (!is_dir($path)) {
+            @mkdir($path, 0755, true);
+        }
+
+        return is_dir($path) && is_writable($path);
+    }
+
+    private static function procOpenEnabled(): bool
+    {
+        if (!function_exists('proc_open')) {
+            return false;
+        }
+
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+
+        return !in_array('proc_open', $disabled, true);
     }
 }

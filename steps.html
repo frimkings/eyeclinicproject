@@ -10,9 +10,9 @@ composer install --ignore-platform-req=php --ignore-platform-req=ext-zip
 php artisan db:seed --class=UserSeeder
 
 
-<VirtualHost 192.168.100.4:80>
+<VirtualHost 192.168.100.67:80>
     DocumentRoot "C:/laragon/www/eyeclinicproject/public"
-    ServerName 192.168.100.4
+    ServerName 192.168.100.67
     ServerAlias eyeclinicproject.test *.eyeclinicproject.test
     <Directory "C:/laragon/www/eyeclinicproject/public">
         AllowOverride All
@@ -25,3 +25,23 @@ php artisan db:seed --class=UserSeeder
 SETUP BACKUP
 cd C:\laragon\www\eyeclinicproject
 php artisan setup:scheduler
+
+
+<VirtualHost *:80>
+    ServerName 192.168.100.26
+    DocumentRoot "C:/laragon/www/eyeclinicproject/public"
+
+    <Directory "C:/laragon/www/eyeclinicproject/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+
+255.255.255.0
+192.168.100.1
+8.8.8.8
+8.8.4.4
+
+cd C:\laragon\www\eyeclinicproject
+php keygen.php
