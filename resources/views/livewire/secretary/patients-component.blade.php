@@ -198,7 +198,59 @@
                             @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Insurance Details (optional) --}}
+                        <div class="border rounded p-2 mb-3" style="background:#f8f9fa;">
+                            <div class="small font-weight-bold text-muted mb-2">
+                                <i class="fas fa-wallet mr-1 text-primary"></i>PAYMENT TYPE
+                            </div>
+                            <div class="btn-group btn-group-sm w-100 shadow-sm" role="group">
+                                <button type="button"
+                                        wire:click="choosePaymentType('cash')"
+                                        class="btn {{ $paymentType === 'cash' ? 'btn-success' : 'btn-light border' }} font-weight-bold">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Cash
+                                </button>
+                                <button type="button"
+                                        wire:click="openInsuranceModal"
+                                        class="btn {{ $paymentType === 'insurance' ? 'btn-primary' : 'btn-light border' }} font-weight-bold">
+                                    <i class="fas fa-shield-alt mr-1"></i>Insurance
+                                </button>
+                            </div>
+
+                            @if($paymentType === 'insurance')
+                                <div class="mt-2 p-2 rounded bg-white border small">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="font-weight-bold text-dark">
+                                                {{ optional($insurers->firstWhere('id', (int) ($state['insurer_id'] ?? 0)))->name ?? 'Insurance details pending' }}
+                                            </div>
+                                            <div class="text-muted">
+                                                {{ $state['insurance_member_id'] ?: 'No member ID' }}
+                                                @if($state['insurance_policy_number'])
+                                                    &middot; {{ $state['insurance_policy_number'] }}
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <button type="button" wire:click="openInsuranceModal" class="btn btn-xs btn-outline-primary">
+                                            Edit
+                                        </button>
+                                    </div>
+                                    @error('insurer_id') <span class="text-danger d-block mt-1">{{ $message }}</span> @enderror
+                                    @error('insurance_member_id') <span class="text-danger d-block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($showInsuranceModal)
+                        <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.45);">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-primary text-white py-2">
+                                        <h6 class="modal-title mb-0 font-weight-bold">
+                                            <i class="fas fa-shield-alt mr-1"></i>Insurance Details
+                                        </h6>
+                                        <button type="button" wire:click="closeInsuranceModal" class="close text-white"><span>&times;</span></button>
+                                    </div>
+                                    <div class="modal-body">
+                        {{-- Insurance Details --}}
                         <div class="border rounded p-2 mb-3" style="background:#f8f9fa;">
                             <div class="small font-weight-bold text-muted mb-2">
                                 <i class="fas fa-shield-alt mr-1 text-primary"></i>INSURANCE DETAILS
@@ -215,14 +267,21 @@
                                 @error('insurer_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                             <div class="row">
-                                <div class="col-6 form-group mb-0">
+                                <div class="col-4 form-group mb-0">
                                     <label class="small text-muted">Member ID</label>
                                     <input type="text" wire:model.defer="state.insurance_member_id"
                                            class="form-control form-control-sm bg-light border-0 @error('insurance_member_id') is-invalid @enderror"
                                            placeholder="e.g. NHIS-123456">
                                     @error('insurance_member_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="col-6 form-group mb-0">
+                                <div class="col-4 form-group mb-0">
+                                    <label class="small text-muted">Member Name</label>
+                                    <input type="text" wire:model.defer="state.insurance_member_name"
+                                           class="form-control form-control-sm bg-light border-0 @error('insurance_member_name') is-invalid @enderror"
+                                           placeholder="As on card">
+                                    @error('insurance_member_name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="col-4 form-group mb-0">
                                     <label class="small text-muted">Policy Number</label>
                                     <input type="text" wire:model.defer="state.insurance_policy_number"
                                            class="form-control form-control-sm bg-light border-0 @error('insurance_policy_number') is-invalid @enderror"
@@ -231,6 +290,19 @@
                                 </div>
                             </div>
                         </div>
+                                    </div>
+                                    <div class="modal-footer py-2">
+                                        <button type="button" wire:click="choosePaymentType('cash')" class="btn btn-light border">
+                                            Use Cash
+                                        </button>
+                                        <button type="button" wire:click="closeInsuranceModal" class="btn btn-primary">
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
 
                         <button type="submit" class="btn {{ $isEditing ? 'btn-info' : 'btn-primary' }} btn-block py-2 font-weight-bold shadow-sm mt-3">
                             {{ $isEditing ? 'UPDATE RECORD' : 'SAVE PATIENT' }}

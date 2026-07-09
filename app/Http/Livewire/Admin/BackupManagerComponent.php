@@ -6,9 +6,12 @@ use App\Models\Setting;
 use App\Services\LicenseService;
 use App\Support\BackupDiagnostics;
 use App\Support\Feature;
+use App\Support\MysqlDumpPath;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use RuntimeException;
+use Symfony\Component\Process\Process;
 
 class BackupManagerComponent extends Component
 {
@@ -240,10 +243,7 @@ class BackupManagerComponent extends Component
         $this->copyResults = [];
         cache()->forget('backup_last_error');
 
-        $this->runBackupCommand(
-            'backup:run --only-db --disable-notifications',
-            'Database backup completed successfully. The file appears in the list below.'
-        );
+        $this->runRawDatabaseBackup();
     }
 
     public function runFullBackup(): void
@@ -297,6 +297,152 @@ class BackupManagerComponent extends Component
         $this->isRunning = false;
     }
 
+    private function runRawDatabaseBackup(): void
+    {
+        $credentialsFile = null;
+
+        try {
+            $connection = config('database.connections.mysql');
+            $database = (string) ($connection['database'] ?? '');
+
+            if ($database === '') {
+                throw new RuntimeException('Database name is not configured.');
+            }
+
+            $dumpPath = MysqlDumpPath::resolve(env('DB_DUMP_BINARY_PATH'));
+            $executable = MysqlDumpPath::executable($dumpPath);
+
+            if (!$executable) {
+                throw new RuntimeException('mysqldump.exe was not found. Check DB_DUMP_BINARY_PATH or Laragon MySQL.');
+            }
+
+            $disk = Storage::disk('backups');
+            $folder = trim((string) config('backup.backup.name'), '/\\');
+            $disk->makeDirectory($folder);
+
+            $safeDatabase = preg_replace('/[^A-Za-z0-9_-]+/', '-', $database) ?: 'database';
+            $filename = 'database-' . $safeDatabase . '-' . now()->format('Y-m-d-H-i-s') . '.sql';
+            $relativePath = $folder . '/' . $filename;
+            $absolutePath = $disk->path($relativePath);
+
+            if (!is_dir(dirname($absolutePath))) {
+                mkdir(dirname($absolutePath), 0755, true);
+            }
+
+            $tempDir = config('backup.backup.temporary_directory') ?? storage_path('app/backup-temp');
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            $credentialsFile = tempnam($tempDir, 'mysql-backup-');
+            if ($credentialsFile === false) {
+                throw new RuntimeException('Could not create temporary MySQL credentials file.');
+            }
+
+            file_put_contents($credentialsFile, $this->mysqlCredentialsFileContents($connection));
+
+            $command = [
+                $executable,
+                '--defaults-extra-file=' . $credentialsFile,
+                '--skip-comments',
+                '--extended-insert',
+                '--single-transaction',
+                '--quick',
+                '--skip-lock-tables',
+                '--column-statistics=0',
+                '--set-gtid-purged=OFF',
+                '--default-character-set=' . ($connection['charset'] ?? 'utf8mb4'),
+                '--result-file=' . $absolutePath,
+                $database,
+            ];
+
+            $process = new Process($command);
+            $process->setTimeout((int) ($connection['dump']['timeout'] ?? 300));
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new RuntimeException(trim($process->getErrorOutput() ?: $process->getOutput()) ?: 'mysqldump failed.');
+            }
+
+            clearstatcache(true, $absolutePath);
+            if (!is_file($absolutePath) || filesize($absolutePath) <= 0) {
+                throw new RuntimeException('mysqldump finished but the SQL file was not created.');
+            }
+
+            $this->copyBackupFileToExtraPaths($absolutePath, $filename);
+
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'success',
+                'message' => 'Database SQL backup completed successfully. The .sql file appears in the list below.',
+            ]);
+        } catch (\Throwable $e) {
+            cache()->put('backup_last_error', get_class($e) . ': ' . $e->getMessage(), now()->addDays(7));
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Database SQL backup failed. Check Backup Diagnostics.']);
+        } finally {
+            if ($credentialsFile && is_file($credentialsFile)) {
+                @unlink($credentialsFile);
+            }
+
+            $this->isRunning = false;
+        }
+    }
+
+    private function mysqlCredentialsFileContents(array $connection): string
+    {
+        $lines = [
+            '[client]',
+            $this->mysqlOptionLine('user', $connection['username'] ?? ''),
+            $this->mysqlOptionLine('port', $connection['port'] ?? 3306),
+        ];
+
+        if (($connection['password'] ?? '') !== '') {
+            $lines[] = $this->mysqlOptionLine('password', $connection['password']);
+        }
+
+        if (($connection['unix_socket'] ?? '') !== '') {
+            $lines[] = $this->mysqlOptionLine('socket', $connection['unix_socket']);
+        } else {
+            $lines[] = $this->mysqlOptionLine('host', $connection['host'] ?? '127.0.0.1');
+        }
+
+        return implode(PHP_EOL, $lines) . PHP_EOL;
+    }
+
+    private function mysqlOptionLine(string $key, mixed $value): string
+    {
+        $escaped = str_replace(['\\', '"'], ['\\\\', '\\"'], (string) $value);
+
+        return $key . '="' . $escaped . '"';
+    }
+
+    private function copyBackupFileToExtraPaths(string $sourcePath, string $filename): void
+    {
+        $this->copyResults = [];
+
+        if (empty($this->extraPaths)) {
+            return;
+        }
+
+        foreach ($this->extraPaths as $path) {
+            if (!is_dir($path)) {
+                $this->copyResults[] = ['path' => $path, 'ok' => false, 'reason' => 'Drive not connected'];
+                continue;
+            }
+
+            if (!is_writable($path)) {
+                $this->copyResults[] = ['path' => $path, 'ok' => false, 'reason' => 'Not writable'];
+                continue;
+            }
+
+            try {
+                copy($sourcePath, rtrim($path, '/\\') . DIRECTORY_SEPARATOR . $filename);
+                $this->copyResults[] = ['path' => $path, 'ok' => true, 'reason' => ''];
+            } catch (\Throwable $e) {
+                $this->copyResults[] = ['path' => $path, 'ok' => false, 'reason' => $e->getMessage()];
+            }
+        }
+    }
+
     public function cleanBackups(): void
     {
         try {
@@ -332,6 +478,10 @@ class BackupManagerComponent extends Component
     {
         $backup = $this->resolveBackupByIndex($index);
         if (!$backup) return;
+        if (($backup['extension'] ?? '') !== 'zip') {
+            $this->dispatchBrowserEvent('notify', ['type' => 'info', 'message' => 'Only full ZIP backups can be restored from this button. SQL files are database-only exports.']);
+            return;
+        }
         $this->dispatchBrowserEvent('show-backup-restore-confirmation', [
             'index' => $index,
             'name'  => $backup['name'],
@@ -426,6 +576,7 @@ class BackupManagerComponent extends Component
             ->map(fn ($path) => [
                 'path'          => $path,
                 'name'          => basename($path),
+                'extension'     => strtolower(pathinfo($path, PATHINFO_EXTENSION)),
                 'size'          => $disk->size($path),
                 'size_human'    => $this->humanFileSize($disk->size($path)),
                 'last_modified' => $disk->lastModified($path),

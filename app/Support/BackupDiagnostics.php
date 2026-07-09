@@ -18,6 +18,13 @@ class BackupDiagnostics
         $database = config('database.connections.mysql.database');
         $username = config('database.connections.mysql.username');
 
+        $dbBackupReady = $executable !== null
+            && is_dir($backupRoot)
+            && is_writable($backupRoot)
+            && static::backupDiskReadable()
+            && static::directoryReady($temporaryDirectory)
+            && static::procOpenEnabled();
+
         return [
             'configured_path' => $configured ?: 'Auto-detect',
             'resolved_path' => $resolved ?: 'Not found',
@@ -34,6 +41,8 @@ class BackupDiagnostics
             'temporary_directory_ready' => static::directoryReady($temporaryDirectory),
             'zip_extension_loaded' => extension_loaded('zip'),
             'proc_open_enabled' => static::procOpenEnabled(),
+            'db_backup_ready' => $dbBackupReady,
+            'full_backup_ready' => $dbBackupReady && extension_loaded('zip'),
             'last_error' => cache('backup_last_error'),
             'candidates' => MysqlDumpPath::candidatePaths(),
         ];

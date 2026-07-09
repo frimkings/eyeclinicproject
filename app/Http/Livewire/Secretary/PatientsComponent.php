@@ -9,6 +9,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class PatientsComponent extends Component
@@ -24,6 +25,8 @@ class PatientsComponent extends Component
     public $isEditing = false;
     public $formMessage = '';
     public $formMessageType = 'info';
+    public $paymentType = 'cash';
+    public $showInsuranceModal = false;
     public $activeTab = 'today';
     public $birthdaysTodayCount = 0;
 
@@ -320,21 +323,59 @@ class PatientsComponent extends Component
             'id' => null, 'pxnumber' => '', 'name' => '', 'contact' => '', 'email' => '',
             'dob' => '', 'gender' => '', 'address' => '', 'occupation' => '',
             'civil_status' => '',
-            'insurer_id' => null, 'insurance_member_id' => '', 'insurance_policy_number' => '',
+            'insurer_id' => null, 'insurance_member_id' => '', 'insurance_member_name' => '', 'insurance_policy_number' => '',
         ];
         $this->nameSearch = '';
         $this->isEditing  = false;
+        $this->paymentType = 'cash';
+        $this->showInsuranceModal = false;
         $this->formMessage = '';
         $this->formMessageType = 'info';
+        $this->resetValidation();
+    }
+
+    public function choosePaymentType(string $type): void
+    {
+        $this->paymentType = $type === 'insurance' ? 'insurance' : 'cash';
+
+        if ($this->paymentType === 'cash') {
+            $this->clearInsuranceDetails();
+            return;
+        }
+
+        $this->showInsuranceModal = true;
+    }
+
+    public function openInsuranceModal(): void
+    {
+        $this->paymentType = 'insurance';
+        $this->showInsuranceModal = true;
+    }
+
+    public function closeInsuranceModal(): void
+    {
+        $this->showInsuranceModal = false;
+    }
+
+    public function clearInsuranceDetails(): void
+    {
+        $this->state['insurer_id'] = null;
+        $this->state['insurance_member_id'] = '';
+        $this->state['insurance_member_name'] = '';
+        $this->state['insurance_policy_number'] = '';
+        $this->showInsuranceModal = false;
         $this->resetValidation();
     }
 
     public function saveEntry()
     {
         $this->state['name'] = $this->nameSearch;
+        if ($this->paymentType !== 'insurance') {
+            $this->clearInsuranceDetails();
+        }
         $this->state['insurer_id'] = $this->state['insurer_id'] ?: null;
 
-        $validatedData = Validator::make($this->state, [
+        $validator = Validator::make($this->state, [
             'name'         => 'required|string|max:255',
             'contact'      => 'required',
             'email'        => 'nullable|email',
@@ -343,10 +384,35 @@ class PatientsComponent extends Component
             'address'      => 'required',
             'occupation'               => 'nullable',
             'civil_status'             => 'nullable',
-            'insurer_id'               => 'nullable|integer|exists:insurers,id',
+            'insurer_id'               => [
+                $this->paymentType === 'insurance' ? 'required' : 'nullable',
+                Rule::exists('insurers', 'id')
+                    ->where(fn ($query) => $query->where('active', true)->whereNull('deleted_at')),
+            ],
             'insurance_member_id'      => 'nullable|string|max:60',
+            'insurance_member_name'    => 'nullable|string|max:120',
             'insurance_policy_number'  => 'nullable|string|max:60',
-        ])->validate();
+        ], [], [
+            'insurer_id' => 'Insurer',
+            'insurance_member_id' => 'Member ID',
+            'insurance_member_name' => 'Member Name',
+            'insurance_policy_number' => 'Policy Number',
+        ]);
+
+        $validator->after(function ($validator) {
+            if ($this->paymentType !== 'insurance') {
+                return;
+            }
+
+            if (
+                trim((string) ($this->state['insurance_member_id'] ?? '')) === ''
+                && trim((string) ($this->state['insurance_policy_number'] ?? '')) === ''
+            ) {
+                $validator->errors()->add('insurance_member_id', 'Enter either the member ID or policy number.');
+            }
+        });
+
+        $validatedData = $validator->validate();
 
         if ($this->isEditing) {
             $patient = Patient::find($this->state['id']);
@@ -480,6 +546,8 @@ class PatientsComponent extends Component
         $this->state      = $patient->toArray();
         $this->nameSearch = $patient->name;
         $this->isEditing  = true;
+        $this->paymentType = $patient->insurer_id ? 'insurance' : 'cash';
+        $this->showInsuranceModal = false;
         $this->suggestions = [];
         $this->resetValidation();
         $this->formMessageType = 'info';
@@ -500,6 +568,8 @@ class PatientsComponent extends Component
         $this->state      = $p->toArray();
         $this->nameSearch = $p->name;
         $this->isEditing  = true;
+        $this->paymentType = $p->insurer_id ? 'insurance' : 'cash';
+        $this->showInsuranceModal = false;
         $this->suggestions = [];
     }
 

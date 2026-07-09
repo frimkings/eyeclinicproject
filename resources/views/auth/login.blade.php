@@ -257,6 +257,10 @@
         box-sizing: border-box;
     }
 
+    .field-input.has-toggle {
+        padding-right: 3rem;
+    }
+
     .field-input:focus {
         border-color: #0d7377;
         box-shadow: 0 0 0 3px rgba(13,115,119,0.12);
@@ -265,6 +269,49 @@
     .field-input:focus + .field-icon,
     .field-wrap:focus-within .field-icon {
         stroke: #0d7377;
+    }
+
+    .field-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 2rem;
+        height: 2rem;
+        border: 0;
+        background: transparent;
+        color: #9ca3af;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .field-toggle:hover,
+    .field-toggle:focus {
+        color: #0d7377;
+        outline: none;
+    }
+
+    .field-toggle svg {
+        width: 19px;
+        height: 19px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+    }
+
+    .field-toggle .eye-off {
+        display: none;
+    }
+
+    .field-toggle.is-visible .eye-on {
+        display: none;
+    }
+
+    .field-toggle.is-visible .eye-off {
+        display: block;
     }
 
     .btn-login {
@@ -473,7 +520,7 @@
                     <div class="field-wrap">
                         <input
                             id="password"
-                            class="field-input"
+                            class="field-input has-toggle"
                             type="password"
                             name="password"
                             required
@@ -483,6 +530,19 @@
                         <svg class="field-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
+                        <button type="button"
+                            class="field-toggle"
+                            data-password-toggle="password"
+                            aria-label="Show password"
+                            title="Show/hide password">
+                            <svg class="eye-on" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                                <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <svg class="eye-off" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58M9.88 5.2A9.7 9.7 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.51 10.51 0 01-3.01 4.43M6.61 6.61A10.7 10.7 0 002.458 12C3.732 16.057 7.522 19 12 19c1.25 0 2.445-.23 3.545-.648"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -508,4 +568,22 @@
     </div>
 
 </div>
+<script>
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-password-toggle]');
+        if (!button) {
+            return;
+        }
+
+        const input = document.getElementById(button.dataset.passwordToggle);
+        if (!input) {
+            return;
+        }
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        button.classList.toggle('is-visible', isPassword);
+        button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+</script>
 </x-guest-layout>

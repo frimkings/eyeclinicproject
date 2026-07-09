@@ -88,8 +88,8 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
             <span class="font-weight-bold"><i class="fas fa-stethoscope mr-1 text-info"></i> Backup Diagnostics</span>
-            <span class="badge badge-{{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] && $diagnostics['temporary_directory_ready'] && $diagnostics['zip_extension_loaded'] && $diagnostics['proc_open_enabled'] ? 'success' : 'danger' }}">
-                {{ $diagnostics['binary_exists'] && $diagnostics['backup_root_writable'] && $diagnostics['backup_disk_readable'] && $diagnostics['temporary_directory_ready'] && $diagnostics['zip_extension_loaded'] && $diagnostics['proc_open_enabled'] ? 'Ready' : 'Needs Attention' }}
+            <span class="badge badge-{{ $diagnostics['full_backup_ready'] ? 'success' : ($diagnostics['db_backup_ready'] ? 'warning' : 'danger') }}">
+                {{ $diagnostics['full_backup_ready'] ? 'Ready' : ($diagnostics['db_backup_ready'] ? 'DB Ready' : 'Needs Attention') }}
             </span>
         </div>
         <div class="card-body">
@@ -179,8 +179,11 @@
                     @forelse($backups as $backup)
                         <tr wire:key="backup-{{ $loop->index }}">
                             <td class="align-middle">
-                                <i class="fas fa-file-archive text-primary mr-2"></i>
+                                <i class="fas {{ $backup['extension'] === 'sql' ? 'fa-file-code text-info' : 'fa-file-archive text-primary' }} mr-2"></i>
                                 <span class="font-weight-semibold small">{{ $backup['name'] }}</span>
+                                <span class="badge badge-{{ $backup['extension'] === 'sql' ? 'info' : 'success' }} ml-2">
+                                    {{ strtoupper($backup['extension']) }}
+                                </span>
                             </td>
                             <td class="align-middle">
                                 <span class="badge badge-light border">{{ $backup['size_human'] }}</span>
@@ -200,8 +203,8 @@
                                 <button type="button"
                                         wire:click="requestRestore({{ $loop->index }})"
                                         class="btn btn-sm btn-outline-warning ml-1"
-                                        title="Restore"
-                                        {{ $isRestoring ? 'disabled' : '' }}>
+                                        title="{{ $backup['extension'] === 'zip' ? 'Restore' : 'SQL backups are database-only downloads' }}"
+                                        {{ $isRestoring || $backup['extension'] !== 'zip' ? 'disabled' : '' }}>
                                     @if($isRestoring)
                                         <i class="fas fa-spinner fa-spin"></i>
                                     @else
@@ -587,13 +590,13 @@
                 {{-- Step list --}}
                 <ol class="pl-3" style="line-height:2">
                     <li>
-                        <strong>Stop Apache</strong> in the XAMPP Control Panel.
+                        <strong>Stop Apache</strong> in the Laragon control panel.
                     </li>
                     <li>
                         Open a terminal and go to the project directory:
                         <div class="my-1">
                             <code class="d-block p-2 rounded" style="background:#f1f3f4;font-size:.8rem">
-                                cd C:\xampp\htdocs\eyeclinicproject
+                                cd C:\laragon\www\eyeclinicproject
                             </code>
                         </div>
                     </li>
@@ -619,6 +622,14 @@
                             </code>
                         </div>
                         The filename is relative to the <code>storage/app/backups/</code> folder.
+                    </li>
+                    <li>
+                        To restore a <strong>database-only SQL</strong> file, use MySQL directly:
+                        <div class="my-1">
+                            <code class="d-block p-2 rounded" style="background:#1e3a5c;color:#7dd3fc;font-size:.8rem">
+                                mysql -u root eyeclinicproject &lt; storage\app\backups\Eye Clinic\database-eyeclinicproject-2026-07-07-10-00-00.sql
+                            </code>
+                        </div>
                     </li>
                     <li>
                         If credentials changed, compare <code>.env.restored</code> against your current

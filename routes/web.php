@@ -262,10 +262,13 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
         $disk = Storage::disk('backups');
         abort_unless($disk->exists($decoded), 404);
 
+        $extension = strtolower(pathinfo($decoded, PATHINFO_EXTENSION));
+        $contentType = $extension === 'sql' ? 'application/sql' : 'application/zip';
+
         return response()->streamDownload(
             fn () => print($disk->get($decoded)),
             basename($decoded),
-            ['Content-Type' => 'application/zip']
+            ['Content-Type' => $contentType]
         );
     })->name('admin.backup.download')->middleware('feature:manual_backup');
 });

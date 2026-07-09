@@ -10,6 +10,7 @@ use App\Models\Sales;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Validation\Rule;
 
 class InsuranceClaimsComponent extends Component
 {
@@ -41,6 +42,7 @@ class InsuranceClaimsComponent extends Component
     public array $state = [
         'patient_search'      => '',
         'patient_id'          => '',
+        'insurer_search'      => '',
         'insurer_id'          => '',
         'sale_id'             => '',
         'member_id'           => '',
@@ -57,6 +59,7 @@ class InsuranceClaimsComponent extends Component
     ];
 
     public array $patientResults = [];
+    public array $insurerResults = [];
     public array $patientSales   = [];
 
     // ── Status modal ──────────────────────────────────────────────────────────
@@ -89,13 +92,19 @@ class InsuranceClaimsComponent extends Component
 
     public function openEdit(int $id): void
     {
-        $claim = InsuranceClaim::with('patient')->findOrFail($id);
+        $claim = InsuranceClaim::with(['patient', 'insurer'])->findOrFail($id);
+        if ($claim->status !== 'draft') {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Only draft claims can be edited.']);
+            return;
+        }
+
         $this->claimId   = $id;
         $this->isEditing = true;
 
         $this->state = [
             'patient_search'       => $claim->patient->name ?? '',
             'patient_id'           => $claim->patient_id,
+            'insurer_search'       => $claim->insurer->name ?? '',
             'insurer_id'           => $claim->insurer_id,
             'sale_id'              => $claim->sale_id ?? '',
             'member_id'            => $claim->member_id ?? '',
@@ -118,6 +127,10 @@ class InsuranceClaimsComponent extends Component
     public function updatedStatePatientSearch(): void
     {
         $q = trim($this->state['patient_search']);
+        $this->state['patient_id'] = '';
+        $this->state['sale_id'] = '';
+        $this->patientSales = [];
+
         if (strlen($q) < 2) {
             $this->patientResults = [];
             return;
@@ -128,41 +141,96 @@ class InsuranceClaimsComponent extends Component
         })->limit(8)->get(['id', 'name', 'pxnumber'])->toArray();
     }
 
+    public function updatedStateInsurerSearch(): void
+    {
+        $q = trim($this->state['insurer_search']);
+        $this->state['insurer_id'] = '';
+
+        if (strlen($q) < 1) {
+            $this->insurerResults = [];
+            return;
+        }
+
+        $this->insurerResults = Insurer::where('active', true)
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%")
+                    ->orWhere('scheme_type', 'like', "%{$q}%");
+            })
+            ->orderBy('name')
+            ->limit(8)
+            ->get(['id', 'name', 'code', 'scheme_type'])
+            ->toArray();
+    }
+
     public function selectPatient(int $id, string $name): void
     {
         $this->state['patient_id']     = $id;
         $this->state['patient_search'] = $name;
+        $this->state['sale_id']        = '';
         $this->patientResults          = [];
         $this->loadPatientSales($id);
 
         // Pre-fill insurance defaults from patient record (only when creating)
         if (!$this->isEditing) {
-            $patient = Patient::find($id);
+            $patient = Patient::with('insurer')->find($id);
             if ($patient?->insurer_id) {
-                $this->state['insurer_id']    = $patient->insurer_id;
+                $this->state['insurer_id']     = $patient->insurer_id;
+                $this->state['insurer_search'] = $patient->insurer->name ?? '';
                 $this->state['member_id']     = $patient->insurance_member_id ?? '';
+                $this->state['member_name']   = $patient->insurance_member_name ?: $patient->name;
                 $this->state['policy_number'] = $patient->insurance_policy_number ?? '';
+                $this->insurerResults          = [];
             }
         }
+    }
+
+    public function selectInsurer(int $id): void
+    {
+        $insurer = Insurer::where('active', true)->findOrFail($id);
+
+        $this->state['insurer_id']     = $insurer->id;
+        $this->state['insurer_search'] = $insurer->name;
+        $this->insurerResults          = [];
+        $this->resetErrorBag('state.insurer_id');
     }
 
     public function updatedStateSaleId(): void
     {
         if ($this->state['sale_id']) {
-            $sale = Sales::find($this->state['sale_id']);
-            if ($sale && empty($this->state['claim_amount'])) {
+            $sale = Sales::where('patient_id', $this->state['patient_id'])->find($this->state['sale_id']);
+            if (!$sale) {
+                $this->state['sale_id'] = '';
+                $this->dispatchBrowserEvent('notify', [
+                    'type'    => 'error',
+                    'message' => 'The selected sale does not belong to the selected patient.',
+                ]);
+                return;
+            }
+
+            if (empty($this->state['claim_amount'])) {
                 $this->state['claim_amount'] = $sale->total_amount;
             }
         }
     }
 
+    public function updatedStatePreAuthStatus(): void
+    {
+        $this->clearPreAuthFieldsForStatus();
+    }
+
     public function save(): void
     {
         $data = $this->validateForm();
-        $data['created_by'] = auth()->id();
+        $data = $this->normalizeClaimData($data);
 
         if ($this->isEditing) {
             $claim = InsuranceClaim::findOrFail($this->claimId);
+            if ($claim->status !== 'draft') {
+                $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Only draft claims can be edited.']);
+                return;
+            }
+
             $old   = $claim->only(array_keys($data));
             $data['updated_by'] = auth()->id();
             $claim->update($data);
@@ -173,6 +241,7 @@ class InsuranceClaimsComponent extends Component
             );
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Claim updated.']);
         } else {
+            $data['created_by'] = auth()->id();
             $claim = InsuranceClaim::create($data);
             AuditTrail::record(
                 'insurance_claim.created',
@@ -205,6 +274,12 @@ class InsuranceClaimsComponent extends Component
 
     public function openStatusModal(int $id, string $newStatus): void
     {
+        $claim = InsuranceClaim::findOrFail($id);
+        if (!$this->canTransition($claim->status, $newStatus)) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Invalid claim status transition.']);
+            return;
+        }
+
         $this->statusClaimId   = $id;
         $this->pendingStatus   = $newStatus;
         $this->statusState     = [
@@ -220,6 +295,14 @@ class InsuranceClaimsComponent extends Component
     public function applyStatus(): void
     {
         $claim = InsuranceClaim::findOrFail($this->statusClaimId);
+        if (!$this->canTransition($claim->status, $this->pendingStatus)) {
+            $this->showStatusModal = false;
+            $this->statusClaimId = null;
+            $this->pendingStatus = '';
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Invalid claim status transition.']);
+            return;
+        }
+
         $update = ['status' => $this->pendingStatus, 'updated_by' => auth()->id()];
 
         switch ($this->pendingStatus) {
@@ -263,6 +346,7 @@ class InsuranceClaimsComponent extends Component
                 break;
         }
 
+        $update = $this->normalizeStatusData($update);
         $old = $claim->only(array_keys($update));
         $claim->update($update);
         AuditTrail::record(
@@ -273,6 +357,7 @@ class InsuranceClaimsComponent extends Component
 
         $this->showStatusModal = false;
         $this->statusClaimId   = null;
+        $this->pendingStatus   = '';
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Claim status updated.']);
     }
 
@@ -352,14 +437,25 @@ class InsuranceClaimsComponent extends Component
 
     private function validateForm(): array
     {
-        $saleUnique = $this->isEditing
-            ? 'nullable|exists:sales,id|unique:insurance_claims,sale_id,' . $this->claimId
-            : 'nullable|exists:sales,id|unique:insurance_claims,sale_id';
+        $patientId = (int) ($this->state['patient_id'] ?: 0);
+        $saleUnique = Rule::unique('insurance_claims', 'sale_id');
+        if ($this->isEditing) {
+            $saleUnique->ignore($this->claimId);
+        }
 
         return $this->validate([
             'state.patient_id'         => 'required|exists:patients,id',
-            'state.insurer_id'         => 'required|exists:insurers,id',
-            'state.sale_id'            => $saleUnique,
+            'state.insurer_id'         => [
+                'required',
+                Rule::exists('insurers', 'id')
+                    ->where(fn ($query) => $query->where('active', true)->whereNull('deleted_at')),
+            ],
+            'state.sale_id'            => [
+                'nullable',
+                Rule::exists('sales', 'id')
+                    ->where(fn ($query) => $query->where('patient_id', $patientId)->whereNull('deleted_at')),
+                $saleUnique,
+            ],
             'state.member_id'          => 'nullable|string|max:60',
             'state.member_name'        => 'nullable|string|max:120',
             'state.policy_number'      => 'nullable|string|max:60',
@@ -377,6 +473,84 @@ class InsuranceClaimsComponent extends Component
             'state.claim_amount'    => 'Claim Amount',
             'state.pre_auth_status' => 'Pre-Auth Status',
         ])['state'];
+    }
+
+    private function normalizeClaimData(array $data): array
+    {
+        foreach ([
+            'sale_id',
+            'member_id',
+            'member_name',
+            'policy_number',
+            'notes',
+            'pre_auth_code',
+            'pre_auth_amount',
+            'pre_auth_date',
+            'pre_auth_expiry_date',
+            'pre_auth_notes',
+        ] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === '') {
+                $data[$field] = null;
+            }
+        }
+
+        if (!in_array($data['pre_auth_status'] ?? 'not_required', ['pending', 'approved', 'rejected'], true)) {
+            $data['pre_auth_code'] = null;
+            $data['pre_auth_notes'] = null;
+        }
+
+        if (($data['pre_auth_status'] ?? 'not_required') !== 'approved') {
+            $data['pre_auth_amount'] = null;
+            $data['pre_auth_date'] = null;
+            $data['pre_auth_expiry_date'] = null;
+        }
+
+        return $data;
+    }
+
+    private function clearPreAuthFieldsForStatus(): void
+    {
+        if (!in_array($this->state['pre_auth_status'], ['pending', 'approved', 'rejected'], true)) {
+            $this->state['pre_auth_code'] = '';
+            $this->state['pre_auth_notes'] = '';
+        }
+
+        if ($this->state['pre_auth_status'] !== 'approved') {
+            $this->state['pre_auth_amount'] = '';
+            $this->state['pre_auth_date'] = '';
+            $this->state['pre_auth_expiry_date'] = '';
+        }
+    }
+
+    private function normalizeStatusData(array $data): array
+    {
+        foreach ([
+            'submission_date',
+            'approval_date',
+            'approved_amount',
+            'payment_date',
+            'rejection_reason',
+        ] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === '') {
+                $data[$field] = null;
+            }
+        }
+
+        return $data;
+    }
+
+    private function canTransition(string $currentStatus, string $nextStatus): bool
+    {
+        $transitions = [
+            'draft'              => ['submitted'],
+            'submitted'          => ['approved', 'partially_approved', 'rejected'],
+            'approved'           => ['paid'],
+            'partially_approved' => ['paid'],
+            'rejected'           => [],
+            'paid'               => [],
+        ];
+
+        return in_array($nextStatus, $transitions[$currentStatus] ?? [], true);
     }
 
     private function loadPatientSales(int $patientId): void
@@ -404,6 +578,7 @@ class InsuranceClaimsComponent extends Component
         $this->state   = [
             'patient_search'       => '',
             'patient_id'           => '',
+            'insurer_search'       => '',
             'insurer_id'           => '',
             'sale_id'              => '',
             'member_id'            => '',
@@ -419,6 +594,7 @@ class InsuranceClaimsComponent extends Component
             'pre_auth_notes'       => '',
         ];
         $this->patientResults = [];
+        $this->insurerResults = [];
         $this->patientSales   = [];
         $this->resetValidation();
     }

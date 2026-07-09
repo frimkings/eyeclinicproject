@@ -381,15 +381,58 @@
                             <label class="font-weight-bold">
                                 Password {{ $isEdit ? '' : '*' }}
                             </label>
-                            <input type="password" 
-                                wire:model="password" 
-                                class="form-control @error('password') is-invalid @enderror"
-                                placeholder="{{ $isEdit ? 'Leave blank to keep current password' : 'Enter secure password' }}">
-                            @if($isEdit)
-                                <small class="form-text text-muted">Leave blank to keep the current password</small>
-                            @endif
+                            <div class="input-group">
+                                <input type="password"
+                                    id="staff-password"
+                                    wire:model="password"
+                                    class="form-control @error('password') is-invalid @enderror"
+                                    placeholder="{{ $isEdit ? 'Leave blank to keep current password' : 'Enter secure password' }}">
+                                <div class="input-group-append">
+                                    <button type="button"
+                                        class="btn btn-outline-secondary password-toggle"
+                                        data-password-toggle="staff-password"
+                                        aria-label="Show password"
+                                        title="Show/hide password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <small class="form-text text-muted">
+                                {{ $isEdit ? 'Leave blank to keep the current password. ' : '' }}Password must be at least 10 characters and include uppercase, lowercase, and a number.
+                            </small>
+                        </div>
+
+                        {{-- Confirm Password Field --}}
+                        <div class="form-group">
+                            <label class="font-weight-bold">
+                                Confirm Password {{ $isEdit ? '' : '*' }}
+                            </label>
+                            <div class="input-group">
+                                <input type="password"
+                                    id="staff-password-confirmation"
+                                    wire:model="password_confirmation"
+                                    class="form-control @error('password_confirmation') is-invalid @enderror"
+                                    placeholder="{{ $isEdit ? 'Repeat new password when changing it' : 'Repeat secure password' }}">
+                                <div class="input-group-append">
+                                    <button type="button"
+                                        class="btn btn-outline-secondary password-toggle"
+                                        data-password-toggle="staff-password-confirmation"
+                                        aria-label="Show confirm password"
+                                        title="Show/hide password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                @error('password_confirmation')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                             @error('password') 
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                @if($message === 'The password confirmation does not match.')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @endif
                             @enderror
                         </div>
 
@@ -553,24 +596,49 @@
 
                         <div class="form-group">
                             <label class="font-weight-bold small">New Password <span class="text-danger">*</span></label>
-                            <input type="password"
-                                wire:model="newPassword"
-                                class="form-control @error('newPassword') is-invalid @enderror"
-                                placeholder="Min. 8 characters">
-                            @error('newPassword')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            <div class="input-group">
+                                <input type="password"
+                                    id="reset-password"
+                                    wire:model="newPassword"
+                                    class="form-control @error('newPassword') is-invalid @enderror"
+                                    placeholder="Min. 10 characters">
+                                <div class="input-group-append">
+                                    <button type="button"
+                                        class="btn btn-outline-secondary password-toggle"
+                                        data-password-toggle="reset-password"
+                                        aria-label="Show new password"
+                                        title="Show/hide password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                @error('newPassword')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <small class="form-text text-muted">Password must be at least 10 characters and include uppercase, lowercase, and a number.</small>
                         </div>
 
                         <div class="form-group mb-0">
                             <label class="font-weight-bold small">Confirm Password <span class="text-danger">*</span></label>
-                            <input type="password"
-                                wire:model="newPasswordConfirmation"
-                                class="form-control @error('newPasswordConfirmation') is-invalid @enderror"
-                                placeholder="Repeat new password">
-                            @error('newPasswordConfirmation')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            <div class="input-group">
+                                <input type="password"
+                                    id="reset-password-confirmation"
+                                    wire:model="newPasswordConfirmation"
+                                    class="form-control @error('newPasswordConfirmation') is-invalid @enderror"
+                                    placeholder="Repeat new password">
+                                <div class="input-group-append">
+                                    <button type="button"
+                                        class="btn btn-outline-secondary password-toggle"
+                                        data-password-toggle="reset-password-confirmation"
+                                        aria-label="Show confirm password"
+                                        title="Show/hide password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                @error('newPasswordConfirmation')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
                     </div>
 
@@ -721,3 +789,25 @@
         border-color: #28a745;
     }
 </style>
+
+<script>
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-password-toggle]');
+        if (!button) {
+            return;
+        }
+
+        const input = document.getElementById(button.dataset.passwordToggle);
+        const icon = button.querySelector('i');
+
+        if (!input || !icon) {
+            return;
+        }
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.classList.toggle('fa-eye', !isPassword);
+        icon.classList.toggle('fa-eye-slash', isPassword);
+        button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+</script>
