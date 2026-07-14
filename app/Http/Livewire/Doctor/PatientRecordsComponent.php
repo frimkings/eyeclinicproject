@@ -380,14 +380,6 @@ public $isEditingAppointment = false;
    
     public function toggleAppointmentSection()
     {
-<<<<<<< HEAD
-=======
-        if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation. Addenda remain available.']);
-            return;
-        }
-
->>>>>>> 9807871ec45f0e4d99a20cb0609fe60ef5410a05
         $this->showAppointmentSection = !$this->showAppointmentSection;
         
         if ($this->showAppointmentSection && $this->patient) {
