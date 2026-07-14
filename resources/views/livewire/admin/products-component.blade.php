@@ -41,8 +41,85 @@
                     <button wire:click="downloadTemplate" class="btn btn-outline-secondary">
                         <i class="fa fa-file-download mr-1"></i> Template
                     </button>
+                    <button wire:click="toggleLensCatalog" class="btn {{ $showLensCatalog ? 'btn-info' : 'btn-outline-info' }}">
+                        <i class="fa fa-glasses mr-1"></i> Lens Catalog
+                    </button>
                 </div>
             </div>
+
+            @if($showLensCatalog)
+                <div class="card card-outline card-info mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fa fa-glasses mr-2"></i>Lens Catalog</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" wire:click="toggleLensCatalog"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form wire:submit.prevent="saveLensOption" class="row align-items-end mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group mb-md-0">
+                                    <label>Lens Family <span class="text-danger">*</span></label>
+                                    <select wire:model.defer="lensState.family" class="form-control @error('family') is-invalid @enderror">
+                                        <option value="">Select family...</option>
+                                        @foreach(\App\Models\LensOption::FAMILIES as $family)
+                                            <option value="{{ $family }}">{{ $family }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('family') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-md-0">
+                                    <label>Display Name <span class="text-danger">*</span></label>
+                                    <input type="text" wire:model.defer="lensState.display_name"
+                                           class="form-control @error('display_name') is-invalid @enderror"
+                                           placeholder="e.g. SV Blue Block">
+                                    @error('display_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fa fa-save mr-1"></i>{{ $editingLensOption ? 'Update' : 'Add' }} Option
+                                </button>
+                                @if($editingLensOption)
+                                    <button type="button" wire:click="cancelLensOption" class="btn btn-default">Cancel</button>
+                                @endif
+                            </div>
+                        </form>
+
+                        <div class="row">
+                            @foreach(\App\Models\LensOption::FAMILIES as $family)
+                                <div class="col-lg-4 mb-3">
+                                    <div class="card h-100 mb-0">
+                                        <div class="card-header py-2"><strong>{{ $family }}</strong></div>
+                                        <div class="list-group list-group-flush">
+                                            @forelse($lensOptions->where('family', $family) as $lensOption)
+                                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                                    <span>{{ $lensOption->display_name }}</span>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" wire:click="editLensOption({{ $lensOption->id }})" class="btn btn-outline-info" title="Edit">
+                                                            <i class="fa fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" wire:click="deleteLensOption({{ $lensOption->id }})"
+                                                                onclick="return confirm('Remove this lens option? Existing refraction records will remain unchanged.')"
+                                                                class="btn btn-outline-danger" title="Delete">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <div class="list-group-item text-muted">No options configured.</div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <small class="text-muted">Changes affect future selections only. Existing refraction values remain stored in the current lensType field.</small>
+                    </div>
+                </div>
+            @endif
 
             @if($showImportPanel)
                 <div class="card card-outline card-primary mb-3">

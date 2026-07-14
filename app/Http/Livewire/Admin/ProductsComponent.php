@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Admin;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\LensOption;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -32,6 +33,9 @@ class ProductsComponent extends Component
     public $state = [];
     public ?Product $editingProduct = null;
     public $showForm = false;
+    public $showLensCatalog = false;
+    public $lensState = ['family' => '', 'display_name' => ''];
+    public ?LensOption $editingLensOption = null;
 
     // CSV Import
     public $showImportPanel = false;
@@ -117,6 +121,60 @@ class ProductsComponent extends Component
         $this->showForm = false;
         $this->resetForm();
         $this->resetValidation();
+    }
+
+    public function toggleLensCatalog()
+    {
+        $this->showLensCatalog = !$this->showLensCatalog;
+        $this->cancelLensOption();
+    }
+
+    public function saveLensOption()
+    {
+        $validated = Validator::make($this->lensState, [
+            'family' => ['required', Rule::in(LensOption::FAMILIES)],
+            'display_name' => [
+                'required', 'string', 'max:150',
+                Rule::unique('lens_options', 'display_name')
+                    ->where(fn ($query) => $query->where('family', $this->lensState['family'] ?? ''))
+                    ->ignore($this->editingLensOption?->id),
+            ],
+        ])->validate();
+
+        if ($this->editingLensOption) {
+            $this->editingLensOption->update($validated);
+            $message = 'Lens option updated successfully.';
+        } else {
+            LensOption::create($validated);
+            $message = 'Lens option added successfully.';
+        }
+
+        $this->cancelLensOption();
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => $message]);
+    }
+
+    public function editLensOption($id)
+    {
+        $this->editingLensOption = LensOption::findOrFail($id);
+        $this->lensState = $this->editingLensOption->only(['family', 'display_name']);
+        $this->resetValidation(['family', 'display_name']);
+    }
+
+    public function cancelLensOption()
+    {
+        $this->editingLensOption = null;
+        $this->lensState = ['family' => '', 'display_name' => ''];
+        $this->resetValidation(['family', 'display_name']);
+    }
+
+    public function deleteLensOption($id)
+    {
+        LensOption::findOrFail($id)->delete();
+        $this->cancelLensOption();
+        $this->dispatchBrowserEvent('notify', [
+            'type' => 'success',
+            'message' => 'Lens option removed. Existing refraction records are unchanged.',
+        ]);
     }
 
     public function resetForm()
@@ -592,6 +650,9 @@ class ProductsComponent extends Component
     {
         $products = $this->getFilteredQuery()->paginate(10);
         $categories = Category::orderBy('name')->get();
+        $lensOptions = LensOption::orderByRaw("CASE family WHEN 'Single Vision' THEN 1 WHEN 'Bifocal' THEN 2 WHEN 'Progressive' THEN 3 ELSE 4 END")
+            ->orderBy('display_name')
+            ->get();
         
         $today = Carbon::today();
         $fourMonths = Carbon::today()->addMonths(4);
@@ -609,7 +670,7 @@ class ProductsComponent extends Component
             'expired'   => (int) $allProducts->expired,
         ];
 
-        return view('livewire.admin.products-component', compact('products', 'categories', 'stats'))
+        return view('livewire.admin.products-component', compact('products', 'categories', 'stats', 'lensOptions'))
             ->layout('layouts.admin.admin-layout');
     }
 }

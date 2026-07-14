@@ -6,6 +6,7 @@ use App\Models\Consultations;
 use App\Models\Appointments;
 use App\Models\Cart;
 use App\Models\AuditTrail;
+use App\Models\ConsultationNote;
 use App\Models\PatientDocument;
 use App\Models\Referral;
 use Livewire\Component;
@@ -24,6 +25,7 @@ use Illuminate\Validation\Rules\Enum;
 use Carbon\Carbon;
 use App\Http\Livewire\Traits\HasAppointmentBooking;
 use App\Models\Setting;
+use App\Models\LensOption;
 
 class PatientRecordsComponent extends Component
 {
@@ -48,6 +50,7 @@ class PatientRecordsComponent extends Component
     public $consultation;
     public $consultationID;
     public $isEditMode = false;
+    public $clinicalAddendum = '';
 
     // Product management
     public $availableProducts = [];
@@ -187,6 +190,51 @@ public $isEditingAppointment = false;
         return 'Clinical fields are locked 24 hours after the consultation was created.';
     }
 
+    public function getGroupedClinicalAddendaProperty()
+    {
+        if (!$this->consultation || !$this->consultation->relationLoaded('addenda')) {
+            return collect();
+        }
+
+        $groups = collect();
+
+        $this->consultation->addenda
+            ->sortBy('created_at')
+            ->groupBy(function ($addendum) {
+                return $addendum->user_id ?: 'deleted-user-' . $addendum->id;
+            })
+            ->each(function ($authorAddenda) use ($groups) {
+                $currentGroup = null;
+
+                foreach ($authorAddenda as $addendum) {
+                    $outsideWindow = !$currentGroup
+                        || $currentGroup['started_at']->diffInSeconds($addendum->created_at) >= 86400;
+
+                    if ($outsideWindow) {
+                        if ($currentGroup) {
+                            $groups->push($currentGroup);
+                        }
+
+                        $currentGroup = [
+                            'user' => $addendum->user,
+                            'started_at' => $addendum->created_at->copy(),
+                            'ended_at' => $addendum->created_at->copy(),
+                            'addenda' => collect(),
+                        ];
+                    }
+
+                    $currentGroup['addenda']->push($addendum);
+                    $currentGroup['ended_at'] = $addendum->created_at->copy();
+                }
+
+                if ($currentGroup) {
+                    $groups->push($currentGroup);
+                }
+            });
+
+        return $groups->sortByDesc('ended_at')->values();
+    }
+
     public function switchTab($tab)
     {
         if ($tab === 'refraction' && $this->consultationID) {
@@ -219,6 +267,7 @@ public $isEditingAppointment = false;
         $this->isEditMode = false;
         $this->consultation = null;
         $this->consultationID = null;
+        $this->clinicalAddendum = '';
         $this->resetValidation();
         $this->productsList = [];
         $this->resetProductForm();
@@ -335,11 +384,6 @@ public $isEditingAppointment = false;
    
     public function toggleAppointmentSection()
     {
-        if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation. Clinical Notes remain editable.']);
-            return;
-        }
-
         $this->showAppointmentSection = !$this->showAppointmentSection;
         
         if ($this->showAppointmentSection && $this->patient) {
@@ -356,11 +400,6 @@ public $isEditingAppointment = false;
 
  public function bookAppointmentFromConsultation()
 {
-    if ($this->consultationFieldsLocked) {
-        $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation.']);
-        return;
-    }
-
     // Validate appointment data
     $this->validate([
         'appointmentTitle' => 'required|string|min:3',
@@ -430,11 +469,6 @@ public $isEditingAppointment = false;
  */
 public function updateAppointment()
 {
-    if ($this->consultationFieldsLocked) {
-        $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation.']);
-        return;
-    }
-
     // Validate appointment data
     $this->validate([
         'appointmentTitle' => 'required|string|min:3',
@@ -449,7 +483,8 @@ public function updateAppointment()
     ]);
 
     try {
-        $appointment = \App\Models\Appointments::findOrFail($this->editingAppointmentId);
+        $appointment = \App\Models\Appointments::where('patient_id', $this->patient->id)
+            ->findOrFail($this->editingAppointmentId);
         
         // Update appointment
         $appointment->update([
@@ -513,6 +548,61 @@ public function cancelAppointmentEdit()
     $this->isEditingAppointment = false;
     $this->showAppointmentSection = false;
    
+}
+
+public function getPatientAppointmentsProperty()
+{
+    if (!$this->patient) {
+        return collect();
+    }
+
+    return Appointments::where('patient_id', $this->patient->id)
+        ->where('scheduled_at', '>=', now()->startOfDay())
+        ->whereNotIn('status', ['Seen', 'Missed', 'Done', 'Cancelled', 'Canceled'])
+        ->orderBy('scheduled_at')
+        ->get();
+}
+
+public function editAppointment($appointmentId)
+{
+    $appointment = Appointments::where('patient_id', $this->patient->id)
+        ->findOrFail($appointmentId);
+
+    $this->editingAppointmentId = $appointment->id;
+    $this->isEditingAppointment = true;
+    $this->showAppointmentSection = true;
+    $this->appointmentPatientId = $appointment->patient_id;
+    $this->appointmentSelectedPatientName = $this->patient->name;
+    $this->appointmentTitle = $appointment->title;
+    $this->appointmentRecallCategory = $appointment->recall_category;
+    $this->appointmentScheduledAt = Carbon::parse($appointment->scheduled_at)->format('Y-m-d\TH:i');
+    $this->appointmentNotes = $appointment->notes;
+    $this->appointmentReminderChannel = $appointment->reminder_channel ?: 'whatsapp';
+    $this->resetValidation();
+}
+
+public function deleteAppointment($appointmentId)
+{
+    $appointment = Appointments::where('patient_id', $this->patient->id)
+        ->findOrFail($appointmentId);
+    $oldValues = $appointment->only(['title', 'scheduled_at', 'status', 'notes']);
+
+    $appointment->delete();
+
+    AuditTrail::record(
+        'appointment.deleted',
+        'Deleted appointment #' . $appointmentId,
+        null,
+        $oldValues,
+        [],
+        $this->patient->id
+    );
+
+    if ((int) $this->editingAppointmentId === (int) $appointmentId) {
+        $this->cancelAppointmentEdit();
+    }
+
+    $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Appointment deleted successfully.']);
 }
 
 
@@ -765,6 +855,11 @@ public function cancelAppointmentEdit()
             'both'  => $sixMetre + $twentyFoot + $qualitative,
             default => $sixMetre + $qualitative,
         };
+    }
+
+    public static function nearVisualAcuityOptions(): array
+    {
+        return ['N4', 'N5', 'N6', 'N8', 'N10', 'N12', 'N14', 'N18', 'N24', 'N36', 'N48', 'N60'];
     }
 
     private function visualAcuityDecimal($value): ?float
@@ -1195,9 +1290,10 @@ public function cancelAppointmentEdit()
 
     public function editConsultation($consultationId)
     {
-        $this->consultation = Consultations::with(['cartItems.product.category', 'diagnoses'])->findOrFail($consultationId);
+        $this->consultation = Consultations::with(['cartItems.product.category', 'diagnoses', 'addenda.user'])->findOrFail($consultationId);
         $this->consultationID = $this->consultation->id;
         $this->isEditMode = true;
+        $this->clinicalAddendum = '';
 
         $this->state = $this->consultation->toArray();
 
@@ -1463,7 +1559,7 @@ public function cancelAppointmentEdit()
     public function updateConsultation()
     {
         if ($this->consultationFieldsLocked) {
-            $this->updateClinicalNotesOnly();
+            $this->addClinicalAddendum();
             return;
         }
 
@@ -1577,37 +1673,40 @@ public function cancelAppointmentEdit()
         }
     }
 
-    private function updateClinicalNotesOnly(): void
+    private function addClinicalAddendum(): void
     {
         $this->validate([
-            'state.notes' => 'nullable|string',
+            'clinicalAddendum' => 'required|string|min:2',
         ]);
 
         DB::beginTransaction();
         try {
-            $oldNotes = $this->consultation->notes;
-
-            $this->consultation->update([
-                'notes' => $this->state['notes'] ?? null,
+            $note = ConsultationNote::create([
+                'consultation_id' => $this->consultation->id,
+                'patient_id' => $this->consultation->patient_id,
+                'user_id' => Auth::id(),
+                'note_type' => 'clinical_addendum',
+                'note' => $this->clinicalAddendum,
             ]);
 
             AuditTrail::record(
-                'consultation.notes_updated',
-                'Updated clinical notes for locked consultation #' . $this->consultation->id,
-                $this->consultation,
-                ['notes' => $oldNotes],
-                ['notes' => $this->consultation->notes],
+                'consultation.addendum_added',
+                'Added clinical addendum to consultation #' . $this->consultation->id,
+                $note,
+                [],
+                ['note' => $note->note, 'note_type' => $note->note_type],
                 $this->patient->id
             );
 
             DB::commit();
 
-            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Clinical notes updated successfully.']);
-            $this->resetForm();
-            $this->activeTab = 'history';
+            $this->consultation->load('addenda.user');
+            $this->clinicalAddendum = '';
+            $this->resetValidation(['clinicalAddendum']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Clinical addendum added successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Failed to update clinical notes: ' . $e->getMessage()]);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Failed to add clinical addendum: ' . $e->getMessage()]);
         }
     }
     
@@ -1770,8 +1869,12 @@ public function cancelAppointmentEdit()
 
         $clinicalTrendData = $this->clinicalTrendData;
         $eyeDiseaseRiskFlags = $this->eyeDiseaseRiskFlags;
+        $lensOptions = LensOption::orderByRaw("CASE family WHEN 'Single Vision' THEN 1 WHEN 'Bifocal' THEN 2 WHEN 'Progressive' THEN 3 ELSE 4 END")
+            ->orderBy('display_name')
+            ->get()
+            ->groupBy('family');
 
-        return view('livewire.doctor.patient-records-component', compact('patientRecords', 'searchResults', 'clinicalTrendData', 'eyeDiseaseRiskFlags', 'patientDocuments', 'auditTrails', 'upcomingAppointment'))
+        return view('livewire.doctor.patient-records-component', compact('patientRecords', 'searchResults', 'clinicalTrendData', 'eyeDiseaseRiskFlags', 'patientDocuments', 'auditTrails', 'upcomingAppointment', 'lensOptions'))
             ->layout('layouts.doctor.doctor-layout');
     }
 }

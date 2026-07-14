@@ -450,7 +450,7 @@
                                 <div>
                                     <div class="font-weight-bold">Limited editing mode</div>
                                     <div>{{ $consultationEditLockReason }}</div>
-                                    <small>Only Clinical Notes can be updated for this visit.</small>
+                                    <small>Original clinical fields stay unchanged. Add a signed clinical addendum instead.</small>
                                 </div>
                             </div>
                         </div>
@@ -726,13 +726,41 @@
                     <label class="font-weight-bold">
                         Clinical Notes
                         @if($consultationFieldsLocked)
-                            <span class="badge badge-success ml-2"><i class="fas fa-edit"></i> Editable</span>
+                            <span class="badge badge-info ml-2"><i class="fas fa-plus-circle"></i> Addendum</span>
                         @endif
                     </label>
-                    <textarea wire:model.defer="state.notes" class="form-control clinical-notes-textarea" rows="8"
-                        placeholder="Enter additional clinical observations, management plans, or notes..."></textarea>
                     @if($consultationFieldsLocked)
-                        <small class="text-success">This field remains open for addenda, management updates, and follow-up notes.</small>
+                        @if($consultation && $consultation->addenda->count() > 0)
+                            <div class="clinical-addenda-list mb-3">
+                                @foreach($this->groupedClinicalAddenda as $addendumGroup)
+                                    <div class="clinical-addendum-item">
+                                        <div class="clinical-addendum-item__meta">
+                                            <span><i class="fas fa-user-md"></i> {{ $addendumGroup['user']->name ?? 'Unknown user' }}</span>
+                                            <span>
+                                                {{ $addendumGroup['started_at']->format('d M Y h:i A') }}
+                                                @if($addendumGroup['started_at']->ne($addendumGroup['ended_at']))
+                                                    &ndash; {{ $addendumGroup['ended_at']->format('d M Y h:i A') }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <div class="clinical-addendum-group">
+                                            @foreach($addendumGroup['addenda'] as $addendum)
+                                                <div class="clinical-addendum-item__note">{{ $addendum->note }}</div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <textarea wire:model.defer="clinicalAddendum"
+                            class="form-control clinical-notes-textarea @error('clinicalAddendum') is-invalid @enderror"
+                            rows="5" placeholder="Add a signed addendum, management update, or follow-up note..."></textarea>
+                        @error('clinicalAddendum') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <small class="text-success">Stored separately with the author and timestamp; the original note cannot be overwritten.</small>
+                    @else
+                        <textarea wire:model.defer="state.notes" class="form-control clinical-notes-textarea" rows="8"
+                            placeholder="Enter additional clinical observations, management plans, or notes..."></textarea>
                     @endif
                 </div>
             </div>
@@ -768,15 +796,11 @@
                     </div>
                 </div>
 
-                <div class="border-top pt-3 {{ $consultationFieldsLocked ? 'consultation-section-locked rounded p-2' : '' }}">
-                    @if($consultationFieldsLocked)
-                        <div class="small text-muted mb-2"><i class="fas fa-lock"></i> Follow-up booking is locked for this visit.</div>
-                    @endif
+                <div class="border-top pt-3">
                     <div class="mb-2">
                         <button type="button" 
                                 wire:click="toggleAppointmentSection" 
-                                class="btn btn-sm {{ $showAppointmentSection ? 'btn-warning' : 'btn-outline-primary' }} btn-block font-weight-bold shadow-sm"
-                                {{ $consultationFieldsLocked ? 'disabled' : '' }}>
+                                class="btn btn-sm {{ $showAppointmentSection ? 'btn-warning' : 'btn-outline-primary' }} btn-block font-weight-bold shadow-sm">
                             <i class="fas {{ $showAppointmentSection ? 'fa-minus-circle' : 'fa-calendar-plus' }}"></i>
                             {{ $showAppointmentSection ? 'Hide Appointment Form' : 'Schedule Follow-up Appointment' }}
                         </button>
@@ -805,7 +829,7 @@
                                 <span wire:loading.remove
                                     wire:target="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
                                     <i class="fas fa-save"></i>
-                                    {{ $consultationFieldsLocked ? 'Save Clinical Notes' : ($isEditMode ? 'Update' : 'Save') . ' Consultation' }}
+                                    {{ $consultationFieldsLocked ? 'Add Clinical Addendum' : ($isEditMode ? 'Update' : 'Save') . ' Consultation' }}
                                 </span>
                                 <span wire:loading
                                     wire:target="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
@@ -1276,34 +1300,16 @@
                                         <label>Lens Type & Coating *</label>
                                         <select wire:model="state.lensType" class="form-control">
                                             <option value="">Select Type...</option>
-
-                                            <optgroup label="Single Vision (SV)">
-                                                <option value="SV Clear">SV Clear (Standard)</option>
-                                                <option value="SV Hard Coat">SV Hard Coat (Scratch Resistant)</option>
-                                                <option value="SV AR">SV with Anti-Reflective (AR)</option>
-                                                <option value="SV Photo AR">SV Photochromic + AR (Transitions)</option>
-                                                <option value="SV Blue AR">SV Blue Anti-Reflective</option>
-                                                <option value="SV Blue Block">SV Blue Block (UV420/No Glare)</option>
-                                                <option value="SV Blue Block Photo">SV Blue Block + Photochromic</option>
-                                                <option value="SV Special Order">SV Special Order</option>
-                                            </optgroup>
-
-                                            <optgroup label="Bifocal">
-                                                <option value="Bifocal Clear">Bifocal Clear</option>
-                                                <option value="Bifocal AR">Bifocal with AR</option>
-                                                <option value="Bifocal Photo AR">Bifocal Photochromic + AR</option>
-                                                <option value="Bifocal Blue Block">Bifocal Blue Block</option>
-                                                <option value="Special Order Bifocal">Special Order Bifocal</option>
-                                            </optgroup>
-
-                                            <optgroup label="Progressive">
-                                                <option value="Progressive Clear">Progressive Clear</option>
-                                                <option value="Progressive AR">Progressive with AR</option>
-                                                <option value="Progressive Photo AR">Progressive Photochromic + AR</option>
-                                                <option value="Progressive Blue Block">Progressive Blue Block</option>
-                                                <option value="Progressive Blue Block Photo">Progressive Blue Block + Photo</option>
-                                                <option value="Special Order Progressive">Special Order Progressive</option>
-                                            </optgroup>
+                                            @if(filled($state['lensType'] ?? null) && !$lensOptions->flatten()->contains('display_name', $state['lensType']))
+                                                <option value="{{ $state['lensType'] }}">{{ $state['lensType'] }} (Existing)</option>
+                                            @endif
+                                            @foreach($lensOptions as $family => $familyOptions)
+                                                <optgroup label="{{ $family }}">
+                                                    @foreach($familyOptions as $lensOption)
+                                                        <option value="{{ $lensOption->display_name }}">{{ $lensOption->display_name }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endforeach
                                         </select>
                                     </div>
 
@@ -1363,8 +1369,12 @@
                                                 <td>
                                                     <select wire:model.defer="state.refractionOD_near_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
-                                                        @foreach($vaOpts as $lbl => $lm)
-                                                            <option value="{{ $lbl }}">{{ $lbl }}{{ $lm !== null ? ' ('.($lm >= 0 ? '+' : '').$lm.')' : ' (NM)' }}</option>
+                                                        @php $nearVaOpts = \App\Http\Livewire\Doctor\PatientRecordsComponent::nearVisualAcuityOptions(); @endphp
+                                                        @if(filled($state['refractionOD_near_va'] ?? null) && !in_array($state['refractionOD_near_va'], $nearVaOpts, true))
+                                                            <option value="{{ $state['refractionOD_near_va'] }}">{{ $state['refractionOD_near_va'] }} (Existing)</option>
+                                                        @endif
+                                                        @foreach($nearVaOpts as $nearVa)
+                                                            <option value="{{ $nearVa }}">{{ $nearVa }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -1390,8 +1400,11 @@
                                                 <td>
                                                     <select wire:model.defer="state.refractionOS_near_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
-                                                        @foreach($vaOpts as $lbl => $lm)
-                                                            <option value="{{ $lbl }}">{{ $lbl }}{{ $lm !== null ? ' ('.($lm >= 0 ? '+' : '').$lm.')' : ' (NM)' }}</option>
+                                                        @if(filled($state['refractionOS_near_va'] ?? null) && !in_array($state['refractionOS_near_va'], $nearVaOpts, true))
+                                                            <option value="{{ $state['refractionOS_near_va'] }}">{{ $state['refractionOS_near_va'] }} (Existing)</option>
+                                                        @endif
+                                                        @foreach($nearVaOpts as $nearVa)
+                                                            <option value="{{ $nearVa }}">{{ $nearVa }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -2011,6 +2024,15 @@
     .consultation-section-locked textarea:disabled { background: #eef1f4; border-color: #d4d9df; color: #6c757d; cursor: not-allowed; }
     .clinical-notes-active { background: #f5fff7; border: 1px solid #b7e4c7; border-radius: 8px; padding: 12px; }
     .clinical-notes-textarea { border-color: #8fd19e; }
+    .clinical-original-note { background: #fff; border: 1px solid #d7eadc; border-radius: 6px; padding: 10px 12px; }
+    .clinical-original-note__label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .clinical-original-note__body { color: #0f172a; font-size: 13px; margin-top: 4px; white-space: pre-line; }
+    .clinical-addenda-list { display: grid; gap: 8px; max-height: 220px; overflow-y: auto; }
+    .clinical-addendum-item { background: #fff; border-left: 3px solid #16a34a; border-radius: 6px; padding: 9px 11px; }
+    .clinical-addendum-item__meta { color: #64748b; display: flex; flex-wrap: wrap; font-size: 11px; font-weight: 600; gap: 8px; justify-content: space-between; margin-bottom: 5px; }
+    .clinical-addendum-item__note { color: #0f172a; font-size: 13px; white-space: pre-line; }
+    .clinical-addendum-group { display: grid; gap: 7px; }
+    .clinical-addendum-group .clinical-addendum-item__note + .clinical-addendum-item__note { border-top: 1px solid #e2e8f0; padding-top: 7px; }
     .consultation-actions {
         background: #fff; border-top: 1px solid #e9ecef;
         margin-top: 16px; padding-top: 14px;
