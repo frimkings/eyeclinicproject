@@ -729,7 +729,6 @@
                             <span class="badge badge-info ml-2"><i class="fas fa-plus-circle"></i> Addendum</span>
                         @endif
                     </label>
-<<<<<<< HEAD
                     @if($consultationFieldsLocked)
                         @if($consultation && $consultation->addenda->count() > 0)
                             <div class="clinical-addenda-list mb-3">
@@ -749,26 +748,6 @@
                                                 <div class="clinical-addendum-item__note">{{ $addendum->note }}</div>
                                             @endforeach
                                         </div>
-=======
-
-                    @if($consultationFieldsLocked)
-                        <div class="clinical-original-note mb-3">
-                            <div class="clinical-original-note__label">Original note</div>
-                            <div class="clinical-original-note__body">
-                                {{ filled($consultation->notes ?? null) ? $consultation->notes : 'No original clinical note was recorded.' }}
-                            </div>
-                        </div>
-
-                        @if($consultation && $consultation->addenda->count() > 0)
-                            <div class="clinical-addenda-list mb-3">
-                                @foreach($consultation->addenda as $addendum)
-                                    <div class="clinical-addendum-item">
-                                        <div class="clinical-addendum-item__meta">
-                                            <span><i class="fas fa-user-md"></i> {{ $addendum->user->name ?? 'Unknown user' }}</span>
-                                            <span>{{ $addendum->created_at->format('d M Y h:i A') }}</span>
-                                        </div>
-                                        <div class="clinical-addendum-item__note">{{ $addendum->note }}</div>
->>>>>>> 9807871ec45f0e4d99a20cb0609fe60ef5410a05
                                     </div>
                                 @endforeach
                             </div>
