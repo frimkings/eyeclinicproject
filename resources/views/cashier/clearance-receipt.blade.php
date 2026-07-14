@@ -97,6 +97,20 @@
         <div>Thank you!</div>
     </div>
 
-    <script>window.onload = () => window.print();</script>
+    <script>
+        window.addEventListener('load', function () {
+            var images = Array.prototype.slice.call(document.images || []);
+            var imageReady = images.map(function (img) {
+                return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+            });
+
+            Promise.all(imageReady).then(function () {
+                setTimeout(function () {
+                    window.focus();
+                    window.print();
+                }, 300);
+            });
+        });
+    </script>
 </body>
 </html>

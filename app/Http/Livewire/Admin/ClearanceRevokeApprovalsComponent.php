@@ -22,6 +22,7 @@ class ClearanceRevokeApprovalsComponent extends Component
 
     public ?int   $rejectingLogId    = null;
     public string $rejectionReason   = '';
+    public bool   $showRejectModal   = false;
 
     protected $rules = [
         'rejectionReason' => 'required|string|min:5|max:500',
@@ -107,16 +108,16 @@ class ClearanceRevokeApprovalsComponent extends Component
     {
         $this->rejectingLogId  = $id;
         $this->rejectionReason = '';
+        $this->showRejectModal = true;
         $this->resetErrorBag();
-        $this->dispatchBrowserEvent('show-rejectRevokeModal');
     }
 
     public function closeRejectModal(): void
     {
         $this->rejectingLogId  = null;
         $this->rejectionReason = '';
+        $this->showRejectModal = false;
         $this->resetErrorBag();
-        $this->dispatchBrowserEvent('hide-rejectRevokeModal');
     }
 
     public function confirmReject(): void

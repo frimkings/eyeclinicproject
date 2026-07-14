@@ -390,10 +390,13 @@ class ExpensesComponent extends Component
         $editingReceiptUrl = ($this->isEditing && $this->expenseId)
             ? optional(Expense::find($this->expenseId))->receipt_url
             : null;
+        $canUseIncomeStatement = LicenseService::has(Feature::ADVANCED_REPORTS)
+            && (auth()->user()?->hasRole('Super Admin') || auth()->user()?->can('manage billing'));
 
         return view('livewire.admin.expenses-component', compact(
             'expenses', 'categories', 'allCategories', 'sectionLabels',
-            'totalInRange', 'todayTotal', 'topCategories', 'editingReceiptUrl'
+            'totalInRange', 'todayTotal', 'topCategories', 'editingReceiptUrl',
+            'canUseIncomeStatement'
         ))->layout('layouts.admin.admin-layout');
     }
 }

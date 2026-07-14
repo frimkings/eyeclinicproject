@@ -17,6 +17,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('system:health-heartbeat')->everyMinute()->withoutOverlapping();
+
         if (LicenseService::has(Feature::SCHEDULED_BACKUPS)) {
             // DB-only snapshot every 5 minutes (fast, small)
             $schedule->command('backup:run --only-db')->everyFiveMinutes();
@@ -66,14 +68,18 @@ class Kernel extends ConsoleKernel
         // Financial report delivery — schedule driven by admin settings (PRO only)
         try {
             $reportSettings = \App\Models\Setting::getSettings();
-            if (LicenseService::has(Feature::REPORT_DELIVERY) && $reportSettings->report_enabled && !empty($reportSettings->report_recipients)) {
-                $cmd = $schedule->command('report:send-financial');
-                if ($reportSettings->report_frequency === 'weekly') {
-                    $cmd->weeklyOn((int) $reportSettings->report_day, $reportSettings->report_time ?? '08:00')
-                        ->withoutOverlapping();
-                } else {
-                    $cmd->dailyAt($reportSettings->report_time ?? '08:00')
-                        ->withoutOverlapping();
+            if (LicenseService::has(Feature::REPORT_DELIVERY)) {
+                $schedule->command('report:retry-financial')->everyMinute()->withoutOverlapping();
+
+                if ($reportSettings->report_enabled && !empty($reportSettings->report_recipients)) {
+                    $cmd = $schedule->command('report:send-financial');
+                    if ($reportSettings->report_frequency === 'weekly') {
+                        $cmd->weeklyOn((int) $reportSettings->report_day, $reportSettings->report_time ?? '08:00')
+                            ->withoutOverlapping();
+                    } else {
+                        $cmd->dailyAt($reportSettings->report_time ?? '08:00')
+                            ->withoutOverlapping();
+                    }
                 }
             }
         } catch (\Throwable) {}

@@ -47,8 +47,7 @@ class DoctorDashboardComponent extends Component
             ->whereDate('created_at', $today)
             ->count();
 
-        $this->consultationsMonth = Consultations::where('user_id', $doctorId)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
+        $this->consultationsMonth = Consultations::whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $this->totalPatients = Patient::count();

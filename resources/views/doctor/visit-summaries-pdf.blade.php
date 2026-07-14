@@ -113,7 +113,20 @@
 
         <div class="section">
             <div class="section-title">Plan / Notes</div>
-            <div class="section-body">{{ $consultation->notes ?: $consultation->others ?: 'Not recorded' }}</div>
+            <div class="section-body">
+                <div>{{ $consultation->notes ?: $consultation->others ?: 'Not recorded' }}</div>
+                @if($consultation->addenda->count())
+                    <div style="margin-top:8px; font-weight:bold;">Clinical Addenda</div>
+                    @foreach($consultation->addenda as $addendum)
+                        <div style="margin-top:6px; border-left:3px solid #0d6efd; padding-left:7px;">
+                            <div class="muted">
+                                {{ $addendum->created_at->format('d M Y h:i A') }} by {{ $addendum->user->name ?? 'Unknown user' }}
+                            </div>
+                            <div>{{ $addendum->note }}</div>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
         </div>
 
         @if($consultation->documents->count())

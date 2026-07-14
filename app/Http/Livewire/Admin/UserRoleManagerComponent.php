@@ -18,7 +18,7 @@ class UserRoleManagerComponent extends Component
 {
     use WithPagination, WithFileUploads;
 
-    public $name, $email, $password, $userId;
+    public $name, $email, $password, $password_confirmation, $userId;
     public $selectedRoles = [];
     public $isOpen = false;
     public $isEdit = false;
@@ -60,7 +60,7 @@ class UserRoleManagerComponent extends Component
 
     public function mount(): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
     }
 
     protected function rules(): array
@@ -69,8 +69,9 @@ class UserRoleManagerComponent extends Component
             'name'           => 'required|min:3',
             'email'          => 'required|email|unique:users,email,' . $this->userId,
             'password'       => $this->isEdit
-                ? ['nullable', Password::min(10)->mixedCase()->numbers()]
-                : ['required', Password::min(10)->mixedCase()->numbers()],
+                ? ['nullable', 'confirmed', Password::min(10)->mixedCase()->numbers()]
+                : ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
+            'password_confirmation' => $this->isEdit ? 'nullable' : 'required',
             'selectedRoles'  => 'required|array|min:1',
             'phone'          => 'nullable|string|max:25',
             'staff_id'       => 'nullable|string|max:30|unique:users,staff_id,' . $this->userId,
@@ -209,7 +210,7 @@ class UserRoleManagerComponent extends Component
 
     public function store()
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
 
         // Free tier: max 3 user accounts
         if (!$this->isEdit && !LicenseService::has(Feature::UNLIMITED_USERS)) {
@@ -256,7 +257,7 @@ class UserRoleManagerComponent extends Component
 
     public function export()
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
 
         $fileName = 'clinic_staff_' . now()->format('Y-m-d_His') . '.csv';
 
@@ -328,7 +329,7 @@ class UserRoleManagerComponent extends Component
 
     public function delete($id)
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
         if (auth()->id() === $id) {
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Action denied: Cannot delete self.']);
             return;
@@ -346,7 +347,7 @@ class UserRoleManagerComponent extends Component
     private function resetInputFields(): void
     {
         $this->reset([
-            'name', 'email', 'password', 'userId', 'selectedRoles', 'roleSearch',
+            'name', 'email', 'password', 'password_confirmation', 'userId', 'selectedRoles', 'roleSearch',
             'phone', 'staff_id', 'gender', 'date_of_birth', 'department', 'hire_date',
         ]);
     }
@@ -363,7 +364,7 @@ class UserRoleManagerComponent extends Component
 
     public function doResetPassword()
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
         $this->validate([
             'newPassword'             => ['required', 'same:newPasswordConfirmation', Password::min(10)->mixedCase()->numbers()],
             'newPasswordConfirmation' => 'required',
@@ -421,7 +422,7 @@ class UserRoleManagerComponent extends Component
 
     public function importCsv(): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        abort_if(!$this->canManageUsers(), 403);
         $this->validate(['importFile' => 'required|file|mimes:csv,txt|max:2048']);
 
         $path    = $this->importFile->getRealPath();
@@ -505,5 +506,12 @@ class UserRoleManagerComponent extends Component
                 'message' => 'No users were imported. Check the errors below.',
             ]);
         }
+    }
+
+    private function canManageUsers(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user?->hasRole('Super Admin') || $user?->can('manage users'));
     }
 }

@@ -10,19 +10,32 @@
             <button type="button"
                     wire:click="runBackup"
                     wire:loading.attr="disabled"
-                    wire:target="runBackup"
+                    wire:target="runBackup,runFullBackup"
                     class="btn btn-primary font-weight-bold shadow-sm">
-                <span wire:loading.remove wire:target="runBackup">
-                    <i class="fas fa-play mr-1"></i> Run Backup Now
+                <span wire:loading.remove wire:target="runBackup,runFullBackup">
+                    <i class="fas fa-database mr-1"></i> DB Backup
                 </span>
                 <span wire:loading wire:target="runBackup">
                     <i class="fas fa-spinner fa-spin mr-1"></i> Running… please wait
                 </span>
             </button>
             <button type="button"
+                    wire:click="runFullBackup"
+                    wire:loading.attr="disabled"
+                    wire:target="runBackup,runFullBackup"
+                    class="btn btn-success font-weight-bold shadow-sm"
+                    title="Back up the database plus uploaded pictures, documents, PDFs, and configured files">
+                <span wire:loading.remove wire:target="runBackup,runFullBackup">
+                    <i class="fas fa-archive mr-1"></i> Full Backup
+                </span>
+                <span wire:loading wire:target="runFullBackup">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Runningâ€¦ please wait
+                </span>
+            </button>
+            <button type="button"
                     wire:click="cleanBackups"
                     wire:loading.attr="disabled"
-                    wire:target="cleanBackups"
+                    wire:target="cleanBackups,runBackup,runFullBackup"
                     class="btn btn-outline-secondary"
                     title="Remove old backups per retention policy">
                 <span wire:loading.remove wire:target="cleanBackups"><i class="fas fa-broom mr-1"></i> Prune Now</span>
@@ -71,6 +84,79 @@
         </div>
     </div>
 
+    {{-- Backup diagnostics --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+            <span class="font-weight-bold"><i class="fas fa-stethoscope mr-1 text-info"></i> Backup Diagnostics</span>
+            <span class="badge badge-{{ $diagnostics['full_backup_ready'] ? 'success' : ($diagnostics['db_backup_ready'] ? 'warning' : 'danger') }}">
+                {{ $diagnostics['full_backup_ready'] ? 'Ready' : ($diagnostics['db_backup_ready'] ? 'DB Ready' : 'Needs Attention') }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6 mb-3">
+                    <div class="p-3 h-100 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
+                        <div class="font-weight-bold mb-2"><i class="fas fa-terminal mr-1 text-primary"></i> MySQL Dump Tool</div>
+                        <div class="diag-row"><span>Configured path</span><code>{{ $diagnostics['configured_path'] }}</code></div>
+                        <div class="diag-row"><span>Detected path</span><code>{{ $diagnostics['resolved_path'] }}</code></div>
+                        <div class="diag-row"><span>Executable</span><code>{{ $diagnostics['executable'] }}</code></div>
+                        <div class="diag-row"><span>Version</span><strong>{{ \Illuminate\Support\Str::limit($diagnostics['binary_version'], 120) }}</strong></div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                    <div class="p-3 h-100 rounded" style="background:#f8fafc;border:1px solid #e5e7eb">
+                        <div class="font-weight-bold mb-2"><i class="fas fa-server mr-1 text-success"></i> Database & Storage</div>
+                        <div class="diag-row"><span>MySQL server</span><strong>{{ $diagnostics['server_version'] }}</strong></div>
+                        <div class="diag-row"><span>Database</span><strong>{{ $diagnostics['database_name'] }}</strong></div>
+                        <div class="diag-row"><span>DB user</span><strong>{{ $diagnostics['database_user'] }}</strong></div>
+                        <div class="diag-row"><span>Backup folder</span><code>{{ $diagnostics['backup_root'] }}</code></div>
+                        <div class="diag-row">
+                            <span>Folder writable</span>
+                            <strong class="text-{{ $diagnostics['backup_root_writable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_root_writable'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                        <div class="diag-row"><span>Temp folder</span><code>{{ $diagnostics['temporary_directory'] }}</code></div>
+                        <div class="diag-row">
+                            <span>Temp writable</span>
+                            <strong class="text-{{ $diagnostics['temporary_directory_ready'] ? 'success' : 'danger' }}">{{ $diagnostics['temporary_directory_ready'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Backup disk readable</span>
+                            <strong class="text-{{ $diagnostics['backup_disk_readable'] ? 'success' : 'danger' }}">{{ $diagnostics['backup_disk_readable'] ? 'Yes' : 'No' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>PHP zip</span>
+                            <strong class="text-{{ $diagnostics['zip_extension_loaded'] ? 'success' : 'danger' }}">{{ $diagnostics['zip_extension_loaded'] ? 'Enabled' : 'Missing' }}</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Process runner</span>
+                            <strong class="text-{{ $diagnostics['proc_open_enabled'] ? 'success' : 'danger' }}">{{ $diagnostics['proc_open_enabled'] ? 'Enabled' : 'Disabled' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if($diagnostics['last_error'])
+                <div class="alert alert-danger mb-3">
+                    <strong><i class="fas fa-exclamation-triangle mr-1"></i> Last backup error:</strong>
+                    <pre class="small mt-2 mb-0 p-2 rounded" style="white-space:pre-wrap;background:#fff5f5;border:1px solid #f5c2c7">{{ $diagnostics['last_error'] }}</pre>
+                </div>
+            @endif
+
+            <div class="collapse" id="backupDiagnosticCandidates">
+                <div class="small text-muted mb-2">Auto-detect checks these folders in order for <code>mysqldump.exe</code>:</div>
+                <div class="d-flex flex-column" style="gap:.25rem">
+                    @foreach($diagnostics['candidates'] as $candidate)
+                        <code class="d-block p-2 rounded" style="background:#f1f5f9">{{ $candidate }}</code>
+                    @endforeach
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#backupDiagnosticCandidates">
+                <i class="fas fa-list mr-1"></i> Show Detection Paths
+            </button>
+        </div>
+    </div>
+
     {{-- Backup list --}}
     <div class="card shadow-sm">
         <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
@@ -93,8 +179,11 @@
                     @forelse($backups as $backup)
                         <tr wire:key="backup-{{ $loop->index }}">
                             <td class="align-middle">
-                                <i class="fas fa-file-archive text-primary mr-2"></i>
+                                <i class="fas {{ $backup['extension'] === 'sql' ? 'fa-file-code text-info' : 'fa-file-archive text-primary' }} mr-2"></i>
                                 <span class="font-weight-semibold small">{{ $backup['name'] }}</span>
+                                <span class="badge badge-{{ $backup['extension'] === 'sql' ? 'info' : 'success' }} ml-2">
+                                    {{ strtoupper($backup['extension']) }}
+                                </span>
                             </td>
                             <td class="align-middle">
                                 <span class="badge badge-light border">{{ $backup['size_human'] }}</span>
@@ -114,8 +203,8 @@
                                 <button type="button"
                                         wire:click="requestRestore({{ $loop->index }})"
                                         class="btn btn-sm btn-outline-warning ml-1"
-                                        title="Restore"
-                                        {{ $isRestoring ? 'disabled' : '' }}>
+                                        title="{{ $backup['extension'] === 'zip' ? 'Restore' : 'SQL backups are database-only downloads' }}"
+                                        {{ $isRestoring || $backup['extension'] !== 'zip' ? 'disabled' : '' }}>
                                     @if($isRestoring)
                                         <i class="fas fa-spinner fa-spin"></i>
                                     @else
@@ -501,13 +590,13 @@
                 {{-- Step list --}}
                 <ol class="pl-3" style="line-height:2">
                     <li>
-                        <strong>Stop Apache</strong> in the XAMPP Control Panel.
+                        <strong>Stop Apache</strong> in the Laragon control panel.
                     </li>
                     <li>
                         Open a terminal and go to the project directory:
                         <div class="my-1">
                             <code class="d-block p-2 rounded" style="background:#f1f3f4;font-size:.8rem">
-                                cd C:\xampp\htdocs\eyeclinicproject
+                                cd C:\laragon\www\eyeclinicproject
                             </code>
                         </div>
                     </li>
@@ -533,6 +622,14 @@
                             </code>
                         </div>
                         The filename is relative to the <code>storage/app/backups/</code> folder.
+                    </li>
+                    <li>
+                        To restore a <strong>database-only SQL</strong> file, use MySQL directly:
+                        <div class="my-1">
+                            <code class="d-block p-2 rounded" style="background:#1e3a5c;color:#7dd3fc;font-size:.8rem">
+                                mysql -u root eyeclinicproject &lt; storage\app\backups\Eye Clinic\database-eyeclinicproject-2026-07-07-10-00-00.sql
+                            </code>
+                        </div>
                     </li>
                     <li>
                         If credentials changed, compare <code>.env.restored</code> against your current
@@ -609,5 +706,25 @@
 }
 .fb-folder-row:hover .fa-folder {
     color: #e6911a;
+}
+.diag-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #edf2f7;
+    padding: 7px 0;
+    font-size: .84rem;
+}
+.diag-row:last-child {
+    border-bottom: 0;
+}
+.diag-row span {
+    color: #64748b;
+    flex: 0 0 130px;
+}
+.diag-row code,
+.diag-row strong {
+    text-align: right;
+    word-break: break-all;
 }
 </style>

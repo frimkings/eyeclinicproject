@@ -111,7 +111,7 @@ public $isEditingAppointment = false;
     public function addDiagnosis($id, $name)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Clinical Notes remain editable.']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -124,7 +124,7 @@ public $isEditingAppointment = false;
     public function removeDiagnosis($index)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Clinical Notes remain editable.']);
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -141,11 +141,7 @@ public $isEditingAppointment = false;
     public function mount(CashierPatientClearance $clearance)
     {
         if (auth()->user()->hasRole('Doctor')) {
-            $allowed = !$clearance->doctor_status
-                || Consultations::where('clearance_id', $clearance->id)
-                    ->where('user_id', auth()->id())
-                    ->exists();
-            abort_unless($allowed, 403);
+            abort_unless($clearance->patient()->exists(), 403);
         }
 
         $this->clearance = $clearance;
@@ -384,6 +380,14 @@ public $isEditingAppointment = false;
    
     public function toggleAppointmentSection()
     {
+<<<<<<< HEAD
+=======
+        if ($this->consultationFieldsLocked) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Follow-up appointment changes are locked for this consultation. Addenda remain available.']);
+            return;
+        }
+
+>>>>>>> 9807871ec45f0e4d99a20cb0609fe60ef5410a05
         $this->showAppointmentSection = !$this->showAppointmentSection;
         
         if ($this->showAppointmentSection && $this->patient) {
@@ -1398,22 +1402,7 @@ public function deleteAppointment($appointmentId)
             return 0;
         }
 
-        $currentCartId = $item['cart_id'] ?? null;
-        $existingQuantity = 0;
-        $reservedQuantity = Cart::where('product_id', $product->id)
-            ->where('is_dispensed', false)
-            ->where('purchased', false)
-            ->sum('quantity');
-
-        if (!empty($currentCartId)) {
-            $cartItem = Cart::find($currentCartId);
-
-            if ($cartItem && !$cartItem->is_dispensed && !$cartItem->purchased) {
-                $existingQuantity = (int) $cartItem->quantity;
-            }
-        }
-
-        return max(0, (int) $product->quantity - (int) $reservedQuantity + $existingQuantity);
+        return max(0, (int) $product->quantity);
     }
 
     private function validatePrescriptionItems(): bool
@@ -1752,6 +1741,11 @@ public function deleteAppointment($appointmentId)
 
     public function saveRefraction()
     {
+        if ($this->consultationFieldsLocked) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Only the doctor who created this consultation can edit refraction data.']);
+            return;
+        }
+
         $this->validate([
             'state.pd' => 'required|numeric',
             'state.lensType' => 'required|string',

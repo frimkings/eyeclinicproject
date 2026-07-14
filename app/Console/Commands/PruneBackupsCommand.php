@@ -19,7 +19,7 @@ class PruneBackupsCommand extends Command
         $now    = Carbon::now();
 
         $all = collect($disk->files($folder))
-            ->filter(fn ($f) => str_ends_with($f, '.zip'))
+            ->filter(fn ($f) => str_ends_with($f, '.zip') || str_ends_with($f, '.sql'))
             ->map(fn ($f) => [
                 'path' => $f,
                 'ts'   => $disk->lastModified($f),

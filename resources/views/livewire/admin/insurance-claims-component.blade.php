@@ -236,7 +236,7 @@
   {{-- Create / Edit Modal --}}
   @if($showModal)
   <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5);">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog insurance-claim-modal" role="document">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">
@@ -273,13 +273,32 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label>Insurer <span class="text-danger">*</span></label>
-                <select wire:model.defer="state.insurer_id" class="form-control @error('state.insurer_id') is-invalid @enderror">
+                <div class="position-relative">
+                  <input wire:model.debounce.250ms="state.insurer_search" type="text"
+                         class="form-control @error('state.insurer_id') is-invalid @enderror"
+                         placeholder="Search insurer name, code, or scheme..." autocomplete="off">
+                  @if(count($insurerResults))
+                  <div class="list-group position-absolute w-100 shadow" style="z-index:1050; top:100%;">
+                    @foreach($insurerResults as $ins)
+                    <button type="button" class="list-group-item list-group-item-action py-1 small"
+                            wire:click="selectInsurer({{ $ins['id'] }})">
+                      <strong>{{ $ins['name'] }}</strong>
+                      <span class="text-muted">
+                        {{ $ins['code'] ? ' - '.$ins['code'] : '' }}
+                        {{ $ins['scheme_type'] ? ' ('.$ins['scheme_type'].')' : '' }}
+                      </span>
+                    </button>
+                    @endforeach
+                  </div>
+                  @endif
+                </div>
+                <select wire:model.defer="state.insurer_id" class="d-none @error('state.insurer_id') is-invalid @enderror">
                   <option value="">— Select insurer —</option>
                   @foreach($insurers as $ins)
                     <option value="{{ $ins->id }}">{{ $ins->name }}</option>
                   @endforeach
                 </select>
-                @error('state.insurer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                @error('state.insurer_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
               </div>
             </div>
             {{-- Sale --}}
@@ -335,8 +354,8 @@
           </div>
 
           {{-- Pre-Authorisation Section --}}
-          <hr class="my-3">
-          <h6 class="font-weight-bold text-muted mb-3">
+          <hr class="my-2">
+          <h6 class="font-weight-bold text-muted mb-2">
             <i class="fas fa-id-card mr-1 text-info"></i>Pre-Authorisation
           </h6>
           <div class="row">
@@ -471,3 +490,49 @@
   </div>
   @endif
 </div>
+
+<style>
+.insurance-claim-modal {
+  max-width: 720px;
+}
+.insurance-claim-modal .modal-header,
+.insurance-claim-modal .modal-footer {
+  padding: .6rem .9rem;
+}
+.insurance-claim-modal .modal-title {
+  font-size: 1rem;
+}
+.insurance-claim-modal .modal-body {
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  padding: .8rem .9rem;
+}
+.insurance-claim-modal .form-group {
+  margin-bottom: .6rem;
+}
+.insurance-claim-modal label {
+  font-size: .86rem;
+  margin-bottom: .25rem;
+}
+.insurance-claim-modal .form-control,
+.insurance-claim-modal .custom-select,
+.insurance-claim-modal .input-group-text {
+  height: calc(1.5em + .5rem + 2px);
+  padding: .25rem .55rem;
+  font-size: .9rem;
+}
+.insurance-claim-modal textarea.form-control {
+  height: auto;
+  min-height: 44px;
+}
+.insurance-claim-modal .btn {
+  padding: .28rem .65rem;
+  font-size: .86rem;
+}
+@media (max-width: 767.98px) {
+  .insurance-claim-modal {
+    max-width: calc(100% - 1rem);
+    margin: .5rem auto;
+  }
+}
+</style>

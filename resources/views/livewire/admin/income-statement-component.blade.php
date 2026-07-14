@@ -450,8 +450,13 @@
                     @if($isLocked)
                         <div class="alert alert-warning py-2 small">Unlock this period to import.</div>
                     @else
-                        <button type="button" wire:click="previewExpenseImport" class="btn btn-outline-danger btn-block">
-                            <i class="fas fa-file-import mr-1"></i>Preview &amp; Import
+                        <button type="button" wire:click="previewExpenseImport" wire:loading.attr="disabled" wire:target="previewExpenseImport" class="btn btn-outline-danger btn-block">
+                            <span wire:loading.remove wire:target="previewExpenseImport">
+                                <i class="fas fa-file-import mr-1"></i>Preview &amp; Import
+                            </span>
+                            <span wire:loading wire:target="previewExpenseImport">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>Preparing preview...
+                            </span>
                         </button>
                     @endif
                 </div>
@@ -539,8 +544,6 @@
             </div>
         </div>
     </div>
-</div>
-
 {{-- Expense Import Preview Modal --}}
 @if($showImportModal)
 <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.55);">
@@ -596,20 +599,26 @@
 
                 <div class="alert alert-warning small mb-0">
                     <i class="fas fa-exclamation-triangle mr-1"></i>
-                    This will <strong>not</strong> import Tax or Non-operating items (Loans, Bank Charges) — add those manually.
-                    Categories mapped to <em>Non-operating Expense</em> in the Expense Tracker will appear under that section.
+                    Tax is not imported from the Expense Tracker. Categories mapped to
+                    <em>Non-operating Expense</em> will appear under that section.
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button wire:click="$set('showImportModal', false)" class="btn btn-secondary">
+                <button wire:click="$set('showImportModal', false)" wire:loading.attr="disabled" wire:target="confirmExpenseImport" class="btn btn-secondary">
                     Cancel
                 </button>
-                <button wire:click="confirmExpenseImport" class="btn btn-danger">
-                    <i class="fas fa-check mr-1"></i>Confirm Import
+                <button wire:click="confirmExpenseImport" wire:loading.attr="disabled" wire:target="confirmExpenseImport" class="btn btn-danger">
+                    <span wire:loading.remove wire:target="confirmExpenseImport">
+                        <i class="fas fa-check mr-1"></i>Confirm Import
+                    </span>
+                    <span wire:loading wire:target="confirmExpenseImport">
+                        <i class="fas fa-spinner fa-spin mr-1"></i>Importing...
+                    </span>
                 </button>
             </div>
         </div>
     </div>
 </div>
 @endif
+</div>

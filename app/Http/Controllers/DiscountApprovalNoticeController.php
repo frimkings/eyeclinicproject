@@ -10,7 +10,7 @@ class DiscountApprovalNoticeController extends Controller
 {
     public function pending()
     {
-        abort_if(!auth()->user()?->hasRole(['Manager', 'Super Admin']), 403);
+        abort_if(!$this->canHandleDiscountApprovals(), 403);
 
         $request = DiscountApprovalRequest::with(['cashier', 'patient'])
             ->where('status', DiscountApprovalRequest::STATUS_PENDING)
@@ -44,7 +44,7 @@ class DiscountApprovalNoticeController extends Controller
 
     public function approve(Request $httpRequest, DiscountApprovalRequest $discountRequest)
     {
-        abort_if(!auth()->user()?->hasRole(['Manager', 'Super Admin']), 403);
+        abort_if(!$this->canHandleDiscountApprovals(), 403);
 
         if ($discountRequest->status !== DiscountApprovalRequest::STATUS_PENDING) {
             return response()->json([
@@ -92,7 +92,7 @@ class DiscountApprovalNoticeController extends Controller
 
     public function reject(Request $httpRequest, DiscountApprovalRequest $discountRequest)
     {
-        abort_if(!auth()->user()?->hasRole(['Manager', 'Super Admin']), 403);
+        abort_if(!$this->canHandleDiscountApprovals(), 403);
 
         if ($discountRequest->status !== DiscountApprovalRequest::STATUS_PENDING) {
             return response()->json([
@@ -121,6 +121,13 @@ class DiscountApprovalNoticeController extends Controller
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values();
+    }
+
+    private function canHandleDiscountApprovals(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user?->hasRole(['Manager', 'Super Admin']) || $user?->can('manage billing') || $user?->can('approve discounts'));
     }
 
     private function requestCartIds(DiscountApprovalRequest $request)

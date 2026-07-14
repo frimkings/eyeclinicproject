@@ -359,11 +359,24 @@
     @endif
 
     <!-- Notes -->
-    @if($consultation->notes)
+    @if($consultation->notes || $consultation->addenda->count())
     <div class="section">
         <div class="section-title">ADDITIONAL NOTES</div>
         <div class="section-content">
-            {{ $consultation->notes }}
+            @if($consultation->notes)
+                <div>{{ $consultation->notes }}</div>
+            @endif
+            @if($consultation->addenda->count())
+                <div style="margin-top:10px; font-weight:bold;">Clinical Addenda</div>
+                @foreach($consultation->addenda as $addendum)
+                    <div style="margin-top:7px; border-left:3px solid #3498db; padding-left:8px;">
+                        <div style="color:#7f8c8d; font-size:9pt;">
+                            {{ $addendum->created_at->format('d M Y h:i A') }} by {{ $addendum->user->name ?? 'Unknown user' }}
+                        </div>
+                        <div>{{ $addendum->note }}</div>
+                    </div>
+                @endforeach
+            @endif
         </div>
     </div>
     @endif

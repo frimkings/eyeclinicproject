@@ -9,6 +9,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class PatientsComponent extends Component
@@ -22,6 +23,10 @@ class PatientsComponent extends Component
     public $suggestions = [];
 
     public $isEditing = false;
+    public $formMessage = '';
+    public $formMessageType = 'info';
+    public $paymentType = 'cash';
+    public $showInsuranceModal = false;
     public $activeTab = 'today';
     public $birthdaysTodayCount = 0;
 
@@ -318,17 +323,59 @@ class PatientsComponent extends Component
             'id' => null, 'pxnumber' => '', 'name' => '', 'contact' => '', 'email' => '',
             'dob' => '', 'gender' => '', 'address' => '', 'occupation' => '',
             'civil_status' => '',
-            'insurer_id' => '', 'insurance_member_id' => '', 'insurance_policy_number' => '',
+            'insurer_id' => null, 'insurance_member_id' => '', 'insurance_member_name' => '', 'insurance_policy_number' => '',
         ];
         $this->nameSearch = '';
         $this->isEditing  = false;
+        $this->paymentType = 'cash';
+        $this->showInsuranceModal = false;
+        $this->formMessage = '';
+        $this->formMessageType = 'info';
+        $this->resetValidation();
+    }
+
+    public function choosePaymentType(string $type): void
+    {
+        $this->paymentType = $type === 'insurance' ? 'insurance' : 'cash';
+
+        if ($this->paymentType === 'cash') {
+            $this->clearInsuranceDetails();
+            return;
+        }
+
+        $this->showInsuranceModal = true;
+    }
+
+    public function openInsuranceModal(): void
+    {
+        $this->paymentType = 'insurance';
+        $this->showInsuranceModal = true;
+    }
+
+    public function closeInsuranceModal(): void
+    {
+        $this->showInsuranceModal = false;
+    }
+
+    public function clearInsuranceDetails(): void
+    {
+        $this->state['insurer_id'] = null;
+        $this->state['insurance_member_id'] = '';
+        $this->state['insurance_member_name'] = '';
+        $this->state['insurance_policy_number'] = '';
+        $this->showInsuranceModal = false;
         $this->resetValidation();
     }
 
     public function saveEntry()
     {
         $this->state['name'] = $this->nameSearch;
-        $validatedData = Validator::make($this->state, [
+        if ($this->paymentType !== 'insurance') {
+            $this->clearInsuranceDetails();
+        }
+        $this->state['insurer_id'] = $this->state['insurer_id'] ?: null;
+
+        $validator = Validator::make($this->state, [
             'name'         => 'required|string|max:255',
             'contact'      => 'required',
             'email'        => 'nullable|email',
@@ -337,16 +384,52 @@ class PatientsComponent extends Component
             'address'      => 'required',
             'occupation'               => 'nullable',
             'civil_status'             => 'nullable',
-            'insurer_id'               => 'nullable|exists:insurers,id',
+            'insurer_id'               => [
+                $this->paymentType === 'insurance' ? 'required' : 'nullable',
+                Rule::exists('insurers', 'id')
+                    ->where(fn ($query) => $query->where('active', true)->whereNull('deleted_at')),
+            ],
             'insurance_member_id'      => 'nullable|string|max:60',
+            'insurance_member_name'    => 'nullable|string|max:120',
             'insurance_policy_number'  => 'nullable|string|max:60',
-        ])->validate();
+        ], [], [
+            'insurer_id' => 'Insurer',
+            'insurance_member_id' => 'Member ID',
+            'insurance_member_name' => 'Member Name',
+            'insurance_policy_number' => 'Policy Number',
+        ]);
+
+        $validator->after(function ($validator) {
+            if ($this->paymentType !== 'insurance') {
+                return;
+            }
+
+            if (
+                trim((string) ($this->state['insurance_member_id'] ?? '')) === ''
+                && trim((string) ($this->state['insurance_policy_number'] ?? '')) === ''
+            ) {
+                $validator->errors()->add('insurance_member_id', 'Enter either the member ID or policy number.');
+            }
+        });
+
+        $validatedData = $validator->validate();
 
         if ($this->isEditing) {
-            $patient = Patient::findOrFail($this->state['id']);
+            $patient = Patient::find($this->state['id']);
+
+            if (!$patient) {
+                $this->isEditing = false;
+                $this->formMessageType = 'warning';
+                $this->formMessage = 'This patient record is no longer available. Please choose another record.';
+                $this->dispatchBrowserEvent('notify', ['type' => 'warning', 'message' => $this->formMessage]);
+                return;
+            }
+
             $old     = $patient->only(array_keys($validatedData));
             $patient->update($validatedData);
             AuditTrail::record('patient.updated', "Updated patient profile: {$patient->name} ({$patient->pxnumber})", $patient, $old, $validatedData, $patient->id);
+            $this->formMessageType = 'success';
+            $this->formMessage = 'Patient profile updated successfully.';
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Profile Updated!']);
         } else {
             // Fix #4: random_int() instead of mt_rand()
@@ -354,9 +437,15 @@ class PatientsComponent extends Component
             $validatedData['user_id']  = Auth::id();
             $patient = Patient::create($validatedData);
             AuditTrail::record('patient.created', "Registered new patient: {$patient->name} ({$patient->pxnumber})", $patient, [], [], $patient->id);
+            $this->formMessageType = 'success';
+            $this->formMessage = "Registered {$patient->name}.";
             $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'New Patient Saved!']);
         }
+        $message = $this->formMessage;
+        $messageType = $this->formMessageType;
         $this->resetForm();
+        $this->formMessage = $message;
+        $this->formMessageType = $messageType;
     }
 
     private function applyFilters($query)
@@ -443,11 +532,26 @@ class PatientsComponent extends Component
         return preg_replace('/[^0-9+]/', '', (string) $contact);
     }
 
-    public function edit(Patient $patient)
+    public function edit(int $id)
     {
+        $patient = Patient::find($id);
+
+        if (!$patient) {
+            $this->formMessageType = 'warning';
+            $this->formMessage = 'This patient record is no longer available. Refresh the list and try again.';
+            $this->dispatchBrowserEvent('notify', ['type' => 'warning', 'message' => $this->formMessage]);
+            return;
+        }
+
         $this->state      = $patient->toArray();
         $this->nameSearch = $patient->name;
         $this->isEditing  = true;
+        $this->paymentType = $patient->insurer_id ? 'insurance' : 'cash';
+        $this->showInsuranceModal = false;
+        $this->suggestions = [];
+        $this->resetValidation();
+        $this->formMessageType = 'info';
+        $this->formMessage = "Editing {$patient->name}'s profile. Update the details and save when ready.";
     }
 
     public function updatedNameSearch($value)
@@ -464,6 +568,8 @@ class PatientsComponent extends Component
         $this->state      = $p->toArray();
         $this->nameSearch = $p->name;
         $this->isEditing  = true;
+        $this->paymentType = $p->insurer_id ? 'insurance' : 'cash';
+        $this->showInsuranceModal = false;
         $this->suggestions = [];
     }
 

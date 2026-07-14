@@ -26,6 +26,7 @@ class Patient extends Model
         'recall_sms_sent_at',
         'insurer_id',
         'insurance_member_id',
+        'insurance_member_name',
         'insurance_policy_number',
     ];
 

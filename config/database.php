@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use App\Support\MysqlDumpPath;
 
 return [
 
@@ -59,8 +60,12 @@ return [
             'strict' => true,
             'engine' => null,
             'dump' => [
-                'dump_binary_path' => 'C:/xampp/mysql/bin', // only the path, so without `mysqldump` or `pg_dump`
+                'dump_binary_path' => MysqlDumpPath::resolve(env('DB_DUMP_BINARY_PATH')), // path only, without mysqldump.exe
                 'useSingleTransaction' => true,
+                'useQuick' => true,
+                'skipLockTables' => true,
+                'doNotUseColumnStatistics' => true,
+                'setGtidPurged' => 'OFF',
                 'timeout' => 60 * 5, // 5 minute timeout
             ],
             'options' => extension_loaded('pdo_mysql') ? array_filter([
