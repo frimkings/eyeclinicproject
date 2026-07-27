@@ -401,7 +401,7 @@
                                 @enderror
                             </div>
                             <small class="form-text text-muted">
-                                {{ $isEdit ? 'Leave blank to keep the current password. ' : '' }}Password must be at least 10 characters and include uppercase, lowercase, and a number.
+                                {{ $isEdit ? 'Leave blank to keep the current password. ' : '' }}Password must be at least 6 characters.
                             </small>
                         </div>
 
@@ -601,7 +601,7 @@
                                     id="reset-password"
                                     wire:model="newPassword"
                                     class="form-control @error('newPassword') is-invalid @enderror"
-                                    placeholder="Min. 10 characters">
+                                    placeholder="Min. 6 characters">
                                 <div class="input-group-append">
                                     <button type="button"
                                         class="btn btn-outline-secondary password-toggle"
@@ -615,7 +615,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <small class="form-text text-muted">Password must be at least 10 characters and include uppercase, lowercase, and a number.</small>
+                            <small class="form-text text-muted">Password must be at least 6 characters.</small>
                         </div>
 
                         <div class="form-group mb-0">

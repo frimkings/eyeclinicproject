@@ -55,7 +55,7 @@ class UserProfileComponent extends Component
             'phone'         => 'nullable|string|max:25',
             'gender'        => 'nullable|in:Male,Female,Other',
             'date_of_birth' => 'nullable|date|before:today',
-            'password'      => ['nullable', 'confirmed', Password::min(8)],
+            'password'      => ['nullable', 'confirmed', Password::min(6)],
             'avatar'        => 'nullable|image|max:2048',
         ];
     }

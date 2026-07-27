@@ -99,7 +99,7 @@
             <div class="password-tips-title">Password Tips</div>
             <div class="tip-item">
                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
-                At least 8 characters long
+                At least 6 characters long
             </div>
             <div class="tip-item">
                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
@@ -175,7 +175,7 @@
                     <label for="password" class="field-label">New Password</label>
                     <div class="field-wrap">
                         <input id="password" class="field-input" type="password" name="password"
-                            required placeholder="Min. 8 characters" oninput="checkStrength(this.value)">
+                            required minlength="6" placeholder="Min. 6 characters" oninput="checkStrength(this.value)">
                         <svg class="field-icon" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>

@@ -64,8 +64,6 @@ return [
                 'useSingleTransaction' => true,
                 'useQuick' => true,
                 'skipLockTables' => true,
-                'doNotUseColumnStatistics' => true,
-                'setGtidPurged' => 'OFF',
                 'timeout' => 60 * 5, // 5 minute timeout
             ],
             'options' => extension_loaded('pdo_mysql') ? array_filter([

@@ -85,7 +85,7 @@ class OfflinePasswordResetController extends Controller
         }
 
         $request->validate([
-            'password'              => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
+            'password'              => ['required', 'confirmed', Password::min(6)],
             'password_confirmation' => 'required',
         ]);
 
