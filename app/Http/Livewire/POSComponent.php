@@ -42,6 +42,8 @@ class POSComponent extends Component
     public $patientSearchTerm = '';
     public $searchResults = [];
     public $showPatientDropdown = false;
+    public $purchaseMode = 'patient';
+    public $directCustomerName = '';
 
     public $productSearchTerm = '';
     public $selectedCategoryId = '';
@@ -109,6 +111,29 @@ class POSComponent extends Component
 
     /* ===================== PATIENT ===================== */
 
+    public function selectPatientPurchaseMode()
+    {
+        $this->purchaseMode = 'patient';
+        $this->directCustomerName = '';
+    }
+
+    public function selectDirectPurchaseMode()
+    {
+        if ($this->patientId || $this->hasPrescriptionCart) {
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'warning',
+                'message' => 'Clear the selected patient or Doctor Cart before starting a direct purchase.',
+            ]);
+            return;
+        }
+
+        $this->purchaseMode = 'direct';
+        $this->isPartPayment = false;
+        $this->patientSearchTerm = '';
+        $this->searchResults = [];
+        $this->showPatientDropdown = false;
+    }
+
     public function updatedPatientSearchTerm()
     {
         if (strlen($this->patientSearchTerm) >= 2) {
@@ -136,6 +161,8 @@ class POSComponent extends Component
         if (!$patient) return;
 
         $this->patientId           = $patient->id;
+        $this->purchaseMode        = 'patient';
+        $this->directCustomerName  = '';
         $this->patientSearchTerm   = $patient->name;
         $this->showPatientDropdown = false;
 
@@ -162,6 +189,7 @@ class POSComponent extends Component
         $this->prescriptionConsultationId = null;
         $this->frameSearchTerm            = '';
         $this->frameSearchResults         = [];
+        $this->isPartPayment              = false;
         $this->resetDiscountApproval();
         $this->calculateTotal();
 
@@ -340,6 +368,8 @@ class POSComponent extends Component
 
         if ($request->patient_id) {
             $this->patientId = $request->patient_id;
+            $this->purchaseMode = 'patient';
+            $this->directCustomerName = '';
             $this->patientSearchTerm = $request->patient->name ?? '';
             $this->showPatientDropdown = false;
             $this->loadPatientCart(null, $this->discountRequestCartIds($request)->toArray());
@@ -403,6 +433,8 @@ class POSComponent extends Component
         }
 
         $this->patientId = $patient->id;
+        $this->purchaseMode = 'patient';
+        $this->directCustomerName = '';
         $this->patientSearchTerm = $patient->name;
         $this->showPatientDropdown = false;
         $this->loadPatientCart($consultationId);
@@ -848,6 +880,17 @@ class POSComponent extends Component
     }
 
     /* ===================== SPLIT PAYMENT ===================== */
+
+    public function updatedIsPartPayment($enabled)
+    {
+        if ($enabled && !$this->patientId) {
+            $this->isPartPayment = false;
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'warning',
+                'message' => 'Part payment requires a registered patient.',
+            ]);
+        }
+    }
 
     public function addPayment()
     {
@@ -1551,6 +1594,22 @@ class POSComponent extends Component
             return;
         }
 
+        if ($this->purchaseMode === 'direct') {
+            $this->validate([
+                'directCustomerName' => 'nullable|string|max:150',
+            ]);
+            $this->directCustomerName = trim($this->directCustomerName);
+        }
+
+        if ($this->isPartPayment && !$this->patientId) {
+            $this->isPartPayment = false;
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'error',
+                'message' => 'Part payment is not available for Walk-ins or Direct Purchases. Select a registered patient first.',
+            ]);
+            return;
+        }
+
         if ($this->discountAmount > 0 && !$this->discountApproved) {
             $this->confirmSellWithoutPendingDiscount();
             return;
@@ -1618,6 +1677,16 @@ class POSComponent extends Component
         if (empty($this->cart)) {
             $this->checkoutProcessing = false;
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Cart is empty']);
+            return;
+        }
+
+        if ($this->isPartPayment && !$this->patientId) {
+            $this->checkoutProcessing = false;
+            $this->isPartPayment = false;
+            $this->dispatchBrowserEvent('notify', [
+                'type' => 'error',
+                'message' => 'Part payment requires a registered patient.',
+            ]);
             return;
         }
 
@@ -1713,6 +1782,9 @@ class POSComponent extends Component
             $sale = Sales::create([
                 'user_id'         => Auth::id(),
                 'patient_id'      => $this->patientId,
+                'customer_name'   => $this->purchaseMode === 'direct' && !$this->patientId
+                    ? ($this->directCustomerName !== '' ? $this->directCustomerName : null)
+                    : null,
                 'consultation_id' => $this->prescriptionConsultationId,
                 'total_amount'    => $finalAmount,
                 'amount_paid'     => $recordedAmountPaid,
@@ -1871,6 +1943,26 @@ class POSComponent extends Component
                 $this->patientId
             );
 
+            if ($this->purchaseMode === 'direct' && !$this->patientId) {
+                $directCustomer = $sale->customer_display_name;
+                $cashierName = Auth::user()->name ?? 'Staff';
+
+                AuditTrail::record(
+                    'direct_purchase.completed',
+                    'Direct purchase completed for ' . $directCustomer . ' by ' . $cashierName,
+                    $sale,
+                    [],
+                    [
+                        'purchase_type' => 'direct',
+                        'customer_name' => $directCustomer,
+                        'transaction_id' => $sale->transaction_id,
+                        'total_amount' => $sale->total_amount,
+                    ],
+                    null,
+                    true
+                );
+            }
+
             DB::commit();
 
             // Low-stock alerts — fire after commit so stock values are final in DB
@@ -1927,6 +2019,7 @@ class POSComponent extends Component
                     'contact'  => $saleData->patient->contact  ?? 'N/A',
                     'pxnumber' => $saleData->patient->pxnumber ?? 'N/A',
                 ] : null,
+                'customer_name'  => $saleData->customer_display_name,
                 'items' => $saleData->items->map(function ($item) {
                     return [
                         'name'          => $item->product->name ?? 'N/A',
@@ -1968,6 +2061,8 @@ class POSComponent extends Component
             $this->pendingDiscountApprovalStatus = null;
             $this->isPartPayment        = false;
             $this->hasFramesOrLenses    = false;
+            $this->purchaseMode          = 'patient';
+            $this->directCustomerName    = '';
             $this->checkoutProcessing   = false;
 
         } catch (\Exception $e) {

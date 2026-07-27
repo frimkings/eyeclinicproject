@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Livewire\Cashier\SalesRecordsComponent;
+use App\Http\Livewire\POSComponent;
 use App\Models\Patient;
 use App\Models\RefundLog;
 use App\Models\Sales;
@@ -100,6 +101,60 @@ class SalesTest extends TestCase
         $this->assertEquals($this->cashier->id, $sale->user->id);
     }
 
+    public function test_direct_purchase_uses_customer_name_snapshot(): void
+    {
+        $sale = $this->makeSale([
+            'patient_id' => null,
+            'customer_name' => 'Ama Boateng',
+        ]);
+
+        $this->assertEquals('Ama Boateng', $sale->customer_display_name);
+    }
+
+    public function test_unnamed_direct_purchase_is_walk_in(): void
+    {
+        $sale = $this->makeSale([
+            'patient_id' => null,
+            'customer_name' => null,
+        ]);
+
+        $this->assertEquals('Walk-in', $sale->customer_display_name);
+    }
+
+    public function test_pos_can_switch_to_direct_purchase_mode(): void
+    {
+        Livewire::test(POSComponent::class)
+            ->call('selectDirectPurchaseMode')
+            ->assertSet('purchaseMode', 'direct')
+            ->set('directCustomerName', 'Direct Buyer')
+            ->assertSet('directCustomerName', 'Direct Buyer');
+    }
+
+    public function test_pos_does_not_switch_selected_patient_cart_to_direct_mode(): void
+    {
+        Livewire::test(POSComponent::class)
+            ->set('patientId', $this->patient->id)
+            ->call('selectDirectPurchaseMode')
+            ->assertSet('purchaseMode', 'patient')
+            ->assertDispatchedBrowserEvent('notify');
+    }
+
+    public function test_walk_in_cannot_enable_part_payment(): void
+    {
+        Livewire::test(POSComponent::class)
+            ->set('isPartPayment', true)
+            ->assertSet('isPartPayment', false)
+            ->assertDispatchedBrowserEvent('notify');
+    }
+
+    public function test_registered_patient_can_enable_part_payment(): void
+    {
+        Livewire::test(POSComponent::class)
+            ->set('patientId', $this->patient->id)
+            ->set('isPartPayment', true)
+            ->assertSet('isPartPayment', true);
+    }
+
     // ── SalesRecordsComponent ────────────────────────────────────────────
 
     public function test_cashier_can_view_sales_records_component(): void
@@ -134,6 +189,23 @@ class SalesTest extends TestCase
             ->pluck('transaction_id');
 
         $this->assertContains($txnId, $ids->toArray());
+    }
+
+    public function test_search_filters_by_direct_customer_name(): void
+    {
+        $sale = $this->makeSale([
+            'patient_id' => null,
+            'customer_name' => 'Unique Direct Buyer',
+        ]);
+
+        $ids = Livewire::test(SalesRecordsComponent::class)
+            ->set('searchTerm', 'Direct Buyer')
+            ->set('fromDate', now()->subDay()->format('Y-m-d'))
+            ->set('toDate', now()->addDay()->format('Y-m-d'))
+            ->viewData('sales')
+            ->pluck('id');
+
+        $this->assertContains($sale->id, $ids->toArray());
     }
 
     public function test_date_range_excludes_sales_outside_window(): void

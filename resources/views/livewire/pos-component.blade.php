@@ -51,6 +51,11 @@ x-init="initTheme()"
                         <div>Tel: {{ $receiptData['patient']['contact'] }}</div>
                         <div>ID: {{ $receiptData['patient']['pxnumber'] }}</div>
                     </div>
+                @elseif(!empty($receiptData['customer_name']))
+                    <div style="font-size:10px; padding-bottom:6px; border-bottom:1px dashed #999; margin-bottom:6px;">
+                        <div style="font-weight:bold; margin-bottom:2px;">CUSTOMER:</div>
+                        <div>{{ $receiptData['customer_name'] }}</div>
+                    </div>
                 @endif
                 <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
                     <thead><tr style="border-bottom:1px solid #333;">
@@ -150,6 +155,8 @@ window.buildAndPrint = function(d) {
     var patientBlock = '';
     if (d.patient) {
         patientBlock = '<div style="font-size:10px;padding-bottom:6px;border-bottom:1px dashed #000;margin-bottom:6px;"><strong>PATIENT:</strong><br>' + d.patient.name + '<br>Tel: ' + d.patient.contact + '<br>ID: ' + d.patient.pxnumber + '</div>';
+    } else if (d.customer_name) {
+        patientBlock = '<div style="font-size:10px;padding-bottom:6px;border-bottom:1px dashed #000;margin-bottom:6px;"><strong>CUSTOMER:</strong><br>' + d.customer_name + '</div>';
     }
     var subtotalRow = '', discountRow = '';
     if (d.discount_amount && parseFloat(d.discount_amount) > 0) {
@@ -243,7 +250,7 @@ window.printReceiptFromDom = function(event) {
         <div class="pos-topbar__actions">
             <div class="pos-chip"><i class="fas fa-user-circle"></i> {{ Auth::user()->name }}</div>
             <div class="pos-chip"><i class="fas fa-clock"></i> <span id="currentTime"></span></div>
-            <button class="pos-topbtn" wire:click="loadAllPendingCarts">
+            <button class="pos-topbtn" wire:click="loadAllPendingCarts" {{ $purchaseMode === 'direct' ? 'disabled' : '' }}>
                 <i class="fas fa-layer-group"></i>
                 <span>Doctor Carts</span>
                 @if(($pendingPrescriptionCartCount ?? 0) > 0)
@@ -334,10 +341,42 @@ window.printReceiptFromDom = function(event) {
         {{-- ==================== RIGHT: CHECKOUT ==================== --}}
         <div class="pos-checkout">
 
-            {{-- Patient --}}
+            {{-- Purchase mode / customer --}}
             <div class="pos-co-section pos-patient-section">
-                <div class="pos-co-label"><i class="fas fa-user-circle"></i> Patient</div>
-                @if(!$patientId)
+                <div class="pos-co-label"><i class="fas fa-user-circle"></i> Customer</div>
+                <div class="pos-mode-switch">
+                    <button type="button"
+                            class="pos-mode-btn {{ $purchaseMode === 'patient' ? 'pos-mode-btn--active' : '' }}"
+                            wire:click="selectPatientPurchaseMode">
+                        <i class="fas fa-user-injured"></i> Registered Patient
+                    </button>
+                    <button type="button"
+                            class="pos-mode-btn {{ $purchaseMode === 'direct' ? 'pos-mode-btn--active pos-mode-btn--direct' : '' }}"
+                            wire:click="selectDirectPurchaseMode">
+                        <i class="fas fa-shopping-bag"></i> Direct Purchase
+                    </button>
+                </div>
+
+                @if($purchaseMode === 'direct')
+                    <div class="pos-direct-panel">
+                        <div class="pos-direct-panel__status">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Direct Purchase</span>
+                        </div>
+                        <input class="pos-co-input"
+                               type="text"
+                               maxlength="150"
+                               placeholder="Customer name (optional)"
+                               wire:model.defer="directCustomerName"
+                               autocomplete="off">
+                        <div class="pos-direct-panel__hint">
+                            Leave blank for Walk-in. No patient record or Doctor Cart will be used.
+                        </div>
+                        @error('directCustomerName')
+                            <div class="pos-direct-panel__error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                @elseif(!$patientId)
                     <div class="pos-patient-wrap" style="position:relative;">
                         <input class="pos-co-input"
                                type="text"
@@ -577,13 +616,16 @@ window.printReceiptFromDom = function(event) {
 
                     {{-- Part payment --}}
                     @if($hasFramesOrLenses)
-                        <div class="pos-part-toggle {{ $isPartPayment ? 'pos-part-toggle--active' : '' }}">
+                        <div class="pos-part-toggle {{ $isPartPayment ? 'pos-part-toggle--active' : '' }} {{ !$patientId ? 'pos-part-toggle--disabled' : '' }}">
                             <div>
                                 <i class="fas fa-clock"></i>
                                 <span>Part Payment / Hold Order</span>
+                                @if(!$patientId)
+                                    <small>Registered patient required</small>
+                                @endif
                             </div>
                             <label class="pos-switch">
-                                <input type="checkbox" wire:model.live="isPartPayment">
+                                <input type="checkbox" wire:model.live="isPartPayment" {{ !$patientId ? 'disabled' : '' }}>
                                 <span class="pos-switch__track"></span>
                             </label>
                         </div>
@@ -1360,6 +1402,56 @@ window.printReceiptFromDom = function(event) {
 /* ---- Patient section ---- */
 .pos-patient-section { flex-shrink: 0; }
 
+.pos-mode-switch {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    display: grid;
+    gap: 4px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: .6rem;
+    padding: 4px;
+}
+.pos-mode-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: .72rem;
+    font-weight: 700;
+    min-height: 34px;
+    padding: .35rem .45rem;
+}
+.pos-mode-btn:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+.pos-mode-btn--active {
+    background: rgba(59,130,246,.18);
+    border-color: rgba(59,130,246,.45);
+    color: #93c5fd;
+}
+.pos-mode-btn--direct {
+    background: rgba(34,197,94,.14);
+    border-color: rgba(34,197,94,.4);
+    color: #86efac;
+}
+.pos-direct-panel {
+    background: rgba(34,197,94,.07);
+    border: 1px solid rgba(34,197,94,.22);
+    border-radius: 8px;
+    padding: .65rem;
+}
+.pos-direct-panel__status {
+    align-items: center;
+    color: #86efac;
+    display: flex;
+    font-size: .75rem;
+    font-weight: 800;
+    gap: .35rem;
+    margin-bottom: .5rem;
+}
+.pos-direct-panel__hint { color: #64748b; font-size: .68rem; margin-top: .35rem; }
+.pos-direct-panel__error { color: #fca5a5; font-size: .7rem; margin-top: .3rem; }
+
 .pos-co-input {
     background: rgba(255,255,255,.07);
     border: 1px solid rgba(255,255,255,.1);
@@ -1808,6 +1900,14 @@ window.printReceiptFromDom = function(event) {
     transition: border-color .15s, background .15s;
 }
 .pos-part-toggle--active { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fbbf24; }
+.pos-part-toggle--disabled { opacity: .58; }
+.pos-part-toggle small {
+    display: block;
+    font-size: .62rem;
+    font-weight: 500;
+    margin-left: 1.15rem;
+    margin-top: .1rem;
+}
 
 .pos-switch { display: inline-flex; position: relative; }
 .pos-switch input { height: 0; opacity: 0; position: absolute; width: 0; }
@@ -2207,6 +2307,18 @@ window.printReceiptFromDom = function(event) {
     background: #ffffff;
     border-color: #cbd5e1;
 }
+
+.pos-shell--light .pos-mode-switch {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.pos-shell--light .pos-mode-btn { color: #64748b; }
+.pos-shell--light .pos-mode-btn:hover { background: #e2e8f0; color: #0f172a; }
+.pos-shell--light .pos-mode-btn--active { background: #dbeafe; color: #1d4ed8; }
+.pos-shell--light .pos-mode-btn--direct { background: #dcfce7; color: #15803d; }
+.pos-shell--light .pos-direct-panel { background: #f0fdf4; border-color: #bbf7d0; }
+.pos-shell--light .pos-direct-panel__status { color: #15803d; }
 
 .pos-shell--light .pos-patient-row {
     border-bottom-color: #e5e7eb;

@@ -151,6 +151,44 @@ class ReportsTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_purchase_type_filter_shows_only_direct_purchases(): void
+    {
+        $patientSale = $this->makeSale();
+        $directSale = $this->makeSale([
+            'patient_id' => null,
+            'customer_name' => 'Direct Buyer',
+        ]);
+
+        $ids = Livewire::test(ReportsComponent::class)
+            ->set('fromDate', now()->format('Y-m-d'))
+            ->set('toDate', now()->format('Y-m-d'))
+            ->set('purchaseType', 'direct')
+            ->viewData('sales')
+            ->pluck('id');
+
+        $this->assertContains($directSale->id, $ids->toArray());
+        $this->assertNotContains($patientSale->id, $ids->toArray());
+    }
+
+    public function test_purchase_type_filter_shows_only_patient_purchases(): void
+    {
+        $patientSale = $this->makeSale();
+        $directSale = $this->makeSale([
+            'patient_id' => null,
+            'customer_name' => 'Direct Buyer',
+        ]);
+
+        $ids = Livewire::test(ReportsComponent::class)
+            ->set('fromDate', now()->format('Y-m-d'))
+            ->set('toDate', now()->format('Y-m-d'))
+            ->set('purchaseType', 'patient')
+            ->viewData('sales')
+            ->pluck('id');
+
+        $this->assertContains($patientSale->id, $ids->toArray());
+        $this->assertNotContains($directSale->id, $ids->toArray());
+    }
+
     // ── Date range ────────────────────────────────────────────────────────
 
     public function test_date_range_excludes_old_sales(): void

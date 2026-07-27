@@ -237,6 +237,12 @@
             <div class="small">ID: {{ $sale->patient->pxnumber ?? 'N/A' }}</div>
         </div>
         <div class="divider"></div>
+    @else
+        <div class="section">
+            <div class="label">Customer</div>
+            <div>{{ $sale->customer_display_name }}</div>
+        </div>
+        <div class="divider"></div>
     @endif
 
     <table>

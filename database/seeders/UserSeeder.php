@@ -48,6 +48,42 @@ class UserSeeder extends Seeder
                 'password' => 'staff123',
                 'role' => 'Staff',
             ],
+            [
+                'email' => 'doctor2@eyeclinic.com',
+                'name' => 'Dr. Amelia Santos',
+                'password' => 'password',
+                'role' => 'Doctor',
+            ],
+            [
+                'email' => 'cashier@eyeclinic.com',
+                'name' => 'Maria Reyes',
+                'password' => 'password',
+                'role' => 'Cashier',
+            ],
+            [
+                'email' => 'manager@eyeclinic.com',
+                'name' => 'Daniel Cruz',
+                'password' => 'password',
+                'role' => 'Manager',
+            ],
+            [
+                'email' => 'secretary2@eyeclinic.com',
+                'name' => 'Angela Flores',
+                'password' => 'password',
+                'role' => 'Secretary',
+            ],
+            [
+                'email' => 'staff2@eyeclinic.com',
+                'name' => 'Michael Garcia',
+                'password' => 'password',
+                'role' => 'Staff',
+            ],
+            [
+                'email' => 'staff3@eyeclinic.com',
+                'name' => 'Patricia Mendoza',
+                'password' => 'password',
+                'role' => 'Staff',
+            ],
         ];
 
         foreach ($users as $seedUser) {

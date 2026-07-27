@@ -34,6 +34,7 @@ class ReportsComponent extends Component
 
     /* Payment status filter */
     public $paymentStatus = '';
+    public $purchaseType = '';
 
     /* Refund */
     public $refundReason = '';
@@ -166,6 +167,15 @@ class ReportsComponent extends Component
         $this->resetPage();
     }
 
+    public function updatedPurchaseType()
+    {
+        if (!in_array($this->purchaseType, ['', 'patient', 'direct'], true)) {
+            $this->purchaseType = '';
+        }
+        $this->resetPage();
+        $this->dispatchChart();
+    }
+
     /* ---------------- BASE QUERY ---------------- */
 
     protected function salesBaseQuery()
@@ -185,11 +195,14 @@ class ReportsComponent extends Component
             ->when($this->searchQuery, function ($q) {
                 $q->where(function ($query) {
                     $query->where('transaction_id', 'like', '%' . $this->searchQuery . '%')
+                          ->orWhere('customer_name', 'like', '%' . $this->searchQuery . '%')
                           ->orWhereHas('patient', fn ($p) =>
                               $p->where('name', 'like', '%' . $this->searchQuery . '%')
                           );
                 });
             })
+            ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('patient_id'))
+            ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('patient_id'))
             ->when($this->paymentStatus, fn ($q) => $q->where('payment_status', $this->paymentStatus));
     }
 
@@ -203,8 +216,9 @@ class ReportsComponent extends Component
     public function getSummaryProperty()
     {
         $cacheKey = 'reports_summary_' . md5(
-            $this->activeTab . $this->fromDate . $this->toDate .
-            ($this->showRefunded ? '1' : '0') . $this->paymentStatus
+            auth()->id() . $this->activeTab . $this->fromDate . $this->toDate .
+            ($this->showRefunded ? '1' : '0') . $this->paymentStatus .
+            $this->purchaseType . $this->searchQuery
         );
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () {
@@ -225,6 +239,8 @@ class ReportsComponent extends Component
                     $this->fromDate . ' 00:00:00',
                     $this->toDate   . ' 23:59:59',
                 ])
+                ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('sales.patient_id'))
+                ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('sales.patient_id'))
                 ->whereNull('sale_items.deleted_at')
                 ->whereNull('sales.deleted_at')
                 ->sum(DB::raw('sale_items.dispensed_quantity * COALESCE(products.cost_price, 0)'));
@@ -270,6 +286,8 @@ class ReportsComponent extends Component
                 $this->fromDate . ' 00:00:00',
                 $this->toDate   . ' 23:59:59',
             ])
+            ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('sales.patient_id'))
+            ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('sales.patient_id'))
             ->when($this->searchQuery, function ($q) {
                 $q->where('products.name', 'like', '%' . $this->searchQuery . '%');
             })
@@ -314,6 +332,8 @@ class ReportsComponent extends Component
                 $this->fromDate . ' 00:00:00',
                 $this->toDate   . ' 23:59:59',
             ])
+            ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('sales.patient_id'))
+            ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('sales.patient_id'))
             ->whereNull('sale_items.deleted_at')
             ->whereNull('sales.deleted_at')
             ->groupBy('categories.id', 'categories.name')
@@ -339,6 +359,10 @@ class ReportsComponent extends Component
             $this->fromDate . ' 00:00:00',
             $this->toDate   . ' 23:59:59',
         ])
+        ->whereHas('sale', function ($q) {
+            $q->when($this->purchaseType === 'patient', fn ($sale) => $sale->whereNotNull('patient_id'))
+              ->when($this->purchaseType === 'direct', fn ($sale) => $sale->whereNull('patient_id'));
+        })
         ->selectRaw('payment_method, SUM(amount) as total, COUNT(*) as cnt')
         ->groupBy('payment_method')
         ->orderByDesc('total')
@@ -371,6 +395,8 @@ class ReportsComponent extends Component
                     $this->fromDate . ' 00:00:00',
                     $this->toDate   . ' 23:59:59',
                 ]);
+                $q->when($this->purchaseType === 'patient', fn ($sale) => $sale->whereNotNull('patient_id'))
+                  ->when($this->purchaseType === 'direct', fn ($sale) => $sale->whereNull('patient_id'));
             })
             ->groupBy('product_id')
             ->with('product')
@@ -386,6 +412,7 @@ class ReportsComponent extends Component
         $this->searchQuery   = '';
         $this->showRefunded  = false;
         $this->paymentStatus = '';
+        $this->purchaseType  = '';
         $this->perPage       = 25;
         $this->setDateRangeForTab($this->activeTab);
         $this->resetPage();
@@ -418,12 +445,13 @@ class ReportsComponent extends Component
 
         return response()->streamDownload(function () use ($query) {
             $f = fopen('php://output', 'w');
-            fputcsv($f, ['Transaction ID', 'Patient', 'Date', 'Time', 'Total Amount', 'Amount Paid', 'Payment Status', 'Profit']);
+            fputcsv($f, ['Transaction ID', 'Customer', 'Purchase Type', 'Date', 'Time', 'Total Amount', 'Amount Paid', 'Payment Status', 'Profit']);
             $query->chunkById(500, function ($chunk) use ($f) {
                 foreach ($chunk as $sale) {
                     fputcsv($f, [
                         $sale->transaction_id,
-                        $sale->patient->name ?? 'Walk-in Customer',
+                        $sale->customer_display_name,
+                        $sale->patient_id ? 'Patient Purchase' : 'Direct Purchase',
                         $sale->created_at->format('Y-m-d'),
                         $sale->created_at->format('H:i:s'),
                         $sale->total_amount,
@@ -455,7 +483,7 @@ class ReportsComponent extends Component
 
         $cacheKey = 'reports_chart_' . md5(
             $this->chartPeriod . $this->activeTab . $this->fromDate . $this->toDate .
-            ($this->showRefunded ? '1' : '0')
+            ($this->showRefunded ? '1' : '0') . $this->purchaseType
         );
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () {
@@ -485,6 +513,8 @@ class ReportsComponent extends Component
             $rows = Sales::query()
                 ->where('is_refunded', false)
                 ->whereBetween('created_at', [$start, $end])
+                ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('patient_id'))
+                ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('patient_id'))
                 ->select(DB::raw('DATE(created_at) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
                 ->groupBy('period')
                 ->orderBy('period')
@@ -504,6 +534,8 @@ class ReportsComponent extends Component
             $rows = Sales::query()
                 ->where('is_refunded', false)
                 ->whereBetween('created_at', [$start, $end])
+                ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('patient_id'))
+                ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('patient_id'))
                 ->select(DB::raw('YEARWEEK(created_at, 3) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
                 ->groupBy('period')
                 ->orderBy('period')
@@ -524,6 +556,8 @@ class ReportsComponent extends Component
             $rows = Sales::query()
                 ->where('is_refunded', false)
                 ->whereBetween('created_at', [$start, $end])
+                ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('patient_id'))
+                ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('patient_id'))
                 ->select(DB::raw("DATE_FORMAT(created_at,'%Y-%m') as period"), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
                 ->groupBy('period')
                 ->orderBy('period')
@@ -544,6 +578,8 @@ class ReportsComponent extends Component
             $rows = Sales::query()
                 ->where('is_refunded', false)
                 ->whereBetween('created_at', [$start, $end])
+                ->when($this->purchaseType === 'patient', fn ($q) => $q->whereNotNull('patient_id'))
+                ->when($this->purchaseType === 'direct', fn ($q) => $q->whereNull('patient_id'))
                 ->select(DB::raw('YEAR(created_at) as period'), DB::raw('SUM(total_amount) as revenue'), DB::raw('SUM(profit) as profit'))
                 ->groupBy('period')
                 ->orderBy('period')

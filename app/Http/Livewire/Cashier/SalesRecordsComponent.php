@@ -158,7 +158,7 @@ class SalesRecordsComponent extends Component
         \Log::info('viewSale called for sale ID: ' . $saleId);
         
         try {
-            $this->selectedSale = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'user_id', 'created_at')
+            $this->selectedSale = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'customer_name', 'user_id', 'created_at')
                 ->with([
                     'items:id,sale_id,product_id,dispensed_quantity,selling_price,subtotal',
                     'items.product:id,name',
@@ -185,7 +185,7 @@ class SalesRecordsComponent extends Component
         \Log::info('printReceipt called for sale ID: ' . $saleId);
         
         try {
-            $sale = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'user_id', 'created_at')
+            $sale = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'customer_name', 'user_id', 'created_at')
                 ->with([
                     'items:id,sale_id,product_id,dispensed_quantity,selling_price,subtotal',
                     'items.product:id,name',
@@ -207,6 +207,7 @@ class SalesRecordsComponent extends Component
                     'contact' => $sale->patient->contact,
                     'pxnumber' => $sale->patient->pxnumber,
                 ] : null,
+                'customer_name' => $sale->customer_display_name,
                 'user' => $sale->user ? [
                     'name' => $sale->user->name,
                 ] : null,
@@ -244,7 +245,7 @@ class SalesRecordsComponent extends Component
 
         $fileName = 'Sales_Report_' . $this->fromDate . '_to_' . $this->toDate . '.csv';
         
-        $query = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'user_id', 'created_at')
+        $query = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'customer_name', 'user_id', 'created_at')
             ->with(['patient:id,name', 'user:id,name'])
             ->whereBetween('created_at', [$fromDate, $toDate]);
 
@@ -255,6 +256,7 @@ class SalesRecordsComponent extends Component
         if (!empty($this->searchTerm)) {
             $query->where(function($q) {
                 $q->where('transaction_id', 'like', '%' . $this->searchTerm . '%')
+                  ->orWhere('customer_name', 'like', '%' . $this->searchTerm . '%')
                   ->orWhereHas('patient', function($p) {
                       $p->where('name', 'like', '%' . $this->searchTerm . '%');
                   });
@@ -280,7 +282,7 @@ class SalesRecordsComponent extends Component
                     fputcsv($file, [
                         $sale->created_at->format('Y-m-d H:i'),
                         $sale->transaction_id,
-                        $sale->patient->name ?? 'Walk-in',
+                        $sale->customer_display_name,
                         $sale->user->name ?? 'System',
                         currency() . ' ' . number_format($sale->total_amount, 2),
                         $sale->is_refunded ? 'Refunded' : 'Paid'
@@ -367,7 +369,7 @@ class SalesRecordsComponent extends Component
         $this->normalizeFilters();
         [$fromDate, $toDate] = $this->dateRange();
 
-        $query = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'user_id', 'created_at')
+        $query = Sales::select('id', 'transaction_id', 'total_amount', 'is_refunded', 'patient_id', 'customer_name', 'user_id', 'created_at')
             ->with([
                 'items:id,sale_id,product_id,dispensed_quantity,selling_price,subtotal',
                 'items.product:id,name',
@@ -384,6 +386,7 @@ class SalesRecordsComponent extends Component
         if (!empty($this->searchTerm)) {
             $query->where(function($q) {
                 $q->where('transaction_id', 'like', '%' . $this->searchTerm . '%')
+                  ->orWhere('customer_name', 'like', '%' . $this->searchTerm . '%')
                   ->orWhereHas('patient', function($p) {
                       $p->where('name', 'like', '%' . $this->searchTerm . '%');
                   });
@@ -399,6 +402,7 @@ class SalesRecordsComponent extends Component
                 ->where('is_refunded', false)
                 ->where(function($q) {
                     $q->where('transaction_id', 'like', '%' . $this->searchTerm . '%')
+                      ->orWhere('customer_name', 'like', '%' . $this->searchTerm . '%')
                       ->orWhereHas('patient', function($p) {
                           $p->where('name', 'like', '%' . $this->searchTerm . '%');
                       });

@@ -175,7 +175,7 @@
 
                     <div class="mb-3">
                         <span class="text-muted small font-weight-bold">Patient:</span>
-                        <span class="ml-1 font-weight-bold">{{ $historyForSale->patient->name ?? 'Walk-in' }}</span>
+                        <span class="ml-1 font-weight-bold">{{ $historyForSale->customer_display_name }}</span>
                         @if($historyForSale->patient)
                             <span class="text-muted small ml-2">{{ $historyForSale->patient->pxnumber }}</span>
                         @endif
@@ -277,7 +277,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label text-muted mb-1">Patient</label>
-                            <div class="font-weight-bold">{{ $selectedSale->patient->name ?? 'Walk-in' }}</div>
+                            <div class="font-weight-bold">{{ $selectedSale->customer_display_name }}</div>
                             @if($selectedSale->patient)
                                 <small class="text-muted">{{ $selectedSale->patient->pxnumber }}</small>
                             @endif

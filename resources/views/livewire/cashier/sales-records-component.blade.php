@@ -78,7 +78,7 @@
                                 <small class="text-primary font-italic">{{ $sale->transaction_id }}</small>
                             </td>
                             <td>
-                                <span class="d-block font-weight-bold text-dark">{{ $sale->patient->name ?? 'Walk-in' }}</span>
+                                <span class="d-block font-weight-bold text-dark">{{ $sale->customer_display_name }}</span>
                                 <small class="text-muted">By: {{ $sale->user->name ?? 'N/A' }}</small>
                             </td>
                             <td class="font-weight-bold">{{ currency() }} {{ number_format($sale->total_amount, 2) }}</td>
@@ -115,7 +115,7 @@
                                 
                                 {{-- Hidden div with sale data --}}
                                 <div id="sale-{{ $sale->id }}" class="sale-data">
-                                    <div class="patient">{{ $sale->patient->name ?? 'Walk-in' }}</div>
+                                    <div class="patient">{{ $sale->customer_display_name }}</div>
                                     <div class="transaction-id">{{ $sale->transaction_id }}</div>
                                     <div class="total">{{ number_format($sale->total_amount, 2) }}</div>
                                     <div class="items">

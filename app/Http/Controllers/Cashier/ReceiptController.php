@@ -38,7 +38,7 @@ class ReceiptController extends Controller
         $change = $request->query('change', 0);
         $clinicSettings = Setting::getSettings();
 
-        $patientName = $sale->patient?->name;
+        $patientName = $sale->customer_display_name;
         $nameSlug = $patientName
             ? Str::slug($patientName)
             : Str::slug($sale->transaction_id);
@@ -65,6 +65,7 @@ class ReceiptController extends Controller
                 'discount_approved_by',
                 'is_refunded',
                 'patient_id',
+                'customer_name',
                 'user_id',
                 'created_at'
             )

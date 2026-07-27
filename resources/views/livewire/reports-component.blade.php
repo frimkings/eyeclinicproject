@@ -88,6 +88,11 @@
                     <option value="partial">Partial</option>
                     <option value="unpaid">Unpaid</option>
                 </select>
+                <select wire:model="purchaseType" class="form-control form-control-sm mt-2">
+                    <option value="">All Purchase Types</option>
+                    <option value="patient">Patient Purchase</option>
+                    <option value="direct">Direct Purchase / Walk-in</option>
+                </select>
             </div>
             @endif
 
@@ -112,7 +117,7 @@
             </button>
 
             {{-- ACTIVE FILTERS --}}
-            @if($searchQuery || ($showRefunded && $activeTab !== 'trash') || $paymentStatus)
+            @if($searchQuery || ($showRefunded && $activeTab !== 'trash') || $paymentStatus || $purchaseType)
             <div class="mt-3 pt-3 border-top">
                 <p class="sidebar-label">Active Filters</p>
                 @if($searchQuery)
@@ -123,6 +128,11 @@
                 @endif
                 @if($paymentStatus)
                     <span class="badge badge-info d-inline-block mb-1">{{ ucfirst($paymentStatus) }}</span>
+                @endif
+                @if($purchaseType)
+                    <span class="badge badge-success d-inline-block mb-1">
+                        {{ $purchaseType === 'patient' ? 'Patient Purchase' : 'Direct Purchase' }}
+                    </span>
                 @endif
             </div>
             @endif
@@ -784,7 +794,10 @@
                                         <div class="small text-muted">{{ $sale->created_at->format('h:i A') }}</div>
                                     </td>
                                     <td>
-                                        <div class="font-weight-bold">{{ $sale->patient->name ?? 'Walk-in Customer' }}</div>
+                                        <div class="font-weight-bold">{{ $sale->customer_display_name }}</div>
+                                        <span class="badge {{ $sale->patient_id ? 'badge-primary' : 'badge-success' }}">
+                                            {{ $sale->patient_id ? 'Patient Purchase' : 'Direct Purchase' }}
+                                        </span>
                                         <small class="text-muted">#{{ $sale->transaction_id }}</small>
                                     </td>
                                     <td class="text-right font-weight-bold">{{ currency() }} {{ number_format($sale->total_amount, 2) }}</td>
@@ -859,7 +872,7 @@
             <div class="modal-body p-0">
                 @if($viewingSale)
                 <div class="px-4 pt-3 pb-1 bg-light border-bottom d-flex justify-content-between">
-                    <div><span class="text-muted small">Patient:</span> <strong>{{ $viewingSale->patient_name ?? 'Walk-in' }}</strong></div>
+                    <div><span class="text-muted small">Customer:</span> <strong>{{ $viewingSale->customer_display_name }}</strong></div>
                     <div><span class="text-muted small">Date:</span> <strong>{{ $viewingSale->created_at->format('M d, Y h:i A') }}</strong></div>
                 </div>
                 <div class="table-responsive">

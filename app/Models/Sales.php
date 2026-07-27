@@ -14,6 +14,7 @@ class Sales extends Model
 protected $fillable = [
     'user_id',
     'patient_id',
+    'customer_name',
     'consultation_id',
     'transaction_id',
     'total_amount',
@@ -42,6 +43,11 @@ protected $casts = [
 public function getRemainingBalanceAttribute(): float
 {
     return max(0, (float) $this->total_amount - (float) $this->amount_paid);
+}
+
+public function getCustomerDisplayNameAttribute(): string
+{
+    return $this->patient?->name ?: ($this->customer_name ?: 'Walk-in');
 }
 
 public function isFullyPaid(): bool
