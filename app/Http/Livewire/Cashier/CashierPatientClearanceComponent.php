@@ -7,6 +7,7 @@ use App\Models\CashierPatientClearance;
 use App\Models\Category;
 use App\Models\ClearanceRevokeLog;
 use App\Models\Patient;
+use App\Models\InsuranceClaim;
 use App\Models\PaymentTransaction;
 use App\Models\Product;
 use App\Models\SaleItem;
@@ -43,6 +44,8 @@ class CashierPatientClearanceComponent extends Component
     public string $selectedServiceId = ''; // numeric product id OR 'unpaid'
     public string $patientName   = '';
     public array $clearancePayments = [];
+    public float $outstandingBalance = 0.0;
+    public array $insuranceSummary = [];
 
     // --- Inline status update ---
     public ?int   $editingClearanceId     = null;
@@ -120,6 +123,25 @@ class CashierPatientClearanceComponent extends Component
         $this->selectedServiceId  = '';
         $this->patientClearanceId = $patientId;
         $this->patientName        = $patient->name;
+        $this->outstandingBalance = (float) Sales::where('patient_id', $patientId)
+            ->where('created_at', '<', now()->startOfDay())
+            ->where('is_refunded', false)
+            ->selectRaw('COALESCE(SUM(GREATEST(total_amount - amount_paid, 0)), 0) AS balance')
+            ->value('balance');
+
+        $claim = InsuranceClaim::with('insurer')->where('patient_id', $patientId)->latest()->first();
+        $approvedCoverage = (float) ($claim?->approved_amount ?? $claim?->pre_auth_amount ?? 0);
+        $claimAmount = (float) ($claim?->claim_amount ?? 0);
+        $this->insuranceSummary = $patient->insurer_id ? [
+            'insurer' => $claim?->insurer?->name ?? $patient->insurer?->name ?? 'Insurance',
+            'member_id' => $claim?->member_id ?? $patient->insurance_member_id,
+            'member_name' => $claim?->member_name ?? $patient->insurance_member_name,
+            'policy_number' => $claim?->policy_number ?? $patient->insurance_policy_number,
+            'status' => $claim?->statusLabel() ?? 'No claim submitted',
+            'pre_auth_status' => $claim?->preAuthLabel() ?? 'No Pre-Auth',
+            'coverage' => $approvedCoverage,
+            'patient_contribution' => max(0, $claimAmount - $approvedCoverage),
+        ] : [];
 
         $this->dispatchBrowserEvent('show-addClearanceModal-form');
     }
@@ -477,7 +499,7 @@ class CashierPatientClearanceComponent extends Component
               ->orWhere('type', 'service');
         })->orderBy('name')->get();
 
-        $clearances = CashierPatientClearance::with(['patient', 'user', 'service', 'sale', 'pendingRevokeLog'])
+        $clearances = CashierPatientClearance::with(['patient.insurer', 'patient.latestInsuranceClaim', 'user', 'service', 'sale', 'pendingRevokeLog'])
             ->whereDate('clearance_date', '>=', $from)
             ->whereDate('clearance_date', '<=', $to)
             ->when($this->statusFilter, fn($q) => $q->where('payment_status', $this->statusFilter))
@@ -489,9 +511,19 @@ class CashierPatientClearanceComponent extends Component
             ->latest()
             ->paginate(10, ['*'], 'cleared_page');
 
+        $reconciliation = PaymentTransaction::query()
+            ->selectRaw('payment_method, COUNT(*) AS transaction_count, SUM(amount) AS total_amount')
+            ->whereDate('created_at', $today)
+            ->whereHas('sale', fn ($query) => $query->where('is_refunded', false))
+            ->groupBy('payment_method')
+            ->orderBy('payment_method')
+            ->get();
+        $reconciliationTotal = (float) $reconciliation->sum('total_amount');
+
         return view('livewire.cashier.cashier-patient-clearance-component', compact(
             'patients', 'clearances', 'services',
-            'pendingCount', 'clearedToday', 'paidToday', 'unpaidToday'
+            'pendingCount', 'clearedToday', 'paidToday', 'unpaidToday',
+            'reconciliation', 'reconciliationTotal'
         ))->layout('layouts.secretary.secretary-layout');
     }
 }

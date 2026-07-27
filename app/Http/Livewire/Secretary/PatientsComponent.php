@@ -33,6 +33,12 @@ class PatientsComponent extends Component
     public $pxSearch      = '';
     public $fromDate      = null;
     public $toDate        = null;
+    public $fromDateDisplay = '';
+    public $toDateDisplay = '';
+    public $dobDisplay = '';
+    public $dobAge = null;
+    public $dateRangeError = '';
+    public $duplicatePatients = [];
     public $insurerFilter = '';
 
     public $selectedPatients = [];
@@ -63,6 +69,53 @@ class PatientsComponent extends Component
     {
         $this->fromDate = Carbon::today()->startOfMonth()->toDateString();
         $this->toDate = Carbon::today()->toDateString();
+        $this->fromDateDisplay = Carbon::parse($this->fromDate)->format('d/m/y');
+        $this->toDateDisplay = Carbon::parse($this->toDate)->format('d/m/y');
+    }
+
+    public function updatedFromDateDisplay(): void
+    {
+        $this->fromDate = $this->parseDisplayDate($this->fromDateDisplay);
+        $this->validateDateRange();
+        $this->resetPage();
+        $this->clearSelection();
+    }
+
+    public function updatedToDateDisplay(): void
+    {
+        $this->toDate = $this->parseDisplayDate($this->toDateDisplay);
+        $this->validateDateRange();
+        $this->resetPage();
+        $this->clearSelection();
+    }
+
+    public function updatedDobDisplay(): void
+    {
+        $date = $this->parseDisplayDate($this->dobDisplay);
+        $this->dobAge = $date ? Carbon::parse($date)->age : null;
+        $this->checkDuplicatePatients();
+    }
+
+    public function updatedStateContact(): void
+    {
+        $this->checkDuplicatePatients();
+    }
+
+    public function setDatePreset(string $preset): void
+    {
+        $to = Carbon::today();
+        $from = match ($preset) {
+            'today' => $to->copy(),
+            'last_30_days' => $to->copy()->subDays(29),
+            default => $to->copy()->startOfMonth(),
+        };
+        $this->fromDate = $from->toDateString();
+        $this->toDate = $to->toDateString();
+        $this->fromDateDisplay = $from->format('d/m/y');
+        $this->toDateDisplay = $to->format('d/m/y');
+        $this->dateRangeError = '';
+        $this->resetPage();
+        $this->clearSelection();
     }
 
     public function updatedPxSearch()
@@ -83,6 +136,11 @@ class PatientsComponent extends Component
         $this->clearSelection();
     }
 
+    private function patientQuery()
+    {
+        return $this->activeTab === 'archived' ? Patient::onlyTrashed() : Patient::query();
+    }
+
     public function updatingPage()
     {
         $this->clearSelection();
@@ -99,7 +157,7 @@ class PatientsComponent extends Component
 
     public function getGenderStatsProperty()
     {
-        $query = $this->applyFilters(Patient::query());
+        $query = $this->applyFilters($this->patientQuery());
 
         return [
             'male'   => (clone $query)->where('gender', 'Male')->count(),
@@ -133,7 +191,7 @@ class PatientsComponent extends Component
     public function updatedSelectAll($value)
     {
         if ($value) {
-            $this->selectedPatients = $this->applyFilters(Patient::query())
+            $this->selectedPatients = $this->applyFilters($this->patientQuery())
                 ->pluck('id')->map(fn($id) => (string)$id)->toArray();
         } else {
             $this->selectedPatients = [];
@@ -158,10 +216,22 @@ class PatientsComponent extends Component
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => 'Selected records archived!']);
     }
 
+    public function restoreSelected(): void
+    {
+        $patients = Patient::onlyTrashed()->whereIn('id', $this->selectedPatients)->get();
+        foreach ($patients as $patient) {
+            $patient->restore();
+            AuditTrail::record('patient.restored', "Restored patient profile: {$patient->name} ({$patient->pxnumber})", $patient, [], [], $patient->id, true);
+        }
+        $count = $patients->count();
+        $this->clearSelection();
+        $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "{$count} patient record(s) restored."]);
+    }
+
     // Fix #5: pass the query builder; downloadCSV streams with chunkById
     public function exportRegistry()
     {
-        $query = $this->applyFilters(Patient::query());
+        $query = $this->applyFilters($this->patientQuery());
         // Fix #8 force=true: exports are security-critical — always audit
         AuditTrail::record('patient.exported', 'Exported patient registry.', null, [], [], null, true);
         return $this->downloadCSV($query, 'Patient_Registry_Report');
@@ -171,7 +241,8 @@ class PatientsComponent extends Component
     {
         if (empty($this->selectedPatients)) return;
         // Fix #1: resolve against DB so forged IDs in the public property are ignored
-        $query = Patient::whereIn('id', $this->selectedPatients);
+        $query = ($this->activeTab === 'archived' ? Patient::onlyTrashed() : Patient::query())
+            ->whereIn('id', $this->selectedPatients);
         AuditTrail::record('patient.exported', 'Exported ' . count($this->selectedPatients) . ' selected patient(s).', null, [], [], null, true);
         return $this->downloadCSV($query, 'Selected_Patients_Export');
     }
@@ -191,12 +262,12 @@ class PatientsComponent extends Component
                         $px->name,
                         $px->email,
                         $px->contact,
-                        $px->dob,
+                        $px->dob ? Carbon::parse($px->dob)->format('d/m/y') : '',
                         $px->gender,
                         $px->civil_status,
                         $px->occupation,
                         $px->address,
-                        $px->created_at->format('Y-m-d'),
+                        $px->created_at->format('d/m/y'),
                     ]));
                 }
             });
@@ -326,6 +397,9 @@ class PatientsComponent extends Component
             'insurer_id' => null, 'insurance_member_id' => '', 'insurance_member_name' => '', 'insurance_policy_number' => '',
         ];
         $this->nameSearch = '';
+        $this->dobDisplay = '';
+        $this->dobAge = null;
+        $this->duplicatePatients = [];
         $this->isEditing  = false;
         $this->paymentType = 'cash';
         $this->showInsuranceModal = false;
@@ -370,6 +444,8 @@ class PatientsComponent extends Component
     public function saveEntry()
     {
         $this->state['name'] = $this->nameSearch;
+        $this->state['dob'] = $this->parseDisplayDate($this->dobDisplay);
+        $this->checkDuplicatePatients();
         if ($this->paymentType !== 'insurance') {
             $this->clearInsuranceDetails();
         }
@@ -413,6 +489,11 @@ class PatientsComponent extends Component
         });
 
         $validatedData = $validator->validate();
+
+        if (!$this->isEditing && count($this->duplicatePatients) > 0) {
+            $this->addError('name', 'A possible matching patient already exists. Open the existing profile or change the identifying details.');
+            return;
+        }
 
         if ($this->isEditing) {
             $patient = Patient::find($this->state['id']);
@@ -462,6 +543,9 @@ class PatientsComponent extends Component
         }
 
         if (!$this->pxSearch) {
+            if ($this->dateRangeError !== '') {
+                return $query->whereRaw('1 = 0');
+            }
             if ($this->fromDate && $this->toDate) {
                 $query->whereBetween('created_at', [
                     Carbon::parse($this->fromDate)->startOfDay(),
@@ -544,6 +628,8 @@ class PatientsComponent extends Component
         }
 
         $this->state      = $patient->toArray();
+        $this->dobDisplay = $patient->dob ? Carbon::parse($patient->dob)->format('d/m/y') : '';
+        $this->dobAge = $patient->dob ? Carbon::parse($patient->dob)->age : null;
         $this->nameSearch = $patient->name;
         $this->isEditing  = true;
         $this->paymentType = $patient->insurer_id ? 'insurance' : 'cash';
@@ -556,6 +642,7 @@ class PatientsComponent extends Component
 
     public function updatedNameSearch($value)
     {
+        $this->checkDuplicatePatients();
         if (strlen($value) < 2) { $this->suggestions = []; return; }
         $this->suggestions = Patient::where('name', 'like', '%' . $value . '%')->limit(5)->get()->toArray();
     }
@@ -566,6 +653,8 @@ class PatientsComponent extends Component
     {
         $p = Patient::findOrFail($id);
         $this->state      = $p->toArray();
+        $this->dobDisplay = $p->dob ? Carbon::parse($p->dob)->format('d/m/y') : '';
+        $this->dobAge = $p->dob ? Carbon::parse($p->dob)->age : null;
         $this->nameSearch = $p->name;
         $this->isEditing  = true;
         $this->paymentType = $p->insurer_id ? 'insurance' : 'cash';
@@ -581,10 +670,75 @@ class PatientsComponent extends Component
                 ->count();
         }
 
-        $query = $this->applyFilters(Patient::query());
+        $query = $this->applyFilters($this->patientQuery());
         return view('livewire.secretary.patients-component', [
             'patients' => $query->latest()->paginate(10),
             'insurers' => \App\Models\Insurer::where('active', true)->orderBy('name')->get(['id', 'name', 'scheme_type']),
         ])->layout('layouts.secretary.secretary-layout');
+    }
+
+    private function parseDisplayDate(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('!d/m/y', $value);
+            $errors = Carbon::getLastErrors();
+
+            if (is_array($errors) && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+                return null;
+            }
+
+            return $date->toDateString();
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    private function validateDateRange(): void
+    {
+        $this->dateRangeError = '';
+        if ($this->fromDateDisplay !== '' && !$this->fromDate) {
+            $this->dateRangeError = 'Enter the From date as dd/mm/yy.';
+            return;
+        }
+        if ($this->toDateDisplay !== '' && !$this->toDate) {
+            $this->dateRangeError = 'Enter the To date as dd/mm/yy.';
+            return;
+        }
+        if ($this->fromDate && $this->toDate && Carbon::parse($this->fromDate)->gt(Carbon::parse($this->toDate))) {
+            $this->dateRangeError = 'The From date cannot be later than the To date.';
+        }
+    }
+
+    private function checkDuplicatePatients(): void
+    {
+        $name = trim($this->nameSearch);
+        $contact = trim((string) ($this->state['contact'] ?? ''));
+        $dob = $this->parseDisplayDate($this->dobDisplay);
+
+        if (mb_strlen($name) < 3 || (!$dob && $contact === '')) {
+            $this->duplicatePatients = [];
+            return;
+        }
+
+        $query = Patient::where('name', $name);
+        if ($this->isEditing && !empty($this->state['id'])) {
+            $query->where('id', '!=', $this->state['id']);
+        }
+        $query->where(function ($match) use ($dob, $contact) {
+            if ($dob) {
+                $match->whereDate('dob', $dob);
+            }
+            if ($contact !== '') {
+                $match->orWhere('contact', $contact);
+            }
+        });
+
+        $this->duplicatePatients = $query->limit(3)->get(['id', 'name', 'pxnumber', 'dob', 'contact'])->toArray();
     }
 }

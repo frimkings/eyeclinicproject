@@ -3,6 +3,7 @@
 
     <span class="brand-text font-weight-light">PRIME EYE CARE</span>
   </a> --}}
+@php($appSettings = $appSettings ?? \App\Models\Setting::getSettings())
 <div class="brand-wrapper d-flex align-items-center py-2 px-3">
     @if($appSettings->clinic_logo)
         <img src="{{ asset('storage/' . $appSettings->clinic_logo) }}" 

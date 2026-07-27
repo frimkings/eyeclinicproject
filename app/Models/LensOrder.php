@@ -16,6 +16,8 @@ class LensOrder extends Model
         'lens_product_id',
         'frame_price',
         'lens_price',
+        'lab_cost',
+        'stock_reserved_at',
         'notes',
         'pickUpDate',
         'refraction_id',
@@ -24,6 +26,7 @@ class LensOrder extends Model
         'status',
         'paid_amount',
         'collected_at',
+        'cancelled_at',
         'renewal_date',
         'renewal_reminder_sent_at',
         'renewal_approval_status',
@@ -32,7 +35,10 @@ class LensOrder extends Model
     ];
 
     protected $casts = [
+        'lab_cost'                 => 'decimal:2',
+        'stock_reserved_at'        => 'datetime',
         'collected_at'             => 'datetime',
+        'cancelled_at'             => 'datetime',
         'renewal_date'             => 'date',
         'renewal_reminder_sent_at' => 'datetime',
         'renewal_actioned_at'      => 'datetime',

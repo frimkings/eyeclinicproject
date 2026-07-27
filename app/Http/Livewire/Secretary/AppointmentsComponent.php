@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Appointments;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Collection;
@@ -25,6 +26,8 @@ class AppointmentsComponent extends Component
     public $reminder_channel = 'whatsapp';
     public $patient_id;
     public $scheduled_at;
+    public $doctor_id;
+    public $duration_minutes = 30;
     public $notes;
     public $patientSearch = '';
     public $selectedPatientName = '';
@@ -86,6 +89,8 @@ public $recallCategories = [
         'reminder_channel' => 'required|in:none,sms,whatsapp,both',
         'patient_id' => 'required|exists:patients,id,deleted_at,NULL',
         'scheduled_at' => 'required|date|after_or_equal:today',
+        'doctor_id' => 'nullable|exists:users,id',
+        'duration_minutes' => 'required|integer|in:15,30,45,60,90,120',
         'notes' => 'nullable|string',
     ];
 
@@ -271,7 +276,7 @@ public $recallCategories = [
     public function bulkMarkAsSeen()
     {
         if (empty($this->selectedAppointments)) return;
-        Appointments::whereIn('id', $this->selectedAppointments)->update(['status' => 'Seen']);
+        Appointments::whereIn('id', $this->selectedAppointments)->update(['status' => 'Seen', 'completed_at' => now()]);
         $count = count($this->selectedAppointments);
         $this->resetSelection();
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "Successfully moved $count records to History."]);
@@ -341,8 +346,8 @@ public $recallCategories = [
     private function getFilteredQuery()
     {
         $query = ($this->activeFilter === 'trash') 
-            ? Appointments::onlyTrashed()->with('patient') 
-            : Appointments::with('patient');
+            ? Appointments::onlyTrashed()->with(['patient', 'doctor'])
+            : Appointments::with(['patient', 'doctor']);
         
         $query->whereHas('patient', function ($q) {
             $q->where(function ($sub) {
@@ -409,6 +414,9 @@ public $recallCategories = [
     {
         $payload = ['status' => $status];
         $payload['missed_at'] = $status === 'Missed' ? now() : null;
+        if ($status === 'Arrived') $payload['arrived_at'] = now();
+        if ($status === 'With Doctor') $payload['doctor_started_at'] = now();
+        if (in_array($status, ['Done', 'Seen'], true)) $payload['completed_at'] = now();
 
         Appointments::findOrFail($id)->update($payload);
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => ($status === 'Seen') ? "Moved to History." : "Status updated."]);
@@ -444,10 +452,13 @@ public $recallCategories = [
             'title' => $this->title ?: 'Walk-in Visit',
             'recall_category' => $this->recall_category ?: ($this->title ?: 'Walk-in Visit'),
             'scheduled_at' => $scheduledAt,
+            'doctor_id' => $this->doctor_id ?: null,
+            'duration_minutes' => (int) $this->duration_minutes,
             'notes' => $this->notes,
             'reminder_channel' => $this->reminder_channel ?: 'none',
             'reminder_status' => 'not_sent',
             'status' => 'Arrived',
+            'arrived_at' => now(),
         ]);
 
         $this->resetForm();
@@ -672,12 +683,18 @@ public $recallCategories = [
     {
         $this->validate();
         $scheduledAt = Carbon::parse($this->scheduled_at);
+
+        if ($this->hasSchedulingConflict($scheduledAt)) {
+            return;
+        }
         
         $payload = [
             'patient_id' => $this->patient_id, 
             'title' => $this->title, 
             'recall_category' => $this->recall_category ?: $this->title,
             'scheduled_at' => $scheduledAt,
+            'doctor_id' => $this->doctor_id ?: null,
+            'duration_minutes' => (int) $this->duration_minutes,
             'notes' => $this->notes,
             'reminder_channel' => $this->reminder_channel ?: 'whatsapp',
         ];
@@ -736,6 +753,8 @@ public $recallCategories = [
         $this->reminder_channel = $appointment->reminder_channel ?? 'whatsapp';
         $this->notes = $appointment->notes;
         $this->scheduled_at = Carbon::parse($appointment->scheduled_at)->format('Y-m-d\TH:i');
+        $this->doctor_id = $appointment->doctor_id;
+        $this->duration_minutes = $appointment->duration_minutes ?: 30;
         $this->isEditModalOpen = true;
     }
 
@@ -749,7 +768,39 @@ public $recallCategories = [
         $this->newAppointmentStatus = 'Pending';
     }
 
-    public function resetForm() { $this->reset(['title', 'recall_category', 'patient_id', 'scheduled_at', 'notes', 'selectedPatientName', 'patientSearch']); $this->reminder_channel = 'whatsapp'; $this->newAppointmentStatus = 'Pending'; }
+    public function resetForm() { $this->reset(['title', 'recall_category', 'patient_id', 'doctor_id', 'scheduled_at', 'notes', 'selectedPatientName', 'patientSearch']); $this->duration_minutes = 30; $this->reminder_channel = 'whatsapp'; $this->newAppointmentStatus = 'Pending'; }
+
+    private function hasSchedulingConflict(Carbon $scheduledAt): bool
+    {
+        $endAt = $scheduledAt->copy()->addMinutes((int) $this->duration_minutes);
+        $appointments = Appointments::whereDate('scheduled_at', $scheduledAt->toDateString())
+            ->whereNotIn('status', ['Cancelled', 'Missed'])
+            ->when($this->editingAppointmentId, fn ($query) => $query->where('id', '!=', $this->editingAppointmentId))
+            ->get(['id', 'patient_id', 'doctor_id', 'scheduled_at', 'duration_minutes']);
+
+        $patientConflict = $appointments->first(function ($appointment) use ($scheduledAt, $endAt) {
+            if ((int) $appointment->patient_id !== (int) $this->patient_id) return false;
+            $existingEnd = $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes ?: 30);
+            return $appointment->scheduled_at->lt($endAt) && $existingEnd->gt($scheduledAt);
+        });
+        if ($patientConflict) {
+            $this->addError('scheduled_at', 'This patient already has an overlapping appointment.');
+            return true;
+        }
+
+        if ($this->doctor_id) {
+            $doctorConflict = $appointments->first(function ($appointment) use ($scheduledAt, $endAt) {
+                if ((int) $appointment->doctor_id !== (int) $this->doctor_id) return false;
+                $existingEnd = $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes ?: 30);
+                return $appointment->scheduled_at->lt($endAt) && $existingEnd->gt($scheduledAt);
+            });
+            if ($doctorConflict) {
+                $this->addError('scheduled_at', 'The selected doctor already has an overlapping appointment.');
+                return true;
+            }
+        }
+        return false;
+    }
 
     private function flashDailyLimitWarning(Carbon $scheduledAt): void
     {
@@ -918,7 +969,8 @@ public $recallCategories = [
                     ->orWhere('contact', 'like', '%' . $this->patientSearch . '%')
                     ->orWhere('pxnumber', 'like', '%' . $this->patientSearch . '%')
                     ->take(7)->get()
-                : []
+                : [],
+            'doctors' => User::role('Doctor')->orderBy('name')->get(['id', 'name']),
         ])->layout('layouts.secretary.secretary-layout');
     }
 }

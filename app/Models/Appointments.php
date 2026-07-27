@@ -13,15 +13,20 @@ class Appointments extends Model
 
     protected $fillable = [
         'patient_id',
+        'doctor_id',
         'user_id',
         'title',
         'recall_category',
         'scheduled_at',
+        'duration_minutes',
         'notes',
         'reminder_channel',
         'reminder_status',
         'reminder_sent_at',
         'missed_at',
+        'arrived_at',
+        'doctor_started_at',
+        'completed_at',
         'status',
     ];
 
@@ -30,10 +35,18 @@ class Appointments extends Model
         'scheduled_at' => 'datetime',
         'reminder_sent_at' => 'datetime',
         'missed_at' => 'datetime',
+        'arrived_at' => 'datetime',
+        'doctor_started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function patient()
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 }

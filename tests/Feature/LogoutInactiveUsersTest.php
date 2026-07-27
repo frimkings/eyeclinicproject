@@ -8,17 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class LogoutInactiveUsersTest extends TestCase
 {
+    use DatabaseTransactions;
     public function test_it_logs_out_users_after_30_minutes_of_inactivity()
     {
-        $user = new User([
+        $user = User::factory()->create([
             'name' => 'Test Doctor',
             'email' => 'doctor@example.test',
         ]);
-        $user->id = 1;
-        $user->exists = true;
 
         Auth::login($user);
 
@@ -36,12 +36,10 @@ class LogoutInactiveUsersTest extends TestCase
 
     public function test_it_allows_users_before_the_30_minute_inactivity_limit()
     {
-        $user = new User([
+        $user = User::factory()->create([
             'name' => 'Test Doctor',
             'email' => 'doctor@example.test',
         ]);
-        $user->id = 1;
-        $user->exists = true;
 
         Auth::login($user);
 

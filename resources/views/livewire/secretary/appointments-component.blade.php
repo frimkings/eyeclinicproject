@@ -365,6 +365,7 @@
                                 </td>
                                 <td class="align-middle">
                                     <div class="small">{{ $app->title }}</div>
+                                    <div class="text-muted small"><i class="fas fa-user-md mr-1"></i>{{ $app->doctor->name ?? 'Unassigned' }} &middot; {{ $app->duration_minutes ?? 30 }} min</div>
                                     @if($app->recall_category)
                                     <span class="badge badge-light border" style="font-size:.65rem">{{ $app->recall_category }}</span>
                                     @endif
@@ -767,11 +768,31 @@
 
                         {{-- SECTION: Schedule --}}
                         <div class="appt-modal-section-label mt-3">Schedule</div>
-                        <div class="form-group mb-0">
+                        <div class="form-group">
                             <label class="appt-label">Date &amp; Time</label>
                             <input type="datetime-local" wire:model="scheduled_at"
                                    min="{{ now()->format('Y-m-d\TH:i') }}" class="form-control">
                             @error('scheduled_at') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="row">
+                            <div class="col-md-7 form-group mb-0">
+                                <label class="appt-label">Doctor</label>
+                                <select wire:model="doctor_id" class="form-control">
+                                    <option value="">Unassigned</option>
+                                    @foreach($doctors as $doctor)
+                                        <option value="{{ $doctor->id }}">{{ $doctor->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('doctor_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="col-md-5 form-group mb-0">
+                                <label class="appt-label">Duration</label>
+                                <select wire:model="duration_minutes" class="form-control">
+                                    @foreach([15,30,45,60,90,120] as $minutes)
+                                        <option value="{{ $minutes }}">{{ $minutes }} minutes</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light px-4 py-3">

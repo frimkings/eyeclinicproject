@@ -24,6 +24,7 @@ class AuditTrailViewerComponent extends Component
     public $search = '';
     public $event = '';
     public $userId = '';
+    public $userSearch = '';
     public $fromDate;
     public $toDate;
 
@@ -38,6 +39,7 @@ class AuditTrailViewerComponent extends Component
     public function updatingSearch() { $this->resetPage(); }
     public function updatingEvent() { $this->resetPage(); }
     public function updatingUserId() { $this->resetPage(); }
+    public function updatingUserSearch() { $this->resetPage(); }
     public function updatingFromDate() { $this->resetPage(); }
     public function updatingToDate() { $this->resetPage(); }
 
@@ -47,6 +49,7 @@ class AuditTrailViewerComponent extends Component
         $this->search  = '';
         $this->event   = '';
         $this->userId  = '';
+        $this->userSearch = '';
         $this->fromDate = $this->showArchive ? '' : Carbon::today()->subDays(30)->toDateString();
         $this->toDate   = $this->showArchive ? '' : Carbon::today()->toDateString();
         $this->resetPage();
@@ -57,6 +60,7 @@ class AuditTrailViewerComponent extends Component
         $this->search = '';
         $this->event = '';
         $this->userId = '';
+        $this->userSearch = '';
         $this->mount();
         $this->resetPage();
     }
@@ -207,7 +211,9 @@ class AuditTrailViewerComponent extends Component
 
         return view('livewire.admin.audit-trail-viewer-component', [
             'audits'      => $this->query()->paginate(20),
-            'users'       => User::orderBy('name')->get(['id', 'name']),
+            'users'       => User::when($this->userSearch, function ($query) {
+                $query->where('name', 'like', '%' . $this->userSearch . '%');
+            })->orderBy('name')->get(['id', 'name']),
             'events'      => $eventModel::select('event')->distinct()->orderBy('event')->pluck('event'),
             'showArchive' => $this->showArchive,
         ])->layout('layouts.admin.admin-layout');

@@ -73,6 +73,24 @@
                 </div>
             </div>
 
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                    <strong><i class="fas fa-balance-scale mr-2 text-primary"></i>Today's Reconciliation</strong>
+                    <span class="badge badge-dark">Total: {{ currency() }} {{ number_format($reconciliationTotal, 2) }}</span>
+                </div>
+                <div class="card-body py-2"><div class="row">
+                    @forelse($reconciliation as $payment)
+                        <div class="col-6 col-md-3 py-1"><div class="border rounded p-2 h-100">
+                            <small class="text-muted text-uppercase font-weight-bold">{{ str_replace('_', ' ', $payment->payment_method) }}</small>
+                            <div class="font-weight-bold">{{ currency() }} {{ number_format($payment->total_amount, 2) }}</div>
+                            <small class="text-muted">{{ $payment->transaction_count }} transaction(s)</small>
+                        </div></div>
+                    @empty
+                        <div class="col-12 text-center text-muted small py-2">No payments collected today.</div>
+                    @endforelse
+                </div></div>
+            </div>
+
             <!-- Tab Card -->
             <div class="card shadow-sm">
                 <!-- Tab Header -->
@@ -397,6 +415,26 @@
                         <h5 class="mt-3 mb-1">{{ $patientName }}</h5>
                         <p class="text-muted small">Confirm payment status before clearing</p>
                     </div>
+                    @if($outstandingBalance > 0)
+                        <div class="alert alert-warning">
+                            <strong><i class="fas fa-exclamation-triangle mr-1"></i>Previous outstanding balance:</strong>
+                            {{ currency() }} {{ number_format($outstandingBalance, 2) }}
+                            <div class="small mt-1">This is from earlier visits and is not included in the service total below.</div>
+                        </div>
+                    @endif
+                    @if(!empty($insuranceSummary))
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <div class="font-weight-bold text-primary mb-2"><i class="fas fa-shield-alt mr-1"></i>Insurance Details</div>
+                            <div class="row small">
+                                <div class="col-6 mb-2"><span class="text-muted">Insurer</span><br><strong>{{ $insuranceSummary['insurer'] }}</strong></div>
+                                <div class="col-6 mb-2"><span class="text-muted">Approval</span><br><strong>{{ $insuranceSummary['status'] }} / {{ $insuranceSummary['pre_auth_status'] }}</strong></div>
+                                <div class="col-6 mb-2"><span class="text-muted">Member</span><br><strong>{{ $insuranceSummary['member_name'] ?: 'N/A' }} ({{ $insuranceSummary['member_id'] ?: 'No ID' }})</strong></div>
+                                <div class="col-6 mb-2"><span class="text-muted">Policy</span><br><strong>{{ $insuranceSummary['policy_number'] ?: 'N/A' }}</strong></div>
+                                <div class="col-6"><span class="text-muted">Approved coverage</span><br><strong class="text-success">{{ currency() }} {{ number_format($insuranceSummary['coverage'], 2) }}</strong></div>
+                                <div class="col-6"><span class="text-muted">Patient contribution</span><br><strong class="text-danger">{{ currency() }} {{ number_format($insuranceSummary['patient_contribution'], 2) }}</strong></div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="form-group">
                         <label class="font-weight-bold">
                             <i class="fas fa-concierge-bell mr-2 text-success"></i>Service

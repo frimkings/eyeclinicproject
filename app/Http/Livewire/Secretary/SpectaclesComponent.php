@@ -35,6 +35,7 @@ class SpectaclesComponent extends Component
     public $sortField      = 'created_at';
     public $sortDirection  = 'desc';
     public $activeRefractionId = null;
+    public $recordType = 'orders';
 
     // Bulk selection
     public $selectedOrders = [];
@@ -58,6 +59,8 @@ class SpectaclesComponent extends Component
     public $orderNotes;
     public $labName          = '';
     public $labReference     = '';
+    public $labCost          = 0;
+    public $statusOverrideReason = '';
     public $showFrameResults = false;
     public $showLensResults  = false;
 
@@ -108,7 +111,16 @@ class SpectaclesComponent extends Component
     public function setStatusFilter($status)
     {
         $this->statusFilter = $status;
+        $this->recordType = $status === 'Pending' ? 'refractions' : 'orders';
         $this->quickFilter  = '';
+        $this->resetPage();
+    }
+
+    public function setRecordType(string $type): void
+    {
+        $this->recordType = $type === 'refractions' ? 'refractions' : 'orders';
+        $this->statusFilter = '';
+        $this->quickFilter = '';
         $this->resetPage();
     }
 
@@ -179,15 +191,16 @@ class SpectaclesComponent extends Component
         }
 
         $updated = 0;
+        $overrideReason = $this->statusOverrideReason;
         foreach (LensOrder::whereIn('id', $this->selectedOrders)->get() as $order) {
             $old = $order->status;
-            $order->update(['status' => $this->bulkStatus]);
-            $this->appendOrderNote($order, "Bulk status changed to {$this->bulkStatus} by " . (Auth::user()->name ?? 'staff'));
-            $this->recordOrderAudit('spectacles.bulk_status_changed', $order, ['status' => $old], ['status' => $this->bulkStatus]);
-            $updated++;
+            $this->statusOverrideReason = $overrideReason;
+            $this->updateStatus($order->id, $this->bulkStatus);
+            if ($order->fresh()->status !== $old) $updated++;
         }
 
         $this->bulkStatus = '';
+        $this->statusOverrideReason = '';
         $this->clearSelection();
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "{$updated} order(s) updated."]);
     }
@@ -230,6 +243,8 @@ class SpectaclesComponent extends Component
         $order     = LensOrder::findOrFail($orderId);
         $oldStatus = $order->status;
 
+        if (!$this->canTransition($order, $newStatus)) return;
+
         $noteMap = [
             'Collected' => 'Collected by ' . (Auth::user()->name ?? 'staff') . ' on ' . now()->format('d M Y H:i'),
             'Ready'     => 'Ready for pickup - ' . now()->format('d M Y H:i'),
@@ -248,6 +263,7 @@ class SpectaclesComponent extends Component
         }
 
         $order->update($updateData);
+        $this->statusOverrideReason = '';
         $this->recordOrderAudit('spectacles.status_changed', $order, ['status' => $oldStatus], ['status' => $newStatus]);
         $this->dispatchBrowserEvent('notify', ['type' => 'success', 'message' => "Order marked as {$newStatus}."]);
 
@@ -287,6 +303,40 @@ class SpectaclesComponent extends Component
 
     }
 
+    private function canTransition(LensOrder $order, string $newStatus): bool
+    {
+        $sequence = ['Pending', 'In Lab', 'Ready', 'Collected'];
+        $position = array_search($order->status, $sequence, true);
+        $expected = $position !== false ? ($sequence[$position + 1] ?? null) : null;
+        $override = $newStatus !== $expected;
+        $authorizedOverride = Auth::user()?->hasAnyRole(['Manager', 'Super Admin']) && trim($this->statusOverrideReason) !== '';
+
+        if ($override && !$authorizedOverride) {
+            $this->dispatchBrowserEvent('notify', ['type' => 'warning', 'message' => 'Next required action: ' . ($expected ?? 'No further action') . '. Manager override requires a reason.']);
+            return false;
+        }
+
+        if ($newStatus === 'Collected') {
+            $order->loadMissing('refraction.consultation.sale.items.product.category', 'refraction.consultation.cartItems.product.category');
+            if (($this->posOrderSummary($order->refraction)['balance'] ?? 0) > 0 && !$authorizedOverride) {
+                $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Collection blocked: outstanding balance remains.']);
+                return false;
+            }
+        }
+
+        if ($override) $this->appendOrderNote($order, 'Override reason: ' . trim($this->statusOverrideReason) . ' - ' . (Auth::user()->name ?? 'staff'));
+        return true;
+    }
+
+    public function nextRequiredAction(?LensOrder $order): string
+    {
+        if (!$order) return 'Create spectacle order';
+        return match ($order->status) {
+            'Pending' => 'Send to lab', 'In Lab' => 'Mark ready', 'Ready' => 'Collect after balance check',
+            'Collected' => 'Completed', 'Cancelled' => 'Cancelled', default => 'Review order',
+        };
+    }
+
     /* =================== ORDER CREATION =================== */
 
     public function openOrderModal($refractionId)
@@ -316,6 +366,7 @@ class SpectaclesComponent extends Component
         $this->orderNotes           = '';
         $this->labName              = '';
         $this->labReference         = '';
+        $this->labCost              = 0;
         $this->showFrameResults     = false;
         $this->showLensResults      = false;
         $this->resetErrorBag();
@@ -333,6 +384,9 @@ class SpectaclesComponent extends Component
         $this->validate([
             'pickUpDate'  => 'required|date|after_or_equal:today',
             'orderNotes'  => 'nullable|string|max:2000',
+            'selectedFrameId' => 'required|exists:products,id',
+            'selectedLensId' => 'required|exists:products,id',
+            'labCost' => 'nullable|numeric|min:0',
         ]);
 
         $refraction   = Refractions::with(['consultation.patient', 'lensOrder'])->findOrFail($this->selectedRefractionId);
@@ -353,19 +407,33 @@ class SpectaclesComponent extends Component
 
         $orderId = 'ORD-' . strtoupper(Str::random(8));
 
-        $order = LensOrder::create([
-            'user_id'            => Auth::id(),
-            'refraction_id'      => $this->selectedRefractionId,
-            'order_id'           => $orderId,
-            'frame_model_number' => 'To be assigned',
-            'frame_product_id'   => null,
-            'lens_product_id'    => null,
-            'frame_price'        => 0,
-            'lens_price'         => 0,
-            'status'             => 'Pending',
-            'pickUpDate'         => $this->pickUpDate,
-            'notes'              => trim($this->orderNotes ?? ''),
-        ]);
+        $order = \DB::transaction(function () use ($orderId) {
+            $frame = Product::with('category')->lockForUpdate()->findOrFail($this->selectedFrameId);
+            $lens = Product::with('category')->lockForUpdate()->findOrFail($this->selectedLensId);
+            if (!Str::contains(strtolower((string) optional($frame->category)->name), 'frame')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['selectedFrameId' => 'Select a product from the frame category.']);
+            }
+            if (!Str::contains(strtolower((string) optional($lens->category)->name), 'lens')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['selectedLensId' => 'Select a product from the lens category.']);
+            }
+            $requiredFrame = $frame->id === $lens->id ? 2 : 1;
+            if ($frame->quantity < $requiredFrame || $lens->quantity < 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['selectedFrameId' => 'Selected frame or lens is no longer in stock.']);
+            }
+            $frame->decrement('quantity');
+            $lens->decrement('quantity');
+            $notes = trim(collect([
+                $this->orderNotes,
+                $this->labName ? "[Lab: {$this->labName}]" : null,
+                $this->labReference ? "[Lab Ref: {$this->labReference}]" : null,
+            ])->filter()->implode("\n"));
+            return LensOrder::create([
+                'user_id' => Auth::id(), 'refraction_id' => $this->selectedRefractionId, 'order_id' => $orderId,
+                'frame_model_number' => $frame->name, 'frame_product_id' => $frame->id, 'lens_product_id' => $lens->id,
+                'frame_price' => $frame->selling_price, 'lens_price' => $lens->selling_price, 'lab_cost' => $this->labCost ?: 0,
+                'stock_reserved_at' => now(), 'status' => 'Pending', 'pickUpDate' => $this->pickUpDate, 'notes' => $notes,
+            ]);
+        });
 
         $this->recordOrderAudit('spectacles.created', $order, [], [
             'order_id'    => $order->order_id,
@@ -398,12 +466,16 @@ class SpectaclesComponent extends Component
         $cancelReason    = $this->cancelReason;
 
         \DB::transaction(function () use ($cancelConfirmId, $cancelReason) {
-            $order = LensOrder::findOrFail($cancelConfirmId);
-            $order->update(['status' => 'Cancelled']);
+            $order = LensOrder::lockForUpdate()->findOrFail($cancelConfirmId);
+            if ($order->status === 'Cancelled') return;
+            $order->update(['status' => 'Cancelled', 'cancelled_at' => now()]);
             $this->appendOrderNote($order, 'Cancelled - ' . ($cancelReason ?: 'no reason given') . ' - ' . (Auth::user()->name ?? 'staff'));
 
-            if ($order->frame_product_id) Product::where('id', $order->frame_product_id)->increment('quantity');
-            if ($order->lens_product_id)  Product::where('id', $order->lens_product_id)->increment('quantity');
+            if ($order->stock_reserved_at) {
+                if ($order->frame_product_id) Product::where('id', $order->frame_product_id)->increment('quantity');
+                if ($order->lens_product_id)  Product::where('id', $order->lens_product_id)->increment('quantity');
+                $order->update(['stock_reserved_at' => null]);
+            }
 
             $this->recordOrderAudit('spectacles.cancelled', $order, [], ['reason' => $cancelReason]);
         });
@@ -585,7 +657,8 @@ class SpectaclesComponent extends Component
                 'consultation.doctor',
                 'consultation.cartItems.product.category',
                 'consultation.sale.items.product.category',
-                'lensOrder',
+                'lensOrder.frameProduct',
+                'lensOrder.lensProduct',
             ])
             ->when($this->searchTerm, function ($q) {
                 $term = $this->searchTerm;
@@ -602,6 +675,8 @@ class SpectaclesComponent extends Component
             ->when($this->doctorFilter, fn($q) =>
                 $q->whereHas('consultation', fn($c) => $c->where('user_id', $this->doctorFilter))
             );
+
+        $this->recordType === 'orders' ? $query->whereHas('lensOrder') : $query->doesntHave('lensOrder');
 
         if ($this->statusFilter) {
             if ($this->statusFilter === 'Pending') {
@@ -694,6 +769,7 @@ class SpectaclesComponent extends Component
                 'amount' => 0,
                 'paid' => 0,
                 'balance' => 0,
+                'discount' => 0,
                 'transaction' => null,
                 'items' => collect(),
             ];
@@ -739,6 +815,7 @@ class SpectaclesComponent extends Component
                 'amount' => $amount,
                 'paid' => $paid,
                 'balance' => $balance,
+                'discount' => (float) ($sale->discount_amount ?? 0),
                 'transaction' => $sale->transaction_id,
                 'items' => $saleItems,
             ];
@@ -754,6 +831,7 @@ class SpectaclesComponent extends Component
                 'amount' => (float) $items->sum('total'),
                 'paid' => (float) $items->sum('total'),
                 'balance' => 0,
+                'discount' => 0,
                 'transaction' => null,
                 'items' => $items,
             ];
@@ -769,6 +847,7 @@ class SpectaclesComponent extends Component
                 'amount' => (float) $items->sum('total'),
                 'paid' => 0,
                 'balance' => (float) $items->sum('total'),
+                'discount' => 0,
                 'transaction' => null,
                 'items' => $items,
             ];
@@ -781,6 +860,7 @@ class SpectaclesComponent extends Component
             'amount' => 0,
             'paid' => 0,
             'balance' => 0,
+            'discount' => 0,
             'transaction' => null,
             'items' => collect(),
         ];
@@ -790,6 +870,24 @@ class SpectaclesComponent extends Component
     {
         return in_array($posSummary['status'] ?? null, ['partial', 'sold'], true)
             || (float) ($posSummary['paid'] ?? 0) > 0;
+    }
+
+    public function dispensingIssues(Refractions $refraction): array
+    {
+        $issues = [];
+        if (!$refraction->refractionOD && !$refraction->refractionOS) $issues[] = 'Missing prescription';
+        if (!$refraction->pd) $issues[] = 'Missing PD';
+        if (!$refraction->lensType) $issues[] = 'Missing lens type';
+        return $issues;
+    }
+
+    public function estimatedOrderProfit(LensOrder $order): float
+    {
+        $revenue = (float) $order->frame_price + (float) $order->lens_price;
+        $cost = (float) ($order->frameProduct?->cost_price ?? 0)
+            + (float) ($order->lensProduct?->cost_price ?? 0)
+            + (float) $order->lab_cost;
+        return $revenue - $cost;
     }
 
     private function appendOrderNote(LensOrder $order, string $note): void
@@ -874,6 +972,8 @@ class SpectaclesComponent extends Component
             'appSettings'        => Setting::getSettings(),
             'doctors'            => User::whereIn('id', \App\Models\Consultations::whereNotNull('user_id')->select('user_id'))->orderBy('name')->get(['id', 'name']),
             'labs'               => LensOrder::whereNotNull('notes')->get()->map(fn($o) => $this->extractNoteValue($o, 'Lab'))->filter()->unique()->values(),
+            'availableFrames'    => Product::whereHas('category', fn($q) => $q->where('name', 'like', '%frame%'))->where('quantity', '>', 0)->orderBy('name')->get(['id','name','quantity','selling_price']),
+            'availableLenses'    => Product::whereHas('category', fn($q) => $q->where('name', 'like', '%lens%'))->where('quantity', '>', 0)->orderBy('name')->get(['id','name','quantity','selling_price']),
         ])->layout('layouts.secretary.secretary-layout');
     }
 }

@@ -80,6 +80,11 @@ class ReportsComponent extends Component
         }
     }
 
+    public function loadChart(): void
+    {
+        $this->dispatchChart();
+    }
+
     protected function setDateRangeForTab($tab)
     {
         switch ($tab) {

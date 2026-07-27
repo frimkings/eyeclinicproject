@@ -141,6 +141,14 @@
                                     @endforeach
                                 </div>
                             @endif
+                            @if(!empty($duplicatePatients) && !$isEditing)
+                                <div class="alert alert-warning py-2 mt-2 mb-0 small">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Possible duplicate:</strong>
+                                    @foreach($duplicatePatients as $duplicate)
+                                        <button type="button" wire:click="selectPatient({{ $duplicate['id'] }})" class="btn btn-link btn-sm p-0 ml-1">{{ $duplicate['name'] }} ({{ $duplicate['pxnumber'] }})</button>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         <div class="form-group">
@@ -171,8 +179,18 @@
                         <div class="row">
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">BIRTHDAY</label>
-                                <input type="date" wire:model="state.dob" class="form-control bg-light border-0 @error('dob') is-invalid @enderror">
+                                <div class="input-group">
+                                    <input id="registry-dob" type="text" wire:model.lazy="dobDisplay"
+                                           class="form-control bg-light border-0 registry-date-picker @error('dob') is-invalid @enderror"
+                                           data-trigger="registry-dob-trigger" placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
+                                    <div class="input-group-append">
+                                        <button id="registry-dob-trigger" type="button" class="btn btn-light border-0" title="Choose birthday">
+                                            <i class="far fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 @error('dob') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                                @if($dobAge !== null)<small class="text-muted font-weight-bold">Age: {{ $dobAge }} years</small>@endif
                             </div>
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">GENDER</label>
@@ -324,7 +342,11 @@
                 <div>
                     <button wire:click="exportSelected" class="btn btn-sm btn-info font-weight-bold mr-2"><i class="fas fa-file-csv mr-1"></i> EXPORT</button>
                     <button wire:click="clearSelection" class="btn btn-sm btn-light font-weight-bold mr-2"><i class="fas fa-times mr-1"></i> CLEAR</button>
-                    <button wire:click="archiveSelected" onclick="confirm('Archive selected patients?') || event.stopImmediatePropagation()" class="btn btn-sm btn-danger font-weight-bold"><i class="fas fa-trash-alt mr-1"></i> ARCHIVE</button>
+                    @if($activeTab === 'archived')
+                        <button wire:click="restoreSelected" class="btn btn-sm btn-success font-weight-bold"><i class="fas fa-undo mr-1"></i> RESTORE</button>
+                    @else
+                        <button wire:click="archiveSelected" onclick="confirm('Archive selected patients?') || event.stopImmediatePropagation()" class="btn btn-sm btn-danger font-weight-bold"><i class="fas fa-trash-alt mr-1"></i> ARCHIVE</button>
+                    @endif
                 </div>
             </div>
             @endif
@@ -349,6 +371,11 @@
             @endif
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link py-3 {{ $activeTab == 'archived' ? 'active font-weight-bold border-bottom-secondary text-secondary' : 'text-muted' }}" href="#" wire:click.prevent="$set('activeTab', 'archived')">
+            <i class="fas fa-archive mr-1"></i> ARCHIVED
+        </a>
+    </li>
 </ul>
                 </div>
                 <div class="card-body">
@@ -368,9 +395,34 @@
                         </div>
                         <div class="col-md-4">
                             <label class="small font-weight-bold text-muted text-uppercase mb-1">Date Registered Range</label>
+                            <div class="small text-muted mb-1">From <span class="float-right mr-5">To</span></div>
                             <div class="d-flex" style="gap:4px;">
-                                <input type="date" wire:model="fromDate" class="form-control bg-light border-0" style="min-width:0;flex:1;">
-                                <input type="date" wire:model="toDate" class="form-control bg-light border-0" style="min-width:0;flex:1;">
+                                <div class="input-group" style="min-width:0;flex:1;">
+                                    <input id="registry-from-date" type="text" wire:model.lazy="fromDateDisplay"
+                                           class="form-control bg-light border-0 registry-date-picker" data-trigger="registry-from-date-trigger"
+                                           placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
+                                    <div class="input-group-append">
+                                        <button id="registry-from-date-trigger" type="button" class="btn btn-light border-0" title="Choose start date">
+                                            <i class="far fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="input-group" style="min-width:0;flex:1;">
+                                    <input id="registry-to-date" type="text" wire:model.lazy="toDateDisplay"
+                                           class="form-control bg-light border-0 registry-date-picker" data-trigger="registry-to-date-trigger"
+                                           placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
+                                    <div class="input-group-append">
+                                        <button id="registry-to-date-trigger" type="button" class="btn btn-light border-0" title="Choose end date">
+                                            <i class="far fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            @if($dateRangeError)<small class="text-danger font-weight-bold d-block">{{ $dateRangeError }}</small>@endif
+                            <div class="btn-group btn-group-sm mt-2 w-100">
+                                <button type="button" wire:click="setDatePreset('today')" class="btn btn-light border">Today</button>
+                                <button type="button" wire:click="setDatePreset('this_month')" class="btn btn-light border">This Month</button>
+                                <button type="button" wire:click="setDatePreset('last_30_days')" class="btn btn-light border">30 Days</button>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -419,6 +471,7 @@
                                         <td>
                                             <div class="font-weight-bold text-dark mb-0">{{ $px->name }} @if($isBday) 🎂 @endif</div>
                                             <small class="text-muted font-weight-bold">{{ $px->pxnumber }} | {{ $px->contact }}</small>
+                                            <div class="small text-muted">DOB: {{ $px->dob ? \Carbon\Carbon::parse($px->dob)->format('d/m/y') : 'N/A' }} | Registered: {{ $px->created_at->format('d/m/y') }}</div>
                                         </td>
                                         <td>
                                             <div class="font-weight-bold text-dark">{{ \Carbon\Carbon::parse($px->dob)->age }} yrs ({{ $px->gender }})</div>
@@ -447,6 +500,14 @@
                                                         <i class="fas fa-birthday-cake text-warning"></i>
                                                     </a>
                                                 @endif
+                                                @if($activeTab === 'archived')
+                                                <button type="button"
+                                                        wire:click="$set('selectedPatients', ['{{ $px->id }}'])"
+                                                        class="btn btn-sm btn-white border shadow-sm"
+                                                        title="Select this patient for restore">
+                                                    <i class="fas fa-undo text-success"></i>
+                                                </button>
+                                                @else
                                                 <button type="button"
                                                         wire:click="edit({{ $px->id }})"
                                                         wire:loading.attr="disabled"
@@ -455,6 +516,7 @@
                                                         title="Edit patient">
                                                     <i class="fas fa-edit text-primary"></i>
                                                 </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -470,3 +532,48 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        function initializeRegistryDatePickers() {
+            if (typeof Pikaday === 'undefined') {
+                return;
+            }
+
+            document.querySelectorAll('.registry-date-picker').forEach(function (field) {
+                if (!field.dataset.maskReady) {
+                    field.addEventListener('input', function () {
+                        var digits = field.value.replace(/\D/g, '').slice(0, 6);
+                        field.value = digits.replace(/^(\d{2})(\d)/, '$1/$2').replace(/^(\d{2}\/\d{2})(\d)/, '$1/$2');
+                    });
+                    field.dataset.maskReady = '1';
+                }
+
+                if (field._registryDatePicker) {
+                    return;
+                }
+
+                var trigger = document.getElementById(field.dataset.trigger);
+                field._registryDatePicker = new Pikaday({
+                    field: field,
+                    trigger: trigger || field,
+                    format: 'DD/MM/YY',
+                    maxDate: new Date(),
+                    yearRange: [1900, new Date().getFullYear()],
+                    onSelect: function () {
+                        field.value = this.toString('DD/MM/YY');
+                        field.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            });
+        }
+
+        initializeRegistryDatePickers();
+        document.addEventListener('DOMContentLoaded', initializeRegistryDatePickers);
+        document.addEventListener('livewire:load', initializeRegistryDatePickers);
+
+        if (window.Livewire && typeof Livewire.hook === 'function') {
+            Livewire.hook('message.processed', initializeRegistryDatePickers);
+        }
+    })();
+</script>

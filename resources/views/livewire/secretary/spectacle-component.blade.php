@@ -35,10 +35,10 @@
     </section>
 
     <section class="so-metrics" aria-label="Spectacle order summary">
-        <button type="button" wire:click="setStatusFilter('')" class="so-metric {{ !$statusFilter ? 'is-active' : '' }}">
+        <button type="button" wire:click="setRecordType('orders')" class="so-metric {{ $recordType === 'orders' && !$statusFilter ? 'is-active' : '' }}">
             <span class="so-metric-icon neutral"><i class="fas fa-list-ul"></i></span>
             <span class="so-metric-value">{{ $stats['pending'] + $stats['ordered'] + $stats['in_lab'] + $stats['ready'] + $stats['collected'] }}</span>
-            <span class="so-metric-label">All refractions</span>
+            <span class="so-metric-label">All orders</span>
         </button>
         <button type="button" wire:click="setStatusFilter('Pending')" class="so-metric {{ $statusFilter === 'Pending' ? 'is-active' : '' }}">
             <span class="so-metric-icon neutral"><i class="fas fa-glasses"></i></span>
@@ -71,6 +71,10 @@
             <span class="so-metric-label">Renewal due soon</span>
         </button>
     </section>
+    <div class="btn-group mb-3" role="group" aria-label="Record type">
+        <button type="button" wire:click="setRecordType('orders')" class="btn btn-sm {{ $recordType === 'orders' ? 'btn-primary' : 'btn-outline-primary' }}">Spectacle Orders</button>
+        <button type="button" wire:click="setRecordType('refractions')" class="btn btn-sm {{ $recordType === 'refractions' ? 'btn-primary' : 'btn-outline-primary' }}">Refractions Needing Order</button>
+    </div>
 
     <section class="so-filters">
         <div class="so-filter-grid">
@@ -162,7 +166,7 @@
                 <input type="checkbox" wire:model="selectAllOrders">
                 <span>Select matching orders</span>
             </label>
-            <span class="so-muted">{{ $spectacles->total() }} refraction{{ $spectacles->total() === 1 ? '' : 's' }} found</span>
+            <span class="so-muted">{{ $spectacles->total() }} {{ $recordType === 'orders' ? 'spectacle order' : 'refraction needing order' }}{{ $spectacles->total() === 1 ? '' : 's' }} found after filters</span>
 
             @if(count($selectedOrders) > 0)
                 <div class="so-bulk-actions">
@@ -173,7 +177,6 @@
                         <option value="In Lab">In Lab</option>
                         <option value="Ready">Ready</option>
                         <option value="Collected">Collected</option>
-                        <option value="Cancelled">Cancelled</option>
                     </select>
                     <button type="button" wire:click="bulkUpdateStatus" class="so-btn so-btn-primary so-btn-sm">Apply</button>
                     <button type="button" wire:click="clearSelection" class="so-btn so-btn-light so-btn-sm">Clear</button>
@@ -214,6 +217,7 @@
                     $isPickupLate = $order && $order->status === 'Ready' && $order->updated_at && $order->updated_at->diffInDays(now()) >= 7;
                     $canCreateOrder = $this->canCreateOrderFromPos($posSummary);
                     $isActiveRow = optional($activeRefraction)->id === $refraction->id;
+                    $dispensingIssues = $this->dispensingIssues($refraction);
                 @endphp
 
                 <article class="so-queue-row status-{{ $statusMeta['class'] }} {{ $isActiveRow ? 'is-active' : '' }}">
@@ -243,6 +247,8 @@
                             @if($order)
                                 <small>{{ $order->order_id }}</small>
                             @endif
+                            <small>Next: {{ $this->nextRequiredAction($order) }}</small>
+                            @if(count($dispensingIssues))<small class="text-danger">{{ implode(', ', $dispensingIssues) }}</small>@endif
                         </span>
                         <span>
                             <strong>{{ $order ? \Carbon\Carbon::parse($order->pickUpDate)->format('d M Y') : '-' }}</strong>
@@ -331,6 +337,7 @@
                             @if($activePosSummary['balance'] > 0)
                                 <small>Balance {{ currency() }} {{ number_format($activePosSummary['balance'], 2) }}</small>
                             @endif
+                            <small>Paid {{ currency() }} {{ number_format($activePosSummary['paid'], 2) }} @if($activePosSummary['discount'] > 0) · Discount {{ currency() }} {{ number_format($activePosSummary['discount'], 2) }} @endif</small>
                         </div>
                         @if($activePosSummary['items']->isNotEmpty())
                             <div class="so-pos-items">
@@ -400,6 +407,8 @@
                                     <strong>{{ trim($activeLabName . ' ' . $activeLabRef) }}</strong>
                                 </div>
                             @endif
+                            <div><span>Lab cost</span><strong>{{ currency() }} {{ number_format($activeOrder->lab_cost ?? 0, 2) }}</strong></div>
+                            <div><span>Estimated profit</span><strong class="{{ $this->estimatedOrderProfit($activeOrder) < 0 ? 'text-danger' : 'text-success' }}">{{ currency() }} {{ number_format($this->estimatedOrderProfit($activeOrder), 2) }}</strong></div>
                         </div>
 
                         <div class="so-progress-toggle" aria-label="Spectacle order status">
@@ -412,6 +421,9 @@
                                 </button>
                             @endforeach
                         </div>
+                        @if(auth()->user()->hasAnyRole(['Manager','Super Admin']))
+                            <label class="so-form-field mt-2"><span>Override reason (required only to skip a stage)</span><input type="text" wire:model.defer="statusOverrideReason" placeholder="Reason for authorized override"></label>
+                        @endif
 
                         <div class="so-contact-row">
                             <a class="so-icon-btn {{ !$activeCleanPhone ? 'is-disabled' : '' }}" href="{{ $activeCleanPhone ? 'tel:' . $activeCleanPhone : '#' }}" title="Call patient"><i class="fas fa-phone"></i></a>
@@ -616,6 +628,11 @@
             <div class="so-modal-body">
                 <form wire:submit.prevent="createOrder" class="so-order-form">
                     <div class="so-form-grid so-form-grid-simple">
+                        <label class="so-form-field"><span>Frame <strong>*</strong></span><select wire:model="selectedFrameId"><option value="">Select frame</option>@foreach($availableFrames as $frame)<option value="{{ $frame->id }}">{{ $frame->name }} ({{ $frame->quantity }})</option>@endforeach</select>@error('selectedFrameId')<small>{{ $message }}</small>@enderror</label>
+                        <label class="so-form-field"><span>Lens <strong>*</strong></span><select wire:model="selectedLensId"><option value="">Select lens</option>@foreach($availableLenses as $lens)<option value="{{ $lens->id }}">{{ $lens->name }} ({{ $lens->quantity }})</option>@endforeach</select>@error('selectedLensId')<small>{{ $message }}</small>@enderror</label>
+                        <label class="so-form-field"><span>Lab</span><input type="text" wire:model.defer="labName"></label>
+                        <label class="so-form-field"><span>Lab reference</span><input type="text" wire:model.defer="labReference"></label>
+                        <label class="so-form-field"><span>Lab cost</span><input type="number" min="0" step="0.01" wire:model.defer="labCost">@error('labCost')<small>{{ $message }}</small>@enderror</label>
                         <label class="so-form-field">
                             <span>Pickup date <strong>*</strong></span>
                             <input type="date" wire:model="pickUpDate" min="{{ date('Y-m-d') }}">

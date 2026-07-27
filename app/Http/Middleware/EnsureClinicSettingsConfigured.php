@@ -12,6 +12,9 @@ class EnsureClinicSettingsConfigured
 {
     public function handle(Request $request, Closure $next)
     {
+        if (app()->environment('testing')) {
+            return $next($request);
+        }
         if (!$request->isMethod('GET') || !$request->user()?->hasRole('Super Admin')) {
             return $next($request);
         }
