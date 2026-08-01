@@ -8,6 +8,8 @@ use App\Models\Cart;
 use App\Models\Sales;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -25,6 +27,7 @@ class OutstandingBalancesComponent extends Component
     public $collectAmount = '';
     public $paymentMethod = 'cash';
     public $paymentNotes = '';
+    public $paymentIdempotencyKey;
 
     // Payment history modal
     public $showHistoryModal = false;
@@ -38,6 +41,7 @@ class OutstandingBalancesComponent extends Component
     public function mount()
     {
         abort_if(!auth()->user()?->hasRole(['Secretary', 'Cashier', 'Manager', 'Super Admin']), 403);
+        $this->rotatePaymentIdempotencyKey();
     }
 
     public function getBalancesProperty()
@@ -105,6 +109,7 @@ class OutstandingBalancesComponent extends Component
         $this->collectAmount = number_format($balance, 2, '.', '');
         $this->paymentMethod = 'cash';
         $this->paymentNotes = '';
+        $this->rotatePaymentIdempotencyKey();
         $this->resetErrorBag();
         $this->showModal = true;
     }
@@ -115,6 +120,7 @@ class OutstandingBalancesComponent extends Component
         $this->selectedSaleId = null;
         $this->collectAmount = '';
         $this->paymentNotes = '';
+        $this->rotatePaymentIdempotencyKey();
         $this->resetErrorBag();
     }
 
@@ -122,26 +128,56 @@ class OutstandingBalancesComponent extends Component
     {
         $this->validate();
 
-        $sale = Sales::with('items.product')->findOrFail($this->selectedSaleId);
         $amount = (float) $this->collectAmount;
-        $balance = max(0, (float) $sale->total_amount - (float) $sale->amount_paid);
-        $willFullyPay = round((float) $sale->amount_paid + $amount, 2) >= round((float) $sale->total_amount, 2);
+        $saleId = (int) $this->selectedSaleId;
+        $this->ensurePaymentIdempotencyKey();
 
-        if ($amount > $balance) {
-            $this->addError('collectAmount', 'Amount exceeds remaining balance of ' . currency() . ' ' . number_format($balance, 2));
-            return;
-        }
+        $result = DB::transaction(function () use ($saleId, $amount) {
+            // Serialize collections for the same sale. Once this lock is
+            // acquired, re-read and validate against the latest committed
+            // amount_paid value before recording another payment.
+            $sale = Sales::with('items.product')
+                ->whereKey($saleId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        DB::transaction(function () use ($sale, $amount) {
+            $existingPayment = PaymentTransaction::where(
+                    'idempotency_key',
+                    $this->paymentIdempotencyKey
+                )
+                ->where('sale_id', $sale->id)
+                ->first();
+
+            if ($existingPayment) {
+                return [
+                    'sale_id' => $sale->id,
+                    'fully_paid' => $sale->payment_status === 'paid',
+                    'amount' => (float) $existingPayment->amount,
+                    'duplicate' => true,
+                ];
+            }
+
+            $oldAmountPaid = (float) $sale->amount_paid;
+            $oldPaymentStatus = $sale->payment_status;
+            $balance = max(0, round((float) $sale->total_amount - $oldAmountPaid, 2));
+
+            if ($amount > $balance || $balance <= 0) {
+                throw ValidationException::withMessages([
+                    'collectAmount' => 'Amount exceeds remaining balance of '
+                        . currency() . ' ' . number_format($balance, 2),
+                ]);
+            }
+
             PaymentTransaction::create([
                 'sale_id' => $sale->id,
+                'idempotency_key' => $this->paymentIdempotencyKey,
                 'amount' => $amount,
                 'payment_method' => $this->paymentMethod,
                 'notes' => $this->paymentNotes ?: null,
                 'collected_by' => Auth::id(),
             ]);
 
-            $newAmountPaid = round((float) $sale->amount_paid + $amount, 2);
+            $newAmountPaid = round($oldAmountPaid + $amount, 2);
             $fullyPaid = $newAmountPaid >= round((float) $sale->total_amount, 2);
 
             $sale->update([
@@ -188,23 +224,49 @@ class OutstandingBalancesComponent extends Component
                 $fullyPaid ? 'payment.completed' : 'payment.updated',
                 ($fullyPaid ? 'Completed balance payment' : 'Collected part payment') . ' for sale ' . $sale->transaction_id,
                 $sale,
-                ['amount_paid' => $sale->amount_paid, 'payment_status' => $sale->payment_status],
+                ['amount_paid' => $oldAmountPaid, 'payment_status' => $oldPaymentStatus],
                 ['amount_paid' => $newAmountPaid, 'payment_status' => $fullyPaid ? 'paid' : 'partial', 'amount_collected' => $amount],
                 $sale->patient_id
             );
+
+            return [
+                'sale_id' => $sale->id,
+                'fully_paid' => $fullyPaid,
+                'amount' => $amount,
+                'duplicate' => false,
+            ];
         });
 
         $this->closeModal();
         $this->dispatchBrowserEvent('notify', [
-            'type' => 'success',
-            'message' => 'Payment of ' . currency() . ' ' . number_format($amount, 2) . ' recorded successfully.',
+            'type' => $result['duplicate'] ? 'info' : 'success',
+            'message' => 'Payment of ' . currency() . ' ' . number_format($result['amount'], 2)
+                . ($result['duplicate'] ? ' was already recorded.' : ' recorded successfully.'),
         ]);
 
-        if ($willFullyPay) {
+        if ($result['fully_paid']) {
             $this->dispatchBrowserEvent('print-released-receipt', [
-                'url' => route('cashier.receipt.show', $sale->id),
+                'url' => route('cashier.receipt.show', $result['sale_id']),
             ]);
         }
+    }
+
+    private function ensurePaymentIdempotencyKey(): void
+    {
+        if (
+            !is_string($this->paymentIdempotencyKey) ||
+            !preg_match(
+                '/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i',
+                $this->paymentIdempotencyKey
+            )
+        ) {
+            $this->rotatePaymentIdempotencyKey();
+        }
+    }
+
+    private function rotatePaymentIdempotencyKey(): void
+    {
+        $this->paymentIdempotencyKey = (string) Str::uuid();
     }
 
     private function recalculateProfit(Sales $sale): float

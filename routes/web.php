@@ -140,6 +140,10 @@ Route::get('/cashier/receipt/{saleId}', [ReceiptController::class, 'show'])
     ->name('cashier.receipt.show');
 Route::get('/cashier/receipt/{saleId}/pdf', [ReceiptController::class, 'downloadPdf'])
     ->name('cashier.receipt.pdf');
+Route::get('/cashier/refund-receipt/{refund}', [\App\Http\Controllers\RefundReceiptController::class, 'show'])
+    ->name('refunds.receipt');
+Route::get('/cashier/refund-receipt/{refund}/pdf', [\App\Http\Controllers\RefundReceiptController::class, 'downloadPdf'])
+    ->name('refunds.receipt.pdf');
 
 Route::get('/cashier/clearance-receipt/{id}', function ($id) {
     $clearance = \App\Models\CashierPatientClearance::with(['patient', 'service', 'user', 'sale'])->findOrFail($id);

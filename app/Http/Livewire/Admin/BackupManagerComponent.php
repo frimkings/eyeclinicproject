@@ -349,8 +349,6 @@ class BackupManagerComponent extends Component
                 '--single-transaction',
                 '--quick',
                 '--skip-lock-tables',
-                '--column-statistics=0',
-                '--set-gtid-purged=OFF',
                 '--default-character-set=' . ($connection['charset'] ?? 'utf8mb4'),
                 '--result-file=' . $absolutePath,
                 $database,

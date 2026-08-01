@@ -249,6 +249,8 @@ class SalesTest extends TestCase
 
         Livewire::test(SalesRecordsComponent::class)
             ->call('initiateRefund', $sale->id)
+            ->set('initiateRefundReasonCode', 'other')
+            ->set('initiateRefundType', 'refund')
             ->set('initiateRefundReason', 'Too short')
             ->call('submitRefundRequest')
             ->assertHasErrors(['initiateRefundReason']);
@@ -263,6 +265,8 @@ class SalesTest extends TestCase
 
         Livewire::test(SalesRecordsComponent::class)
             ->call('initiateRefund', $sale->id)
+            ->set('initiateRefundReasonCode', 'customer_return')
+            ->set('initiateRefundType', 'refund')
             ->set('initiateRefundReason', 'Customer requested a refund for this purchase.')
             ->call('submitRefundRequest')
             ->assertHasNoErrors();

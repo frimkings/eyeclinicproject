@@ -15,14 +15,33 @@ class RefundLog extends Model
     const STATUS_REJECTED  = 'rejected';
     const STATUS_PROCESSED = 'processed';
 
+    const TYPE_REFUND = 'refund';
+    const TYPE_VOID = 'void';
+
+    const REASON_CODES = [
+        'customer_return' => 'Customer return',
+        'wrong_item' => 'Wrong item supplied',
+        'defective_item' => 'Defective or damaged item',
+        'duplicate_charge' => 'Duplicate charge',
+        'payment_error' => 'Payment or cashier error',
+        'service_cancelled' => 'Service cancelled',
+        'other' => 'Other',
+    ];
+
     protected $fillable = [
         'sale_id',
+        'refund_number',
+        'request_type',
+        'reason_code',
         'status',
         'initiated_by',
         'approved_by',
         'processed_by',
         'rejected_by',
         'reason',
+        'refunded_amount',
+        'original_payment_references',
+        'stock_restoration',
         'rejection_reason',
         'initiated_at',
         'approved_at',
@@ -35,7 +54,25 @@ class RefundLog extends Model
         'approved_at'  => 'datetime',
         'processed_at' => 'datetime',
         'rejected_at'  => 'datetime',
+        'refunded_amount' => 'decimal:2',
+        'original_payment_references' => 'array',
+        'stock_restoration' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $refund): void {
+            if ($refund->getOriginal('status') === self::STATUS_PROCESSED) {
+                throw new \LogicException('Processed refund records are immutable.');
+            }
+        });
+
+        static::deleting(function (self $refund): void {
+            if ($refund->status === self::STATUS_PROCESSED) {
+                throw new \LogicException('Processed refund records cannot be deleted.');
+            }
+        });
+    }
 
     // ── Scopes ────────────────────────────────────────────────────────────────
 

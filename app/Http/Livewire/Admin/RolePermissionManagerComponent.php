@@ -80,7 +80,7 @@ class RolePermissionManagerComponent extends Component
 
     public function mount(): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        $this->authorizeRoleManagement();
     }
 
     // ── Roles ──────────────────────────────────────────────────────────────────
@@ -110,6 +110,8 @@ class RolePermissionManagerComponent extends Component
 
     public function applyRoleTemplate(string $template): void
     {
+        $this->authorizeRoleManagement();
+
         if (!array_key_exists($template, $this->roleTemplates)) {
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Role template not found.']);
             return;
@@ -133,6 +135,8 @@ class RolePermissionManagerComponent extends Component
 
     public function saveRole(): void
     {
+        $this->authorizeRoleManagement();
+
         $uniqueRule = 'unique:roles,name' . ($this->editingRoleId ? ",{$this->editingRoleId}" : '');
         $this->validate(['roleName' => "required|string|max:64|{$uniqueRule}"]);
 
@@ -189,7 +193,7 @@ class RolePermissionManagerComponent extends Component
 
     public function deleteRole(int $id): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        $this->authorizeRoleManagement();
         $role = Role::withCount('users')->findOrFail($id);
 
         if (in_array($role->name, $this->protectedRoles)) {
@@ -221,6 +225,8 @@ class RolePermissionManagerComponent extends Component
 
     public function assignUserToManagedRole(): void
     {
+        $this->authorizeRoleManagement();
+
         abort_if(!$this->managingRoleId, 404);
         $this->validate(['userToAssign' => 'required|exists:users,id']);
 
@@ -242,6 +248,8 @@ class RolePermissionManagerComponent extends Component
 
     public function removeUserFromManagedRole(int $userId): void
     {
+        $this->authorizeRoleManagement();
+
         abort_if(!$this->managingRoleId, 404);
 
         $role = Role::findOrFail($this->managingRoleId);
@@ -285,6 +293,8 @@ class RolePermissionManagerComponent extends Component
 
     public function savePermission(): void
     {
+        $this->authorizeRoleManagement();
+
         $uniqueRule = 'unique:permissions,name' . ($this->editingPermissionId ? ",{$this->editingPermissionId}" : '');
         $this->validate(['permissionName' => "required|string|max:128|{$uniqueRule}"]);
 
@@ -318,7 +328,7 @@ class RolePermissionManagerComponent extends Component
 
     public function deletePermission(int $id): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        $this->authorizeRoleManagement();
         $perm = Permission::findOrFail($id);
         $name = $perm->name;
         $perm->delete();
@@ -330,7 +340,7 @@ class RolePermissionManagerComponent extends Component
 
     public function createPermissionPreset(string $group): void
     {
-        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
+        $this->authorizeRoleManagement();
 
         if (!array_key_exists($group, $this->permissionPresets)) {
             $this->dispatchBrowserEvent('notify', ['type' => 'error', 'message' => 'Permission preset not found.']);
@@ -362,6 +372,11 @@ class RolePermissionManagerComponent extends Component
                 ? "{$group} preset added {$created} new permission(s)."
                 : "{$group} preset already exists.",
         ]);
+    }
+
+    private function authorizeRoleManagement(): void
+    {
+        abort_if(!auth()->user()?->hasRole('Super Admin'), 403);
     }
 
     // ── Render ─────────────────────────────────────────────────────────────────

@@ -80,7 +80,15 @@
                             </td>
                             <td class="small">{{ optional($log->initiator)->name ?? '—' }}</td>
                             <td class="small text-muted" style="max-width:220px; word-break:break-word;">
-                                {{ Str::limit($log->reason, 90) }}
+                                <span class="badge badge-light border mr-1">
+                                    {{ strtoupper($log->request_type ?? 'refund') }}
+                                </span>
+                                @if($log->reason_code)
+                                    <span class="badge badge-info">
+                                        {{ \App\Models\RefundLog::REASON_CODES[$log->reason_code] ?? $log->reason_code }}
+                                    </span>
+                                @endif
+                                <div class="mt-1">{{ Str::limit($log->reason, 90) }}</div>
                                 @if($log->status === 'rejected' && $log->rejection_reason)
                                     <div class="text-danger mt-1">
                                         <i class="fas fa-times-circle mr-1"></i>
@@ -148,6 +156,12 @@
                                             title="Execute refund — restores stock and marks sale as refunded">
                                         <i class="fas fa-undo mr-1"></i> Process
                                     </button>
+                                @elseif($log->status === 'processed')
+                                    <a href="{{ route('refunds.receipt', $log) }}"
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-primary shadow-none">
+                                        <i class="fas fa-receipt mr-1"></i> Receipt
+                                    </a>
                                 @else
                                     <span class="text-muted small">—</span>
                                 @endif
@@ -371,5 +385,11 @@
             @this.call('process', logId);
         });
     }
+
+    window.addEventListener('refund-receipt-ready', function (event) {
+        if (event.detail && event.detail.url) {
+            window.open(event.detail.url, '_blank', 'width=420,height=700');
+        }
+    });
 
 </script>

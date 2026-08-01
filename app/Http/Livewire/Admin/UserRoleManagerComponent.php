@@ -69,8 +69,8 @@ class UserRoleManagerComponent extends Component
             'name'           => 'required|min:3',
             'email'          => 'required|email|unique:users,email,' . $this->userId,
             'password'       => $this->isEdit
-                ? ['nullable', 'confirmed', Password::min(10)->mixedCase()->numbers()]
-                : ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
+                ? ['nullable', 'confirmed', Password::min(6)]
+                : ['required', 'confirmed', Password::min(6)],
             'password_confirmation' => $this->isEdit ? 'nullable' : 'required',
             'selectedRoles'  => 'required|array|min:1',
             'phone'          => 'nullable|string|max:25',
@@ -366,7 +366,7 @@ class UserRoleManagerComponent extends Component
     {
         abort_if(!$this->canManageUsers(), 403);
         $this->validate([
-            'newPassword'             => ['required', 'same:newPasswordConfirmation', Password::min(10)->mixedCase()->numbers()],
+            'newPassword'             => ['required', 'same:newPasswordConfirmation', Password::min(6)],
             'newPasswordConfirmation' => 'required',
         ], [
             'newPassword.same' => 'Passwords do not match.',
@@ -445,6 +445,12 @@ class UserRoleManagerComponent extends Component
 
             if ($name === '' || $email === '' || $password === '' || $roleInput === '') {
                 $results['errors'][] = "Row {$rowNum}: name, email, password, and role are all required.";
+                $results['skipped']++;
+                continue;
+            }
+
+            if (mb_strlen($password) < 6) {
+                $results['errors'][] = "Row {$rowNum}: password must be at least 6 characters.";
                 $results['skipped']++;
                 continue;
             }

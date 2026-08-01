@@ -26,6 +26,8 @@ class PatientMedicalRecordController extends Controller
             403
         );
 
+        $this->ensureClearanceBelongsToPatient($patient, $clearance);
+
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
             ->with(['user', 'doctor', 'addenda.user'])
@@ -162,6 +164,8 @@ class PatientMedicalRecordController extends Controller
      */
     public function preview(Patient $patient, CashierPatientClearance $clearance)
     {
+        $this->ensureClearanceBelongsToPatient($patient, $clearance);
+
         // Get all consultations for this patient
         $consultations = Consultations::where('patient_id', $patient->id)
             ->with(['user', 'doctor', 'addenda.user'])
@@ -187,5 +191,15 @@ class PatientMedicalRecordController extends Controller
         ];
 
         return view('doctor.medical-record-pdf', $data);
+    }
+
+    private function ensureClearanceBelongsToPatient(
+        Patient $patient,
+        CashierPatientClearance $clearance
+    ): void {
+        abort_unless(
+            (int) $clearance->patient_id === (int) $patient->getKey(),
+            404
+        );
     }
 }

@@ -4,9 +4,12 @@ namespace App\Http\Livewire\Admin;
 
 use App\Models\RefundLog;
 use App\Models\Sales;
+use App\Models\AuditTrail;
+use App\Models\Product;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -41,11 +44,7 @@ class RefundApprovalsComponent extends Component
 
     public function mount(): void
     {
-        $user = auth()->user();
-        abort_if(
-            !$user?->hasAnyRole(['Manager', 'Super Admin']) && !$user?->can('manage billing'),
-            403
-        );
+        $this->authorizeRefundManagement();
     }
 
     public function updatedSearch(): void   { $this->resetPage(); }
@@ -62,6 +61,8 @@ class RefundApprovalsComponent extends Component
 
     public function confirmApprove(int $id): void
     {
+        $this->authorizeRefundManagement();
+
         $log = RefundLog::where('status', RefundLog::STATUS_PENDING)
             ->findOrFail($id);
 
@@ -70,6 +71,16 @@ class RefundApprovalsComponent extends Component
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        AuditTrail::record(
+            'refund.approved',
+            ucfirst($log->request_type) . " approved for sale {$log->sale->transaction_id}",
+            $log,
+            ['status' => RefundLog::STATUS_PENDING],
+            ['status' => RefundLog::STATUS_APPROVED, 'approved_by' => auth()->id()],
+            $log->sale->patient_id,
+            true
+        );
 
         if ($log->initiated_by) {
             NotificationService::send(
@@ -109,6 +120,8 @@ class RefundApprovalsComponent extends Component
 
     public function confirmReject(): void
     {
+        $this->authorizeRefundManagement();
+
         $this->validate(['rejectionReason' => 'required|string|min:5|max:500']);
 
         $log = RefundLog::where('status', RefundLog::STATUS_PENDING)
@@ -120,6 +133,20 @@ class RefundApprovalsComponent extends Component
             'rejected_at'      => now(),
             'rejection_reason' => $this->rejectionReason,
         ]);
+
+        AuditTrail::record(
+            'refund.rejected',
+            ucfirst($log->request_type) . " rejected for sale {$log->sale->transaction_id}",
+            $log,
+            ['status' => RefundLog::STATUS_PENDING],
+            [
+                'status' => RefundLog::STATUS_REJECTED,
+                'rejected_by' => auth()->id(),
+                'rejection_reason' => $this->rejectionReason,
+            ],
+            $log->sale->patient_id,
+            true
+        );
 
         if ($log->initiated_by) {
             NotificationService::send(
@@ -144,7 +171,9 @@ class RefundApprovalsComponent extends Component
 
     public function process(int $id): void
     {
-        $log = RefundLog::with('sale.items.product')
+        $this->authorizeRefundManagement();
+
+        $log = RefundLog::with('sale')
             ->where('status', RefundLog::STATUS_APPROVED)
             ->findOrFail($id);
 
@@ -157,10 +186,12 @@ class RefundApprovalsComponent extends Component
         }
 
         try {
-            DB::transaction(function () use ($log, $sale) {
+            $processedLog = DB::transaction(function () use ($log, $sale) {
                 // Pessimistic locks prevent two concurrent requests from double-processing
-                $lockedSale = \App\Models\Sales::lockForUpdate()->findOrFail($sale->id);
                 $lockedLog  = RefundLog::lockForUpdate()->findOrFail($log->id);
+                $lockedSale = Sales::with(['items.product', 'paymentTransactions'])
+                    ->lockForUpdate()
+                    ->findOrFail($sale->id);
 
                 if ($lockedSale->is_refunded) {
                     throw new \RuntimeException('This sale has already been refunded.');
@@ -169,20 +200,77 @@ class RefundApprovalsComponent extends Component
                     throw new \RuntimeException('This refund is no longer in approved status.');
                 }
 
+                $paymentReferences = $lockedSale->paymentTransactions
+                    ->map(fn ($payment) => [
+                        'payment_transaction_id' => $payment->id,
+                        'amount' => (float) $payment->amount,
+                        'payment_method' => $payment->payment_method,
+                        'collected_by' => $payment->collected_by,
+                        'collected_at' => $payment->created_at?->toISOString(),
+                    ])
+                    ->values()
+                    ->all();
+
+                if (!$paymentReferences) {
+                    $paymentReferences[] = [
+                        'payment_transaction_id' => null,
+                        'amount' => (float) $lockedSale->amount_paid,
+                        'payment_method' => 'legacy',
+                        'collected_by' => $lockedSale->user_id,
+                        'collected_at' => $lockedSale->created_at?->toISOString(),
+                    ];
+                }
+
+                $stockRestoration = [];
+                $productIds = $lockedSale->items
+                    ->where('dispensed_quantity', '>', 0)
+                    ->pluck('product_id')
+                    ->filter()
+                    ->unique()
+                    ->sort()
+                    ->values();
+                $products = Product::whereIn('id', $productIds)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                foreach ($lockedSale->items as $item) {
+                    $quantity = (int) $item->dispensed_quantity;
+                    $product = $products->get($item->product_id);
+
+                    if ($quantity <= 0 || !$product) {
+                        continue;
+                    }
+
+                    $before = (int) $product->quantity;
+                    $product->increment('quantity', $quantity);
+                    $product->refresh();
+
+                    $stockRestoration[] = [
+                        'sale_item_id' => $item->id,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'quantity_restored' => $quantity,
+                        'quantity_before' => $before,
+                        'quantity_after' => (int) $product->quantity,
+                    ];
+                }
+
+                $refundNumber = 'RF-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
+                $refundedAmount = min(
+                    (float) $lockedSale->amount_paid,
+                    (float) $lockedSale->total_amount
+                );
+
                 $lockedSale->update([
                     'is_refunded'   => true,
-                    'refund_reason' => $log->reason,
+                    'refund_reason' => $lockedLog->reason,
                     'refunded_at'   => now(),
                     'refunded_by'   => auth()->id(),
                 ]);
 
-                foreach ($sale->items as $item) {
-                    if ($item->product) {
-                        $item->product->increment('quantity', $item->dispensed_quantity);
-                    }
-                }
-
-                $cartIds = $sale->items->pluck('cart_id')->filter()->unique();
+                $cartIds = $lockedSale->items->pluck('cart_id')->filter()->unique();
                 if ($cartIds->isNotEmpty()) {
                     \App\Models\Cart::whereIn('id', $cartIds)->update(['status' => 'refunded']);
                 }
@@ -191,7 +279,30 @@ class RefundApprovalsComponent extends Component
                     'status'       => RefundLog::STATUS_PROCESSED,
                     'processed_by' => auth()->id(),
                     'processed_at' => now(),
+                    'refund_number' => $refundNumber,
+                    'refunded_amount' => $refundedAmount,
+                    'original_payment_references' => $paymentReferences,
+                    'stock_restoration' => $stockRestoration,
                 ]);
+
+                AuditTrail::record(
+                    'refund.processed',
+                    ucfirst($lockedLog->request_type) . " {$refundNumber} processed for sale {$lockedSale->transaction_id}",
+                    $lockedLog,
+                    ['status' => RefundLog::STATUS_APPROVED],
+                    [
+                        'status' => RefundLog::STATUS_PROCESSED,
+                        'refund_number' => $refundNumber,
+                        'refunded_amount' => $refundedAmount,
+                        'reason_code' => $lockedLog->reason_code,
+                        'original_payment_references' => $paymentReferences,
+                        'stock_restoration' => $stockRestoration,
+                    ],
+                    $lockedSale->patient_id,
+                    true
+                );
+
+                return $lockedLog->fresh(['sale']);
             });
         } catch (\RuntimeException $e) {
             $this->dispatchBrowserEvent('close-processing-modal');
@@ -214,7 +325,11 @@ class RefundApprovalsComponent extends Component
         $this->dispatchBrowserEvent('close-processing-modal');
         $this->dispatchBrowserEvent('notify', [
             'type'    => 'success',
-            'message' => "Refund for #{$sale->transaction_id} processed. Stock restored.",
+            'message' => "Refund {$processedLog->refund_number} processed. Eligible stock restored.",
+        ]);
+
+        $this->dispatchBrowserEvent('refund-receipt-ready', [
+            'url' => route('refunds.receipt', $processedLog),
         ]);
     }
 
@@ -250,6 +365,16 @@ class RefundApprovalsComponent extends Component
             ->when($this->fromDate, fn ($q) => $q->whereDate('created_at', '>=', $this->fromDate))
             ->when($this->toDate,   fn ($q) => $q->whereDate('created_at', '<=', $this->toDate))
             ->orderBy('created_at', 'desc');
+    }
+
+    private function authorizeRefundManagement(): void
+    {
+        $user = auth()->user();
+
+        abort_if(
+            !$user?->hasAnyRole(['Manager', 'Super Admin']) && !$user?->can('manage billing'),
+            403
+        );
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
