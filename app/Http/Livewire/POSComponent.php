@@ -87,6 +87,7 @@ class POSComponent extends Component
 
     // Guard flag — prevents double-firing from Livewire listener + Alpine
     public $checkoutProcessing = false;
+    public $checkoutIdempotencyKey;
 
     // Part payment
     public $isPartPayment     = false;
@@ -106,6 +107,7 @@ class POSComponent extends Component
 
     public function mount()
     {
+        $this->rotateCheckoutIdempotencyKey();
         $this->calculateTotal();
     }
 
@@ -614,6 +616,7 @@ class POSComponent extends Component
         $this->prescriptionConsultationId = null;
         $this->frameSearchTerm            = '';
         $this->frameSearchResults         = [];
+        $this->rotateCheckoutIdempotencyKey();
         $this->resetDiscountApproval();
         $this->calculateTotal();
 
@@ -1671,6 +1674,7 @@ class POSComponent extends Component
             return;
         }
         $this->checkoutProcessing = true;
+        $this->ensureCheckoutIdempotencyKey();
 
         Log::info('=== CHECKOUT METHOD CALLED ===');
 
@@ -1736,7 +1740,28 @@ class POSComponent extends Component
         DB::beginTransaction();
 
         try {
-            $products = Product::with('category')->whereIn('id', $this->getCartProductIds())->get()->keyBy('id');
+            // Lock stock rows for the lifetime of this transaction. Concurrent
+            // checkouts containing the same products must wait until this sale
+            // commits or rolls back, then validate against the latest quantity.
+            $products = Product::with('category')
+                ->whereIn('id', $this->getCartProductIds())
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // Identical retries wait on the same stock rows. After the original
+            // transaction commits, return its receipt instead of creating
+            // another sale or decrementing inventory again.
+            $existingSale = $this->findExistingIdempotentSale();
+
+            if ($existingSale) {
+                DB::commit();
+                $this->checkoutProcessing = false;
+                $this->rotateCheckoutIdempotencyKey();
+
+                return redirect()->route('cashier.receipt.show', $existingSale->id);
+            }
 
             $requiredQuantities = [];
 
@@ -1791,36 +1816,12 @@ class POSComponent extends Component
                 'payment_status'  => $paymentStatus,
                 'profit'          => $isPartPayment ? 0 : max(0, $total_profit - $this->discountAmount),
                 'transaction_id'  => $transactionId,
+                'idempotency_key' => $this->checkoutIdempotencyKey,
                 'discount_type'        => $this->discountAmount > 0 ? $this->discountType      : null,
                 'discount_value'       => $this->discountAmount > 0 ? $this->discountValue     : null,
                 'discount_amount'      => $this->discountAmount,
                 'discount_approved_by' => $this->discountAmount > 0 ? $this->discountApprovedById : null,
             ]);
-
-            // Send SMS receipt for full payments only
-            if ($paymentStatus === 'paid' && $this->patientId) {
-                $patient = \App\Models\Patient::find($this->patientId);
-                if ($patient?->contact) {
-                    $clinic = \App\Models\Setting::getSettings()->clinic_name ?? 'the clinic';
-                    $msg = SmsTemplate::render('payment_receipt', [
-                        '[NAME]'   => $patient->name,
-                        '[AMOUNT]' => number_format($finalAmount, 2),
-                        '[TXN_ID]' => $transactionId,
-                        '[CLINIC]' => $clinic,
-                    ]);
-                    if ($msg) (new SmsService)->send($patient->contact, $msg, $patient->id, 'payment_receipt');
-                }
-                if ($patient?->email) {
-                    $clinic = \App\Models\Setting::getSettings()->clinic_name ?? 'the clinic';
-                    (new EmailService)->send($patient->email, new PaymentReceiptMail(
-                        $patient->name,
-                        $clinic,
-                        number_format($finalAmount, 2),
-                        $transactionId,
-                        now()->format('M d, Y h:i A'),
-                    ));
-                }
-            }
 
             // Log one PaymentTransaction per split-payment entry.
             // Cap each amount at the remaining balance so the total never exceeds
@@ -1868,7 +1869,15 @@ class POSComponent extends Component
                     'notes'               => $isPartPayment ? 'On Hold - Part Payment' : ($frequency ? 'Prescription Sale' : 'Direct POS Sale'),
                 ]);
 
-                $product->decrement('quantity', $qty);
+                // Keep a database-level guard in addition to the row lock so an
+                // inventory write can never reduce quantity below zero.
+                $stockUpdated = Product::whereKey($product->id)
+                    ->where('quantity', '>=', $qty)
+                    ->decrement('quantity', $qty);
+
+                if ($stockUpdated !== 1) {
+                    throw new \RuntimeException('Insufficient stock for ' . $product->name);
+                }
             }
 
             // Mark the exact cart rows included in this checkout.
@@ -1965,11 +1974,16 @@ class POSComponent extends Component
 
             DB::commit();
 
+            // External delivery must happen only after the sale and stock changes
+            // are durable. Delivery failures are logged and never reverse or
+            // misreport an already committed checkout.
+            $this->sendCommittedSaleReceipt($sale);
+
             // Low-stock alerts — fire after commit so stock values are final in DB
             $lowStockThreshold = 5;
-            foreach ($requiredQuantities as $productId => $deducted) {
+            foreach (array_keys($requiredQuantities) as $productId) {
                 if (!isset($products[$productId])) continue;
-                $remaining = $products[$productId]->quantity - $deducted;
+                $remaining = (int) Product::whereKey($productId)->value('quantity');
                 if ($remaining >= 0 && $remaining <= $lowStockThreshold) {
                     $stockLabel = $remaining === 0 ? 'OUT OF STOCK' : $remaining . ' unit' . ($remaining === 1 ? '' : 's') . ' left';
                     \App\Services\NotificationService::sendToRoles(
@@ -2064,9 +2078,29 @@ class POSComponent extends Component
             $this->purchaseMode          = 'patient';
             $this->directCustomerName    = '';
             $this->checkoutProcessing   = false;
+            $this->rotateCheckoutIdempotencyKey();
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+
+            // The unique index is the final race-condition guard. If another
+            // request committed this key first, return that sale rather than
+            // reporting the duplicate insert as a failed checkout.
+            try {
+                if ($existingSale = $this->findExistingIdempotentSale()) {
+                    $this->checkoutProcessing = false;
+                    $this->rotateCheckoutIdempotencyKey();
+
+                    return redirect()->route('cashier.receipt.show', $existingSale->id);
+                }
+            } catch (\Throwable $lookupError) {
+                Log::warning('Unable to resolve checkout idempotency key after failure.', [
+                    'error' => $lookupError->getMessage(),
+                ]);
+            }
+
             Log::error('Checkout failed: ' . $e->getMessage());
 
             $this->checkoutProcessing = false;
@@ -2075,6 +2109,85 @@ class POSComponent extends Component
             $this->dispatchBrowserEvent('notify', [
                 'type'    => 'error',
                 'message' => 'Transaction failed: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function ensureCheckoutIdempotencyKey(): void
+    {
+        if (
+            !is_string($this->checkoutIdempotencyKey) ||
+            !preg_match(
+                '/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i',
+                $this->checkoutIdempotencyKey
+            )
+        ) {
+            $this->rotateCheckoutIdempotencyKey();
+        }
+    }
+
+    private function rotateCheckoutIdempotencyKey(): void
+    {
+        $this->checkoutIdempotencyKey = (string) Str::uuid();
+    }
+
+    private function findExistingIdempotentSale(): ?Sales
+    {
+        return Sales::where('idempotency_key', $this->checkoutIdempotencyKey)
+            ->where('user_id', Auth::id())
+            ->first();
+    }
+
+    private function sendCommittedSaleReceipt(Sales $sale): void
+    {
+        if ($sale->payment_status !== 'paid' || !$sale->patient_id) {
+            return;
+        }
+
+        try {
+            $patient = Patient::find($sale->patient_id);
+
+            if (!$patient) {
+                Log::warning('Payment receipt delivery skipped: patient not found.', [
+                    'sale_id' => $sale->id,
+                    'patient_id' => $sale->patient_id,
+                ]);
+                return;
+            }
+
+            $clinic = Setting::getSettings()->clinic_name ?? 'the clinic';
+
+            if ($patient->contact) {
+                $message = SmsTemplate::render('payment_receipt', [
+                    '[NAME]'   => $patient->name,
+                    '[AMOUNT]' => number_format((float) $sale->total_amount, 2),
+                    '[TXN_ID]' => $sale->transaction_id,
+                    '[CLINIC]' => $clinic,
+                ]);
+
+                if ($message) {
+                    (new SmsService())->send(
+                        $patient->contact,
+                        $message,
+                        $patient->id,
+                        'payment_receipt'
+                    );
+                }
+            }
+
+            if ($patient->email) {
+                (new EmailService())->send($patient->email, new PaymentReceiptMail(
+                    $patient->name,
+                    $clinic,
+                    number_format((float) $sale->total_amount, 2),
+                    $sale->transaction_id,
+                    $sale->created_at?->format('M d, Y h:i A') ?? now()->format('M d, Y h:i A'),
+                ));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Post-commit payment receipt delivery failed.', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
             ]);
         }
     }

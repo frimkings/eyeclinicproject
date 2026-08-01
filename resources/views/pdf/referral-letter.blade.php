@@ -271,16 +271,24 @@ html, body {
                 <div class="excuse-date-value">{{ $referral->excuse_from_date->diffInDays($referral->excuse_to_date) + 1 }} day(s)</div>
             </div>
         </div>
-        <p>
-            The patient has been advised to be excused from work / school duties from
-            <strong>{{ $referral->excuse_from_date->format('F d, Y') }}</strong>
-            to <strong>{{ $referral->excuse_to_date->format('F d, Y') }}</strong>
-            due to medical reasons.
-        </p>
         @endif
 
-        <p>The patient is expected to resume normal duties thereafter, unless otherwise reviewed.</p>
-        <p>Please accord this letter the necessary attention. Thank you.</p>
+        @php
+            $excuseNotes = $referral->excuse_notes ?? \App\Models\Referral::defaultExcuseNotes();
+            $excuseNotes = str_replace(
+                ['{excused_from}', '{excused_until}'],
+                [
+                    optional($referral->excuse_from_date)->format('F d, Y'),
+                    optional($referral->excuse_to_date)->format('F d, Y'),
+                ],
+                $excuseNotes
+            );
+        @endphp
+        @foreach(preg_split('/\r\n|\r|\n/', $excuseNotes) as $paragraph)
+            @if(trim($paragraph) !== '')
+                <p>{{ $paragraph }}</p>
+            @endif
+        @endforeach
     </div>
 
     @endif

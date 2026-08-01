@@ -8,6 +8,7 @@ class PaymentTransaction extends Model
 {
     protected $fillable = [
         'sale_id',
+        'idempotency_key',
         'amount',
         'payment_method',
         'notes',

@@ -178,6 +178,32 @@
                         ({{ currency() }} {{ number_format($initiatingRefundSale->total_amount, 2) }}).
                         A manager must approve before the refund is processed.
                     </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-5">
+                            <label class="font-weight-bold small">Request Type</label>
+                            <select wire:model.defer="initiateRefundType"
+                                    class="form-control @error('initiateRefundType') is-invalid @enderror">
+                                <option value="refund">Refund</option>
+                                <option value="void">Void</option>
+                            </select>
+                            @error('initiateRefundType')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-group col-md-7">
+                            <label class="font-weight-bold small">Reason Code</label>
+                            <select wire:model.defer="initiateRefundReasonCode"
+                                    class="form-control @error('initiateRefundReasonCode') is-invalid @enderror">
+                                <option value="">Select a reason</option>
+                                @foreach(\App\Models\RefundLog::REASON_CODES as $code => $label)
+                                    <option value="{{ $code }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('initiateRefundReasonCode')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                     <div class="form-group mb-0">
                         <label class="font-weight-bold small">Reason <span class="text-danger">*</span></label>
                         <textarea

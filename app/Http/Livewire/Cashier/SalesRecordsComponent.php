@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Cashier;
 
 use App\Models\RefundLog;
 use App\Models\Sales;
+use App\Models\AuditTrail;
 use App\Services\NotificationService;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -24,11 +25,15 @@ class SalesRecordsComponent extends Component
 
     public $initiatingRefundSale = null;
     public $initiateRefundReason = '';
+    public $initiateRefundReasonCode = '';
+    public $initiateRefundType = RefundLog::TYPE_REFUND;
 
     protected $paginationTheme = 'bootstrap';
 
     protected $rules = [
         'initiateRefundReason' => 'required|string|min:10|max:500',
+        'initiateRefundReasonCode' => 'required|in:customer_return,wrong_item,defective_item,duplicate_charge,payment_error,service_cancelled,other',
+        'initiateRefundType' => 'required|in:refund,void',
     ];
 
     protected $queryString = [
@@ -316,13 +321,19 @@ class SalesRecordsComponent extends Component
 
         $this->initiatingRefundSale   = $sale;
         $this->initiateRefundReason   = '';
+        $this->initiateRefundReasonCode = '';
+        $this->initiateRefundType = RefundLog::TYPE_REFUND;
         $this->resetErrorBag();
         $this->dispatchBrowserEvent('show-initiateRefundModal');
     }
 
     public function submitRefundRequest()
     {
-        $this->validate(['initiateRefundReason' => 'required|string|min:10|max:500']);
+        $this->validate([
+            'initiateRefundReason' => 'required|string|min:10|max:500',
+            'initiateRefundReasonCode' => 'required|in:' . implode(',', array_keys(RefundLog::REASON_CODES)),
+            'initiateRefundType' => 'required|in:refund,void',
+        ]);
 
         $sale = $this->initiatingRefundSale;
 
@@ -330,9 +341,25 @@ class SalesRecordsComponent extends Component
             'sale_id'      => $sale->id,
             'status'       => RefundLog::STATUS_PENDING,
             'initiated_by' => auth()->id(),
+            'request_type' => $this->initiateRefundType,
+            'reason_code' => $this->initiateRefundReasonCode,
             'reason'       => $this->initiateRefundReason,
             'initiated_at' => now(),
         ]);
+
+        AuditTrail::record(
+            'refund.requested',
+            ucfirst($this->initiateRefundType) . " requested for sale {$sale->transaction_id}",
+            $sale,
+            [],
+            [
+                'request_type' => $this->initiateRefundType,
+                'reason_code' => $this->initiateRefundReasonCode,
+                'reason' => $this->initiateRefundReason,
+            ],
+            $sale->patient_id,
+            true
+        );
 
         NotificationService::sendToRoles(
             ['Manager', 'Super Admin'],
@@ -348,6 +375,8 @@ class SalesRecordsComponent extends Component
 
         $this->initiatingRefundSale = null;
         $this->initiateRefundReason = '';
+        $this->initiateRefundReasonCode = '';
+        $this->initiateRefundType = RefundLog::TYPE_REFUND;
         $this->resetErrorBag();
         $this->dispatchBrowserEvent('hide-initiateRefundModal');
         $this->dispatchBrowserEvent('notify', [
@@ -360,6 +389,8 @@ class SalesRecordsComponent extends Component
     {
         $this->initiatingRefundSale = null;
         $this->initiateRefundReason = '';
+        $this->initiateRefundReasonCode = '';
+        $this->initiateRefundType = RefundLog::TYPE_REFUND;
         $this->resetErrorBag();
         $this->dispatchBrowserEvent('hide-initiateRefundModal');
     }

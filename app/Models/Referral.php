@@ -37,6 +37,7 @@ class Referral extends Model
         // Excuse Duty fields
         'excuse_from_date',
         'excuse_to_date',
+        'excuse_notes',
         'status',
     ];
 
@@ -51,6 +52,13 @@ class Referral extends Model
         'medical_report' => 'Medical Report',
         'excuse_duty'    => 'Excuse Duty Letter',
     ];
+
+    public static function defaultExcuseNotes(): string
+    {
+        return "The patient has been advised to be excused from work / school duties from {excused_from} to {excused_until} due to medical reasons.\n\n"
+            . "The patient is expected to resume normal duties thereafter, unless otherwise reviewed.\n\n"
+            . "Please accord this letter the necessary attention. Thank you.";
+    }
 
     public function getLetterTypeLabelAttribute(): string
     {

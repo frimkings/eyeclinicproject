@@ -17,6 +17,7 @@ protected $fillable = [
     'customer_name',
     'consultation_id',
     'transaction_id',
+    'idempotency_key',
     'total_amount',
     'amount_paid',
     'payment_status',

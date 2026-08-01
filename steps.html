@@ -10,11 +10,12 @@ composer install --prefer-source --ignore-platform-req=php --ignore-platform-req
 
 
 php artisan db:seed --class=UserSeeder
+php artisan db:seed --class=DiagnosisSeeder
 
 
-<VirtualHost  192.168.1.100:80>
+<VirtualHost   192.168.100.5:80>
     DocumentRoot "C:/laragon/www/eyeclinicproject/public"
-    ServerName   192.168.1.100
+    ServerName    192.168.100.5
     ServerAlias eyeclinicproject.test *.eyeclinicproject.test
     <Directory "C:/laragon/www/eyeclinicproject/public">
         AllowOverride All
@@ -56,6 +57,14 @@ php keygen.php
 php artisan key:generate
 cp .env.copy .env
 php artisan migrate:fresh --seed --seeder=UserSeeder
+
+
 zxcv#234QWERTY
 
  192.168.1.100
+
+
+ 192.168.100.5
+
+
+ 

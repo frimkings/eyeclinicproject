@@ -477,6 +477,14 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Letter Notes</label>
+                    <textarea wire:model.defer="excuseNotes" rows="6"
+                        class="form-control @error('excuseNotes') is-invalid @enderror"
+                        placeholder="Enter the wording to print on the letter"></textarea>
+                    <small class="form-text text-muted">Prefilled and fully editable. Date placeholders are filled automatically on the letter.</small>
+                    @error('excuseNotes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="form-group mb-0">
                     <label class="form-label">Reason / Diagnosis <small class="text-muted">(optional — not printed on letter)</small></label>
                     <div wire:ignore>
                         <select id="diagnosis-select" multiple class="form-control diagnosis-select2">

@@ -61,6 +61,7 @@ class ReferralComponent extends Component
     /* ── Excuse Duty-only fields ── */
     public $excuseFromDate = '';
     public $excuseToDate   = '';
+    public $excuseNotes    = '';
 
     protected $paginationTheme = 'bootstrap';
 
@@ -103,6 +104,7 @@ class ReferralComponent extends Component
             return array_merge($base, [
                 'excuseFromDate' => 'required|date',
                 'excuseToDate'   => 'required|date|after_or_equal:excuseFromDate',
+                'excuseNotes'    => 'nullable|string|max:2000',
             ]);
         }
 
@@ -180,6 +182,9 @@ class ReferralComponent extends Component
     {
         $this->resetForm();
         $this->letterType = $type;
+        if ($type === 'excuse_duty') {
+            $this->excuseNotes = Referral::defaultExcuseNotes();
+        }
         $this->editingId  = null;
         $this->showModal  = true;
         $this->dispatchBrowserEvent('init-diagnosis-select2', ['selected' => []]);
@@ -228,6 +233,7 @@ class ReferralComponent extends Component
         // Excuse Duty
         $this->excuseFromDate = $r->excuse_from_date ? $r->excuse_from_date->format('Y-m-d') : '';
         $this->excuseToDate   = $r->excuse_to_date   ? $r->excuse_to_date->format('Y-m-d')   : '';
+        $this->excuseNotes    = $r->excuse_notes ?? Referral::defaultExcuseNotes();
 
         $this->showModal = true;
         $this->dispatchBrowserEvent('init-diagnosis-select2', ['selected' => $this->selectedDiagnoses]);
@@ -272,6 +278,7 @@ class ReferralComponent extends Component
             // Excuse Duty
             'excuse_from_date'   => $this->letterType === 'excuse_duty' ? $this->excuseFromDate : null,
             'excuse_to_date'     => $this->letterType === 'excuse_duty' ? $this->excuseToDate   : null,
+            'excuse_notes'       => $this->letterType === 'excuse_duty' ? trim($this->excuseNotes) : null,
         ];
 
         if ($this->editingId) {
@@ -325,7 +332,7 @@ class ReferralComponent extends Component
             'patientContact', 'complaint', 'vaOd', 'vaOs', 'refraction',
             'anteriorSegment', 'posteriorSegment', 'iop', 'selectedDiagnoses',
             'reasonForReferral', 'management', 'clinicalFindings', 'treatment',
-            'recommendation', 'excuseFromDate', 'excuseToDate',
+            'recommendation', 'excuseFromDate', 'excuseToDate', 'excuseNotes',
         ]);
         $this->referralDate = now()->format('Y-m-d');
         $this->letterType   = 'referral';
