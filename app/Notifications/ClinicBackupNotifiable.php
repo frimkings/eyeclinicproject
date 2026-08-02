@@ -3,12 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\Setting;
-use Illuminate\Notifications\Notifiable;
+use Spatie\Backup\Notifications\Notifiable;
 
-class ClinicBackupNotifiable
+class ClinicBackupNotifiable extends Notifiable
 {
-    use Notifiable;
-
     public function routeNotificationForMail(): string
     {
         return Setting::getSettings()->clinic_email
