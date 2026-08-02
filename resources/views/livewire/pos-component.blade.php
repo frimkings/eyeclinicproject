@@ -1,3 +1,4 @@
+<section>
 <div x-data="{
     checkoutInProgress: false,
     pendingCartsOpen: false,
@@ -367,7 +368,7 @@ window.printReceiptFromDom = function(event) {
                                type="text"
                                maxlength="150"
                                placeholder="Customer name (optional)"
-                               wire:model.defer="directCustomerName"
+                               wire:model="directCustomerName"
                                autocomplete="off">
                         <div class="pos-direct-panel__hint">
                             Leave blank for Walk-in. No patient record or Doctor Cart will be used.
@@ -1064,14 +1065,14 @@ window.printReceiptFromDom = function(event) {
                 <label>Manager / Super Admin Email</label>
                 <div class="pos-input-group">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" wire:model.defer="approvalEmail" placeholder="manager@example.com" autocomplete="off">
+                    <input type="email" wire:model="approvalEmail" placeholder="manager@example.com" autocomplete="off">
                 </div>
             </div>
             <div class="pos-field">
                 <label>Password</label>
                 <div class="pos-input-group">
                     <i class="fas fa-lock"></i>
-                    <input type="password" wire:model.defer="approvalPassword" placeholder="••••••••" autocomplete="new-password">
+                    <input type="password" wire:model="approvalPassword" placeholder="••••••••" autocomplete="new-password">
                 </div>
             </div>
 
@@ -2477,3 +2478,4 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 </script>
+</section>

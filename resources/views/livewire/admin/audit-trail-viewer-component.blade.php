@@ -28,22 +28,22 @@
         <div class="card shadow-sm border-0 mb-3" style="border-top-left-radius:0">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-2"><label class="small font-weight-bold text-muted">Search</label><input class="form-control" wire:model.debounce.400ms="search" placeholder="Event, user, patient..."></div>
-                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">Event</label><select class="form-control" wire:model="event"><option value="">All</option>@foreach($events as $eventName)<option value="{{ $eventName }}">{{ ucwords(str_replace(['.','_'], [' — ', ' '], $eventName)) }}</option>@endforeach</select></div>
+                    <div class="col-md-3 mb-2"><label class="small font-weight-bold text-muted">Search</label><input class="form-control" wire:model.live.debounce.400ms="search" placeholder="Event, user, patient..."></div>
+                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">Event</label><select class="form-control" wire:model.live="event"><option value="">All</option>@foreach($events as $eventName)<option value="{{ $eventName }}">{{ ucwords(str_replace(['.','_'], [' — ', ' '], $eventName)) }}</option>@endforeach</select></div>
                     <div class="col-md-3 mb-2">
                         <label class="small font-weight-bold text-muted" for="audit-user-search">User</label>
                         <input id="audit-user-search" type="search" class="form-control mb-1"
-                               wire:model.debounce.250ms="userSearch" placeholder="Search users..."
+                               wire:model.live.debounce.250ms="userSearch" placeholder="Search users..."
                                autocomplete="off" aria-label="Search users">
-                        <select class="form-control" wire:model="userId" aria-label="Filter audit trail by user">
+                        <select class="form-control" wire:model.live="userId" aria-label="Filter audit trail by user">
                             <option value="">All users</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">From</label><input type="date" class="form-control" wire:model="fromDate"></div>
-                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">To</label><input type="date" class="form-control" wire:model="toDate"></div>
+                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">From</label><input type="date" class="form-control" wire:model.live="fromDate"></div>
+                    <div class="col-md-2 mb-2"><label class="small font-weight-bold text-muted">To</label><input type="date" class="form-control" wire:model.live="toDate"></div>
                 </div>
                 <button class="btn btn-light border btn-sm" wire:click="resetFilters"><i class="fas fa-undo mr-1"></i>Reset</button>
             </div>

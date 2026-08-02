@@ -93,24 +93,24 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="appt-label">Clinic Display Name</label>
-                        <input type="text" wire:model="clinic_name" class="form-control">
+                        <input type="text" wire:model.live="clinic_name" class="form-control">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="appt-label">Location Link</label>
-                        <input type="text" wire:model="clinic_link" class="form-control">
+                        <input type="text" wire:model.live="clinic_link" class="form-control">
                     </div>
                     <div class="col-12 mb-3">
                         <label class="appt-label">WhatsApp Template</label>
-                        <textarea wire:model="whatsapp_template" rows="4" class="form-control"></textarea>
+                        <textarea wire:model.live="whatsapp_template" rows="4" class="form-control"></textarea>
                         <small class="text-muted">Placeholders: [NAME] [REASON] [DATE] [TIME] [LINK]</small>
                     </div>
                     <div class="col-12 mb-3">
                         <label class="appt-label">SMS Template</label>
-                        <textarea wire:model="sms_template" rows="3" class="form-control"></textarea>
+                        <textarea wire:model.live="sms_template" rows="3" class="form-control"></textarea>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="appt-label">Daily Appointment Limit</label>
-                        <input type="number" min="1" wire:model="dailyAppointmentLimit" class="form-control">
+                        <input type="number" min="1" wire:model.live="dailyAppointmentLimit" class="form-control">
                     </div>
                 </div>
                 <button wire:click="saveSettings" class="btn btn-primary font-weight-bold px-4">Save Settings</button>
@@ -170,7 +170,7 @@
                         </button>
                         @endforeach
                         <div class="ml-2">
-                            <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm"
+                            <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm"
                                    placeholder="Search patient…" style="min-width:180px">
                         </div>
                     </div>
@@ -180,15 +180,15 @@
                     <div class="d-flex flex-wrap align-items-end mt-2" style="gap:.5rem">
                         <div>
                             <label class="appt-label mb-0">From</label>
-                            <input type="date" wire:model="startDate" class="form-control form-control-sm">
+                            <input type="date" wire:model.live="startDate" class="form-control form-control-sm">
                         </div>
                         <div>
                             <label class="appt-label mb-0">To</label>
-                            <input type="date" wire:model="endDate" class="form-control form-control-sm">
+                            <input type="date" wire:model.live="endDate" class="form-control form-control-sm">
                         </div>
                         <div>
                             <label class="appt-label mb-0">Status</label>
-                            <select wire:model="statusFilter" class="form-control form-control-sm">
+                            <select wire:model.live="statusFilter" class="form-control form-control-sm">
                                 <option value="All">All</option>
                                 <option>Pending</option>
                                 <option>Confirmed</option>
@@ -204,7 +204,7 @@
                         </div>
                         <div>
                             <label class="appt-label mb-0">Patient</label>
-                            <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search…">
+                            <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search…">
                         </div>
                     </div>
                     @endif
@@ -332,7 +332,7 @@
                     <table class="table table-hover mb-0 appt-table">
                         <thead class="thead-light">
                             <tr>
-                                <th style="width:36px"><input type="checkbox" wire:model="selectAll"></th>
+                                <th style="width:36px"><input type="checkbox" wire:model.live="selectAll"></th>
                                 <th>Time &amp; Date</th>
                                 <th>Patient</th>
                                 <th>Reason</th>
@@ -348,7 +348,7 @@
                                 $missStats=$noShowStats[$app->patient_id]??['missed'=>0,'total'=>0,'rate'=>0,'class'=>'success'];
                             @endphp
                             <tr>
-                                <td class="align-middle"><input type="checkbox" wire:model="selectedAppointments" value="{{ $app->id }}"></td>
+                                <td class="align-middle"><input type="checkbox" wire:model.live="selectedAppointments" value="{{ $app->id }}"></td>
                                 <td class="align-middle">
                                     <div class="font-weight-bold small">{{ $app->scheduled_at->format('h:i A') }}</div>
                                     <div class="text-muted" style="font-size:.75rem">{{ $app->scheduled_at->format('M d, Y') }}</div>
@@ -450,14 +450,14 @@
                     </div>
                 </div>
                 <div class="mt-2">
-                    <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
+                    <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
                 </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 appt-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width:36px"><input type="checkbox" wire:model="selectAll"></th>
+                            <th style="width:36px"><input type="checkbox" wire:model.live="selectAll"></th>
                             <th>Time</th>
                             <th>Patient</th>
                             <th>Reason</th>
@@ -472,7 +472,7 @@
                             $statusColor=['Arrived'=>'success','With Doctor'=>'info','Pending'=>'secondary','Called'=>'warning','Done'=>'dark'][$app->status]??'secondary';
                         @endphp
                         <tr class="{{ $app->status==='Arrived' ? 'table-success' : ($app->status==='With Doctor' ? 'table-info' : '') }}" style="opacity:{{ $app->status==='Done' ? '.6' : '1' }}">
-                            <td class="align-middle"><input type="checkbox" wire:model="selectedAppointments" value="{{ $app->id }}"></td>
+                            <td class="align-middle"><input type="checkbox" wire:model.live="selectedAppointments" value="{{ $app->id }}"></td>
                             <td class="align-middle">
                                 <div class="font-weight-bold small">{{ $app->scheduled_at->format('h:i A') }}</div>
                             </td>
@@ -515,7 +515,7 @@
             @elseif($activeFilter === 'history')
             <div class="appt-toolbar">
                 <div class="d-flex align-items-center justify-content-between w-100">
-                    <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
+                    <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
                     <button wire:click="exportReport" class="btn btn-sm btn-outline-secondary"><i class="fas fa-download mr-1"></i>Export</button>
                 </div>
             </div>
@@ -523,7 +523,7 @@
                 <table class="table table-hover mb-0 appt-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width:36px"><input type="checkbox" wire:model="selectAll"></th>
+                            <th style="width:36px"><input type="checkbox" wire:model.live="selectAll"></th>
                             <th>Date &amp; Time</th>
                             <th>Patient</th>
                             <th>Reason</th>
@@ -535,7 +535,7 @@
                         @forelse($appointments as $app)
                         @php $isCancelled = $app->status === 'Cancelled'; @endphp
                         <tr class="{{ $isCancelled ? '' : 'table-success' }}" style="{{ $isCancelled ? 'opacity:.7' : '' }}">
-                            <td class="align-middle"><input type="checkbox" wire:model="selectedAppointments" value="{{ $app->id }}"></td>
+                            <td class="align-middle"><input type="checkbox" wire:model.live="selectedAppointments" value="{{ $app->id }}"></td>
                             <td class="align-middle">
                                 <div class="font-weight-bold small">{{ $app->scheduled_at->format('M d, Y') }}</div>
                                 <div class="text-muted" style="font-size:.75rem">{{ $app->scheduled_at->format('h:i A') }}</div>
@@ -566,7 +566,7 @@
             @elseif($activeFilter === 'missed')
             <div class="appt-toolbar">
                 <div class="d-flex align-items-center justify-content-between w-100">
-                    <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
+                    <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
                     <button wire:click="exportReport" class="btn btn-sm btn-outline-secondary"><i class="fas fa-download mr-1"></i>Export</button>
                 </div>
             </div>
@@ -574,7 +574,7 @@
                 <table class="table table-hover mb-0 appt-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width:36px"><input type="checkbox" wire:model="selectAll"></th>
+                            <th style="width:36px"><input type="checkbox" wire:model.live="selectAll"></th>
                             <th>Missed On</th>
                             <th>Patient</th>
                             <th>Reason</th>
@@ -585,7 +585,7 @@
                     <tbody>
                         @forelse($appointments as $app)
                         <tr>
-                            <td class="align-middle"><input type="checkbox" wire:model="selectedAppointments" value="{{ $app->id }}"></td>
+                            <td class="align-middle"><input type="checkbox" wire:model.live="selectedAppointments" value="{{ $app->id }}"></td>
                             <td class="align-middle">
                                 <div class="font-weight-bold small text-danger">{{ $app->scheduled_at->format('M d, Y') }}</div>
                                 <div class="text-muted" style="font-size:.75rem">{{ $app->scheduled_at->diffForHumans() }}</div>
@@ -601,12 +601,12 @@
                                 <div class="d-flex align-items-end flex-wrap" style="gap:.35rem">
                                     <div>
                                         <label class="appt-label mb-0">Date</label>
-                                        <input type="date" wire:model="rescheduleDate" class="form-control form-control-sm" style="width:130px">
+                                        <input type="date" wire:model.live="rescheduleDate" class="form-control form-control-sm" style="width:130px">
                                         @error('rescheduleDate') <div class="text-danger" style="font-size:.7rem">{{ $message }}</div> @enderror
                                     </div>
                                     <div>
                                         <label class="appt-label mb-0">Time</label>
-                                        <input type="time" wire:model="rescheduleTime" class="form-control form-control-sm" style="width:100px">
+                                        <input type="time" wire:model.live="rescheduleTime" class="form-control form-control-sm" style="width:100px">
                                     </div>
                                     <button wire:click="rescheduleMissed" class="btn btn-sm btn-primary font-weight-bold">Confirm</button>
                                     <button wire:click="closeMissedAction" class="btn btn-sm btn-outline-secondary">Cancel</button>
@@ -644,13 +644,13 @@
             {{-- ============================= TRASH ============================= --}}
             @elseif($activeFilter === 'trash')
             <div class="appt-toolbar">
-                <input wire:model.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
+                <input wire:model.live.debounce.300ms="search" type="text" class="form-control form-control-sm" placeholder="Search patient…" style="max-width:260px">
             </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 appt-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width:36px"><input type="checkbox" wire:model="selectAll"></th>
+                            <th style="width:36px"><input type="checkbox" wire:model.live="selectAll"></th>
                             <th>Date</th>
                             <th>Patient</th>
                             <th>Reason</th>
@@ -660,7 +660,7 @@
                     <tbody>
                         @forelse($appointments as $app)
                         <tr style="opacity:.7">
-                            <td class="align-middle"><input type="checkbox" wire:model="selectedAppointments" value="{{ $app->id }}"></td>
+                            <td class="align-middle"><input type="checkbox" wire:model.live="selectedAppointments" value="{{ $app->id }}"></td>
                             <td class="align-middle small">{{ $app->scheduled_at->format('M d, Y') }}</td>
                             <td class="align-middle"><div class="font-weight-bold">{{ $app->patient->name }}</div></td>
                             <td class="align-middle small">{{ $app->title }}</td>
@@ -697,7 +697,7 @@
                     </h5>
                     <button type="button" class="close" wire:click="closeModal"><span>&times;</span></button>
                 </div>
-                <form wire:submit.prevent="saveAppointment">
+                <form wire:submit="saveAppointment">
                     <div class="modal-body px-4 py-3" style="max-height:calc(100vh - 180px); overflow-y:auto">
 
                         {{-- SECTION: Patient --}}
@@ -709,7 +709,7 @@
                                 <button type="button" wire:click="clearSelectedPatient" class="btn btn-sm btn-link text-danger p-0"><i class="fas fa-times"></i></button>
                             </div>
                             @else
-                            <input type="text" wire:model.debounce.300ms="patientSearch"
+                            <input type="text" wire:model.live.debounce.300ms="patientSearch"
                                    class="form-control" placeholder="Search by name, phone, or PX number…">
                             @if(!empty($searchablePatients))
                             <div class="list-group position-absolute w-100 shadow-lg mt-1" style="z-index:1100; max-height:200px; overflow-y:auto">
@@ -732,7 +732,7 @@
                         <div class="appt-modal-section-label mt-3">Visit Details</div>
                         <div class="form-group">
                             <label class="appt-label">Reason</label>
-                            <select wire:model="title" class="form-control">
+                            <select wire:model.live="title" class="form-control">
                                 <option value="">— Select reason —</option>
                                 @foreach($appointmentReasons as $reason)
                                 <option value="{{ $reason }}">{{ $reason }}</option>
@@ -742,7 +742,7 @@
                         </div>
                         <div class="form-group">
                             <label class="appt-label">Recall Category</label>
-                            <select wire:model="recall_category" class="form-control">
+                            <select wire:model.live="recall_category" class="form-control">
                                 <option value="">Use reason</option>
                                 @foreach($recallCategories as $cat)
                                 <option value="{{ $cat }}">{{ $cat }}</option>
@@ -751,14 +751,14 @@
                         </div>
                         <div class="form-group">
                             <label class="appt-label">Notes</label>
-                            <textarea wire:model="notes" rows="2" class="form-control"></textarea>
+                            <textarea wire:model.live="notes" rows="2" class="form-control"></textarea>
                         </div>
 
                         {{-- SECTION: Reminder --}}
                         <div class="appt-modal-section-label mt-3">Reminder</div>
                         <div class="form-group">
                             <label class="appt-label">Channel</label>
-                            <select wire:model="reminder_channel" class="form-control">
+                            <select wire:model.live="reminder_channel" class="form-control">
                                 <option value="whatsapp">WhatsApp</option>
                                 <option value="sms">SMS</option>
                                 <option value="both">SMS + WhatsApp</option>
@@ -770,14 +770,14 @@
                         <div class="appt-modal-section-label mt-3">Schedule</div>
                         <div class="form-group">
                             <label class="appt-label">Date &amp; Time</label>
-                            <input type="datetime-local" wire:model="scheduled_at"
+                            <input type="datetime-local" wire:model.live="scheduled_at"
                                    min="{{ now()->format('Y-m-d\TH:i') }}" class="form-control">
                             @error('scheduled_at') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         <div class="row">
                             <div class="col-md-7 form-group mb-0">
                                 <label class="appt-label">Doctor</label>
-                                <select wire:model="doctor_id" class="form-control">
+                                <select wire:model.live="doctor_id" class="form-control">
                                     <option value="">Unassigned</option>
                                     @foreach($doctors as $doctor)
                                         <option value="{{ $doctor->id }}">{{ $doctor->name }}</option>
@@ -787,7 +787,7 @@
                             </div>
                             <div class="col-md-5 form-group mb-0">
                                 <label class="appt-label">Duration</label>
-                                <select wire:model="duration_minutes" class="form-control">
+                                <select wire:model.live="duration_minutes" class="form-control">
                                     @foreach([15,30,45,60,90,120] as $minutes)
                                         <option value="{{ $minutes }}">{{ $minutes }} minutes</option>
                                     @endforeach
@@ -820,7 +820,7 @@
                 <div class="modal-body px-4 py-3">
                     <div class="form-group mb-0">
                         <label class="appt-label">Reason <span class="text-muted font-weight-normal">(optional)</span></label>
-                        <textarea wire:model="cancelReason" rows="3" class="form-control" placeholder="e.g. Patient requested cancellation…"></textarea>
+                        <textarea wire:model.live="cancelReason" rows="3" class="form-control" placeholder="e.g. Patient requested cancellation…"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light px-4 py-3">

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Cashier\SalesRecordsComponent;
-use App\Http\Livewire\POSComponent;
+use App\Livewire\Cashier\SalesRecordsComponent;
+use App\Livewire\POSComponent;
 use App\Models\Patient;
 use App\Models\RefundLog;
 use App\Models\Sales;
@@ -136,7 +136,7 @@ class SalesTest extends TestCase
             ->set('patientId', $this->patient->id)
             ->call('selectDirectPurchaseMode')
             ->assertSet('purchaseMode', 'patient')
-            ->assertDispatchedBrowserEvent('notify');
+            ->assertDispatched('notify');
     }
 
     public function test_walk_in_cannot_enable_part_payment(): void
@@ -144,7 +144,7 @@ class SalesTest extends TestCase
         Livewire::test(POSComponent::class)
             ->set('isPartPayment', true)
             ->assertSet('isPartPayment', false)
-            ->assertDispatchedBrowserEvent('notify');
+            ->assertDispatched('notify');
     }
 
     public function test_registered_patient_can_enable_part_payment(): void
@@ -292,7 +292,7 @@ class SalesTest extends TestCase
 
         Livewire::test(SalesRecordsComponent::class)
             ->call('initiateRefund', $sale->id)
-            ->assertDispatchedBrowserEvent('notify');
+            ->assertDispatched('notify');
 
         $this->assertEquals(1, RefundLog::where('sale_id', $sale->id)->count());
     }

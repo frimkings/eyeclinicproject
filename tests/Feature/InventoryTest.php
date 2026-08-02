@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Admin\ProductsComponent;
+use App\Livewire\Admin\ProductsComponent;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;

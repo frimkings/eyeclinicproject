@@ -80,7 +80,7 @@
         <div class="so-filter-grid">
             <label class="so-search">
                 <i class="fas fa-search"></i>
-                <input type="search" wire:model.debounce.400ms="searchTerm" placeholder="Search patient, folder no., order ID, frame">
+                <input type="search" wire:model.live.debounce.400ms="searchTerm" placeholder="Search patient, folder no., order ID, frame">
                 @if($searchTerm)
                     <button type="button" wire:click="$set('searchTerm', '')" aria-label="Clear search"><i class="fas fa-times"></i></button>
                 @endif
@@ -88,17 +88,17 @@
 
             <label class="so-field">
                 <span>From</span>
-                <input type="date" wire:model="fromDate">
+                <input type="date" wire:model.live="fromDate">
             </label>
 
             <label class="so-field">
                 <span>To</span>
-                <input type="date" wire:model="toDate">
+                <input type="date" wire:model.live="toDate">
             </label>
 
             <label class="so-field">
                 <span>Status</span>
-                <select wire:model="statusFilter">
+                <select wire:model.live="statusFilter">
                     <option value="">All statuses</option>
                     <option value="Pending">Awaiting order</option>
                     <option value="Ordered">Pending</option>
@@ -112,7 +112,7 @@
             @if(count($doctors) > 0)
                 <label class="so-field">
                     <span>Doctor</span>
-                    <select wire:model="doctorFilter">
+                    <select wire:model.live="doctorFilter">
                         <option value="">All doctors</option>
                         @foreach($doctors as $doc)
                             <option value="{{ $doc->id }}">{{ $doc->name }}</option>
@@ -124,7 +124,7 @@
             @if(count($labs) > 0)
                 <label class="so-field">
                     <span>Lab</span>
-                    <select wire:model="labFilter">
+                    <select wire:model.live="labFilter">
                         <option value="">All labs</option>
                         @foreach($labs as $lab)
                             <option value="{{ $lab }}">{{ $lab }}</option>
@@ -163,7 +163,7 @@
     @if($spectacles->total() > 0)
         <section class="so-bulk-panel">
             <label class="so-check">
-                <input type="checkbox" wire:model="selectAllOrders">
+                <input type="checkbox" wire:model.live="selectAllOrders">
                 <span>Select matching orders</span>
             </label>
             <span class="so-muted">{{ $spectacles->total() }} {{ $recordType === 'orders' ? 'spectacle order' : 'refraction needing order' }}{{ $spectacles->total() === 1 ? '' : 's' }} found after filters</span>
@@ -171,7 +171,7 @@
             @if(count($selectedOrders) > 0)
                 <div class="so-bulk-actions">
                     <strong>{{ count($selectedOrders) }} selected</strong>
-                    <select wire:model="bulkStatus">
+                    <select wire:model.live="bulkStatus">
                         <option value="">Move to status</option>
                         <option value="Pending">Pending</option>
                         <option value="In Lab">In Lab</option>
@@ -422,7 +422,7 @@
                             @endforeach
                         </div>
                         @if(auth()->user()->hasAnyRole(['Manager','Super Admin']))
-                            <label class="so-form-field mt-2"><span>Override reason (required only to skip a stage)</span><input type="text" wire:model.defer="statusOverrideReason" placeholder="Reason for authorized override"></label>
+                            <label class="so-form-field mt-2"><span>Override reason (required only to skip a stage)</span><input type="text" wire:model="statusOverrideReason" placeholder="Reason for authorized override"></label>
                         @endif
 
                         <div class="so-contact-row">
@@ -626,22 +626,22 @@
             </header>
 
             <div class="so-modal-body">
-                <form wire:submit.prevent="createOrder" class="so-order-form">
+                <form wire:submit="createOrder" class="so-order-form">
                     <div class="so-form-grid so-form-grid-simple">
-                        <label class="so-form-field"><span>Frame <strong>*</strong></span><select wire:model="selectedFrameId"><option value="">Select frame</option>@foreach($availableFrames as $frame)<option value="{{ $frame->id }}">{{ $frame->name }} ({{ $frame->quantity }})</option>@endforeach</select>@error('selectedFrameId')<small>{{ $message }}</small>@enderror</label>
-                        <label class="so-form-field"><span>Lens <strong>*</strong></span><select wire:model="selectedLensId"><option value="">Select lens</option>@foreach($availableLenses as $lens)<option value="{{ $lens->id }}">{{ $lens->name }} ({{ $lens->quantity }})</option>@endforeach</select>@error('selectedLensId')<small>{{ $message }}</small>@enderror</label>
-                        <label class="so-form-field"><span>Lab</span><input type="text" wire:model.defer="labName"></label>
-                        <label class="so-form-field"><span>Lab reference</span><input type="text" wire:model.defer="labReference"></label>
-                        <label class="so-form-field"><span>Lab cost</span><input type="number" min="0" step="0.01" wire:model.defer="labCost">@error('labCost')<small>{{ $message }}</small>@enderror</label>
+                        <label class="so-form-field"><span>Frame <strong>*</strong></span><select wire:model.live="selectedFrameId"><option value="">Select frame</option>@foreach($availableFrames as $frame)<option value="{{ $frame->id }}">{{ $frame->name }} ({{ $frame->quantity }})</option>@endforeach</select>@error('selectedFrameId')<small>{{ $message }}</small>@enderror</label>
+                        <label class="so-form-field"><span>Lens <strong>*</strong></span><select wire:model.live="selectedLensId"><option value="">Select lens</option>@foreach($availableLenses as $lens)<option value="{{ $lens->id }}">{{ $lens->name }} ({{ $lens->quantity }})</option>@endforeach</select>@error('selectedLensId')<small>{{ $message }}</small>@enderror</label>
+                        <label class="so-form-field"><span>Lab</span><input type="text" wire:model="labName"></label>
+                        <label class="so-form-field"><span>Lab reference</span><input type="text" wire:model="labReference"></label>
+                        <label class="so-form-field"><span>Lab cost</span><input type="number" min="0" step="0.01" wire:model="labCost">@error('labCost')<small>{{ $message }}</small>@enderror</label>
                         <label class="so-form-field">
                             <span>Pickup date <strong>*</strong></span>
-                            <input type="date" wire:model="pickUpDate" min="{{ date('Y-m-d') }}">
+                            <input type="date" wire:model.live="pickUpDate" min="{{ date('Y-m-d') }}">
                             @error('pickUpDate')<small>{{ $message }}</small>@enderror
                         </label>
 
                         <label class="so-form-field">
                             <span>Notes</span>
-                            <textarea wire:model.defer="orderNotes" rows="4" placeholder="Optional notes"></textarea>
+                            <textarea wire:model="orderNotes" rows="4" placeholder="Optional notes"></textarea>
                             @error('orderNotes')<small>{{ $message }}</small>@enderror
                         </label>
                     </div>
@@ -672,7 +672,7 @@
             <div class="so-modal-body">
                 <label class="so-form-field">
                     <span>Reason</span>
-                    <textarea wire:model.defer="cancelReason" rows="3" placeholder="Optional cancellation reason"></textarea>
+                    <textarea wire:model="cancelReason" rows="3" placeholder="Optional cancellation reason"></textarea>
                 </label>
             </div>
             <footer class="so-modal-footer">

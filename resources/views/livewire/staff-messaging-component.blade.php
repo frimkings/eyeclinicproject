@@ -81,7 +81,7 @@
                         <div class="alert alert-danger py-1 mb-2">{{ $message }}</div>
                     @enderror
                     <div class="input-group">
-                        <textarea wire:model.defer="replyBody"
+                        <textarea wire:model="replyBody"
                                   class="form-control"
                                   rows="2"
                                   placeholder="Write a reply…"></textarea>
@@ -122,7 +122,7 @@
                         </li>
                     </ul>
                     <div class="mt-2 mb-2">
-                        <input wire:model.debounce.300ms="search"
+                        <input wire:model.live.debounce.300ms="search"
                                type="search"
                                class="form-control form-control-sm"
                                placeholder="Search messages…">
@@ -190,7 +190,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label>To</label>
-                        <select wire:model="recipientId"
+                        <select wire:model.live="recipientId"
                                 class="form-control @error('recipientId') is-invalid @enderror">
                             <option value="">Select recipient…</option>
                             @foreach($staffUsers as $staff)
@@ -203,7 +203,7 @@
                     </div>
                     <div class="form-group">
                         <label>Subject</label>
-                        <input wire:model.defer="composeSubject"
+                        <input wire:model="composeSubject"
                                type="text"
                                class="form-control @error('composeSubject') is-invalid @enderror"
                                placeholder="Subject">
@@ -213,7 +213,7 @@
                     </div>
                     <div class="form-group">
                         <label>Message</label>
-                        <textarea wire:model.defer="composeBody"
+                        <textarea wire:model="composeBody"
                                   class="form-control @error('composeBody') is-invalid @enderror"
                                   rows="5"
                                   placeholder="Write your message…"></textarea>
@@ -259,8 +259,8 @@
                 if (el) el.scrollTop = el.scrollHeight;
             }
             scrollThread();
-            document.addEventListener('livewire:load', function () {
-                Livewire.hook('message.processed', scrollThread);
+            document.addEventListener('livewire:init', function () {
+                Livewire.hook('morph.updated', scrollThread);
             });
         })();
     </script>

@@ -12,9 +12,9 @@
         <div class="card shadow-sm border-0 mt-3">
             <div class="card-body">
                 <div class="row mb-3">
-                    <div class="col-md-6"><input class="form-control" wire:model.debounce.400ms="search" placeholder="Search product, batch or category..."></div>
+                    <div class="col-md-6"><input class="form-control" wire:model.live.debounce.400ms="search" placeholder="Search product, batch or category..."></div>
                     <div class="col-md-3">
-                        <select class="form-control" wire:model="expiryWindow">
+                        <select class="form-control" wire:model.live="expiryWindow">
                             <option value="30">30-day expiry window</option>
                             <option value="60">60-day expiry window</option>
                             <option value="90">90-day expiry window</option>

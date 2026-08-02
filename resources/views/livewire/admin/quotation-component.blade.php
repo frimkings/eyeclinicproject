@@ -22,12 +22,12 @@
         <div class="card-body py-2">
             <div class="row align-items-center">
                 <div class="col-md-5 mb-2 mb-md-0">
-                    <input wire:model.debounce.300ms="search" type="text"
+                    <input wire:model.live.debounce.300ms="search" type="text"
                            class="form-control form-control-sm"
                            placeholder="Search by number or patient name…">
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
-                    <select wire:model="status" class="form-control form-control-sm">
+                    <select wire:model.live="status" class="form-control form-control-sm">
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
                         <option value="sent">Sent</option>
@@ -37,7 +37,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select wire:model="perPage" class="form-control form-control-sm">
+                    <select wire:model.live="perPage" class="form-control form-control-sm">
                         <option value="15">15 / page</option>
                         <option value="30">30 / page</option>
                         <option value="50">50 / page</option>
@@ -169,7 +169,7 @@
                             <label class="small font-weight-bold text-muted">PATIENT (optional)</label>
                             <div class="position-relative">
                                 <input type="text"
-                                       wire:model.debounce.300ms="patientSearch"
+                                       wire:model.live.debounce.300ms="patientSearch"
                                        class="form-control form-control-sm"
                                        placeholder="Search by name or PX no…"
                                        autocomplete="off">
@@ -196,13 +196,13 @@
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">PATIENT NAME *</label>
-                            <input type="text" wire:model.defer="patient_name"
+                            <input type="text" wire:model="patient_name"
                                    class="form-control form-control-sm @error('patient_name') is-invalid @enderror">
                             @error('patient_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">PHONE</label>
-                            <input type="text" wire:model.defer="patient_phone" class="form-control form-control-sm">
+                            <input type="text" wire:model="patient_phone" class="form-control form-control-sm">
                         </div>
                     </div>
 
@@ -210,19 +210,19 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">ISSUE DATE *</label>
-                            <input type="date" wire:model.defer="issue_date"
+                            <input type="date" wire:model="issue_date"
                                    class="form-control form-control-sm @error('issue_date') is-invalid @enderror">
                             @error('issue_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">VALID UNTIL *</label>
-                            <input type="date" wire:model.defer="valid_until"
+                            <input type="date" wire:model="valid_until"
                                    class="form-control form-control-sm @error('valid_until') is-invalid @enderror">
                             @error('valid_until')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">STATUS</label>
-                            <select wire:model.defer="status_field" class="form-control form-control-sm">
+                            <select wire:model="status_field" class="form-control form-control-sm">
                                 <option value="draft">Draft</option>
                                 <option value="sent">Sent</option>
                                 <option value="accepted">Accepted</option>
@@ -236,7 +236,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">NOTES</label>
-                            <textarea wire:model.defer="notes" rows="5"
+                            <textarea wire:model="notes" rows="5"
                                       class="form-control form-control-sm"
                                       placeholder="Terms, delivery info…"></textarea>
                         </div>
@@ -270,7 +270,7 @@
                                 <tr>
                                     <td class="position-relative">
                                         <input type="text"
-                                               wire:model.debounce.300ms="items.{{ $i }}.description"
+                                               wire:model.live.debounce.300ms="items.{{ $i }}.description"
                                                class="form-control form-control-sm @error('items.'.$i.'.description') is-invalid @enderror"
                                                placeholder="Item description or search product…"
                                                autocomplete="off">
@@ -290,14 +290,14 @@
                                         @error('items.'.$i.'.description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model.lazy="items.{{ $i }}.quantity"
+                                        <input type="number" wire:model.blur="items.{{ $i }}.quantity"
                                                class="form-control form-control-sm text-right @error('items.'.$i.'.quantity') is-invalid @enderror"
                                                style="min-width:70px;"
                                                min="0.01" step="0.01">
                                         @error('items.'.$i.'.quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model.lazy="items.{{ $i }}.unit_price"
+                                        <input type="number" wire:model.blur="items.{{ $i }}.unit_price"
                                                class="form-control form-control-sm text-right @error('items.'.$i.'.unit_price') is-invalid @enderror"
                                                style="min-width:100px;"
                                                min="0" step="0.01">
@@ -335,7 +335,7 @@
                                         <div class="input-group-prepend">
                                             <span class="input-group-text" style="font-size:.75rem;">{{ currency() }}</span>
                                         </div>
-                                        <input type="number" wire:model.lazy="discount_amount"
+                                        <input type="number" wire:model.blur="discount_amount"
                                                class="form-control form-control-sm text-right" min="0" step="0.01">
                                     </div>
                                 </td>

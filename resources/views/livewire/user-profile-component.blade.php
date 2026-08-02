@@ -113,7 +113,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="small font-weight-bold text-muted mb-1">Full Name</label>
                             <input type="text"
-                                   wire:model.defer="name"
+                                   wire:model="name"
                                    class="form-control @error('name') is-invalid @enderror"
                                    placeholder="Your full name">
                             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -138,7 +138,7 @@
                                     <span class="input-group-text bg-light"><i class="fas fa-phone text-muted"></i></span>
                                 </div>
                                 <input type="text"
-                                       wire:model.defer="phone"
+                                       wire:model="phone"
                                        class="form-control @error('phone') is-invalid @enderror"
                                        placeholder="+63 912 345 6789">
                                 @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -146,7 +146,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="small font-weight-bold text-muted mb-1">Gender</label>
-                            <select wire:model.defer="gender"
+                            <select wire:model="gender"
                                     class="custom-select @error('gender') is-invalid @enderror">
                                 <option value="">— Not specified —</option>
                                 <option value="Male">Male</option>
@@ -158,7 +158,7 @@
                         <div class="col-md-4 mb-3">
                             <label class="small font-weight-bold text-muted mb-1">Date of Birth</label>
                             <input type="date"
-                                   wire:model.defer="date_of_birth"
+                                   wire:model="date_of_birth"
                                    class="form-control @error('date_of_birth') is-invalid @enderror">
                             @error('date_of_birth')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -184,7 +184,7 @@
                             <div class="mb-2">
                                 <label class="btn btn-outline-secondary btn-sm mb-0" style="cursor:pointer">
                                     <i class="fas fa-upload mr-1"></i> Choose Photo
-                                    <input type="file" wire:model="avatar" accept="image/*" style="display:none">
+                                    <input type="file" wire:model.live="avatar" accept="image/*" style="display:none">
                                 </label>
                                 @if($user->avatar)
                                 <button type="button" wire:click="removeAvatar" class="btn btn-outline-danger btn-sm ml-1"
@@ -212,7 +212,7 @@
                             <div class="input-group">
                                 <input type="password"
                                        id="pwField"
-                                       wire:model.defer="password"
+                                       wire:model="password"
                                        class="form-control @error('password') is-invalid @enderror"
                                        placeholder="Min 8 characters"
                                        oninput="updateStrength(this.value)">
@@ -236,7 +236,7 @@
                             <div class="input-group">
                                 <input type="password"
                                        id="pwConfirm"
-                                       wire:model.defer="password_confirmation"
+                                       wire:model="password_confirmation"
                                        class="form-control"
                                        placeholder="Repeat password">
                                 <div class="input-group-append">

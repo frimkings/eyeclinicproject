@@ -5,7 +5,7 @@
 
 <div
     x-data="{
-        range: @entangle($attributes->wire('model')),
+        range: @entangle($attributes->wire('model')).live,
         picker: null,
         init() {
             // Merge custom options with default options
@@ -56,6 +56,6 @@
         type="text"
         class="form-control"
         placeholder="{{ $placeholder }}"
-        {{ $attributes->whereDoesntStartWith('wire:model') }}
+        {{ $attributes->whereDoesntStartWith('wire:model.live') }}
     >
 </div>

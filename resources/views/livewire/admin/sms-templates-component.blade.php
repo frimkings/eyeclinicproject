@@ -49,7 +49,7 @@
                         {{-- Textarea --}}
                         <textarea
                             id="tpl-{{ $key }}"
-                            wire:model.defer="templates.{{ $key }}.message"
+                            wire:model="templates.{{ $key }}.message"
                             rows="3"
                             class="form-control bg-light border-0 @error('templates.'.$key.'.message') is-invalid @enderror"
                             maxlength="1000">{{ $tpl['message'] }}</textarea>
@@ -90,28 +90,28 @@
 
                                 <div class="custom-control custom-radio mb-1">
                                     <input type="radio" id="brf_all" name="broadcastFilter" value="all"
-                                           class="custom-control-input" wire:model="broadcastFilter">
+                                           class="custom-control-input" wire:model.live="broadcastFilter">
                                     <label class="custom-control-label small" for="brf_all">
                                         <strong>All patients</strong> with a contact number
                                     </label>
                                 </div>
                                 <div class="custom-control custom-radio mb-1">
                                     <input type="radio" id="brf_year" name="broadcastFilter" value="this_year"
-                                           class="custom-control-input" wire:model="broadcastFilter">
+                                           class="custom-control-input" wire:model.live="broadcastFilter">
                                     <label class="custom-control-label small" for="brf_year">
                                         <strong>Active this year</strong> — visited in the current calendar year
                                     </label>
                                 </div>
                                 <div class="custom-control custom-radio mb-1">
                                     <input type="radio" id="brf_24" name="broadcastFilter" value="last_24_months"
-                                           class="custom-control-input" wire:model="broadcastFilter">
+                                           class="custom-control-input" wire:model.live="broadcastFilter">
                                     <label class="custom-control-label small" for="brf_24">
                                         <strong>Active in last 24 months</strong>
                                     </label>
                                 </div>
                                 <div class="custom-control custom-radio mb-1">
                                     <input type="radio" id="brf_custom" name="broadcastFilter" value="custom"
-                                           class="custom-control-input" wire:model="broadcastFilter">
+                                           class="custom-control-input" wire:model.live="broadcastFilter">
                                     <label class="custom-control-label small" for="brf_custom">
                                         <strong>Custom range</strong>
                                     </label>
@@ -120,7 +120,7 @@
                                 @if($broadcastFilter === 'custom')
                                     <div class="mt-1 ml-4 d-flex align-items-center">
                                         <input type="number"
-                                               wire:model.defer="broadcastCustomMonths"
+                                               wire:model="broadcastCustomMonths"
                                                class="form-control form-control-sm bg-light border-0 @error('broadcastCustomMonths') is-invalid @enderror"
                                                style="width:90px;" min="1" max="120" placeholder="e.g. 18">
                                         <span class="ml-2 small text-muted">months back</span>
@@ -195,7 +195,7 @@
                     <div class="d-flex align-items-center mb-3">
                         <div class="custom-control custom-switch mr-3">
                             <input type="checkbox" class="custom-control-input" id="recallEnabled"
-                                   wire:model="recallEnabled">
+                                   wire:model.live="recallEnabled">
                             <label class="custom-control-label font-weight-bold" for="recallEnabled">
                                 Enable automated recall SMS
                             </label>
@@ -212,7 +212,7 @@
                             <label class="small font-weight-bold text-muted">Send recall when a patient has not visited for:</label>
                             <div class="d-flex align-items-center mt-1">
                                 <input type="number"
-                                       wire:model.defer="recallMonths"
+                                       wire:model="recallMonths"
                                        class="form-control form-control-sm bg-light border-0 @error('recallMonths') is-invalid @enderror"
                                        style="width:100px;" min="1" max="120" placeholder="12">
                                 <span class="ml-2 small text-muted">months</span>
@@ -257,7 +257,7 @@
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="bf_all" name="birthdayFilter" value="all"
                                    class="custom-control-input"
-                                   wire:model="birthdayFilter">
+                                   wire:model.live="birthdayFilter">
                             <label class="custom-control-label" for="bf_all">
                                 <strong>All patients</strong>
                                 <span class="text-muted small ml-1">— every patient with a DOB and contact number</span>
@@ -267,7 +267,7 @@
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="bf_year" name="birthdayFilter" value="this_year"
                                    class="custom-control-input"
-                                   wire:model="birthdayFilter">
+                                   wire:model.live="birthdayFilter">
                             <label class="custom-control-label" for="bf_year">
                                 <strong>Active this year</strong>
                                 <span class="text-muted small ml-1">— patients with a consultation in the current calendar year</span>
@@ -277,7 +277,7 @@
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="bf_24" name="birthdayFilter" value="last_24_months"
                                    class="custom-control-input"
-                                   wire:model="birthdayFilter">
+                                   wire:model.live="birthdayFilter">
                             <label class="custom-control-label" for="bf_24">
                                 <strong>Active in the last 24 months</strong>
                                 <span class="text-muted small ml-1">— patients with a consultation in the past 2 years</span>
@@ -287,7 +287,7 @@
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="bf_custom" name="birthdayFilter" value="custom"
                                    class="custom-control-input"
-                                   wire:model="birthdayFilter">
+                                   wire:model.live="birthdayFilter">
                             <label class="custom-control-label" for="bf_custom">
                                 <strong>Custom range</strong>
                                 <span class="text-muted small ml-1">— specify how many months back to check</span>
@@ -297,7 +297,7 @@
                         @if($birthdayFilter === 'custom')
                             <div class="mt-2 ml-4 d-flex align-items-center">
                                 <input type="number"
-                                       wire:model.defer="birthdayCustomMonths"
+                                       wire:model="birthdayCustomMonths"
                                        class="form-control form-control-sm bg-light border-0 @error('birthdayCustomMonths') is-invalid @enderror"
                                        style="width:100px;"
                                        min="1" max="120" placeholder="e.g. 18">

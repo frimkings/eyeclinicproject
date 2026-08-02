@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\OutstandingBalancesComponent;
+use App\Livewire\OutstandingBalancesComponent;
 use App\Models\Patient;
 use App\Models\PaymentTransaction;
 use App\Models\Sales;
@@ -58,7 +58,7 @@ class PaymentIdempotencyTest extends TestCase
             ->set('paymentIdempotencyKey', $key)
             ->call('collectPayment')
             ->assertHasNoErrors()
-            ->assertDispatchedBrowserEvent('notify');
+            ->assertDispatched('notify');
 
         $this->assertSame(1, PaymentTransaction::where('sale_id', $sale->id)->count());
         $this->assertSame('50.00', $sale->fresh()->amount_paid);

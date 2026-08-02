@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Admin\RefundApprovalsComponent;
-use App\Http\Livewire\Admin\RolePermissionManagerComponent;
+use App\Livewire\Admin\RefundApprovalsComponent;
+use App\Livewire\Admin\RolePermissionManagerComponent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Spatie\Permission\Models\Permission;
@@ -21,9 +22,7 @@ class AuthorizationCoverageTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /**
-     * @dataProvider protectedPageMatrix
-     */
+    #[DataProvider('protectedPageMatrix')]
     public function test_standard_roles_are_checked_against_each_protected_page_group(
         string $routeName,
         string $roleName,

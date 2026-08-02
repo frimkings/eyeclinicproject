@@ -92,23 +92,23 @@
           <div class="d-flex align-items-center flex-wrap w-100" style="gap:8px;">
             <div class="input-group" style="max-width:240px;">
               <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-              <input wire:model.debounce.300ms="search" type="text" class="form-control" placeholder="Patient name or Px#…">
+              <input wire:model.live.debounce.300ms="search" type="text" class="form-control" placeholder="Patient name or Px#…">
             </div>
-            <select wire:model="insurerFilter" class="form-control" style="max-width:200px;">
+            <select wire:model.live="insurerFilter" class="form-control" style="max-width:200px;">
               <option value="">All Insurers</option>
               @foreach($insurers as $ins)
                 <option value="{{ $ins->id }}">{{ $ins->name }}</option>
               @endforeach
             </select>
-            <select wire:model="preAuthFilter" class="form-control" style="max-width:170px;">
+            <select wire:model.live="preAuthFilter" class="form-control" style="max-width:170px;">
               <option value="">All Pre-Auth</option>
               <option value="not_required">Not Required</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
-            <input wire:model.lazy="fromDate" type="date" class="form-control" style="max-width:145px;" title="From date">
-            <input wire:model.lazy="toDate"   type="date" class="form-control" style="max-width:145px;" title="To date">
+            <input wire:model.blur="fromDate" type="date" class="form-control" style="max-width:145px;" title="From date">
+            <input wire:model.blur="toDate"   type="date" class="form-control" style="max-width:145px;" title="To date">
             <div class="ml-auto d-flex" style="gap:6px;">
               <button wire:click="exportCsv" class="btn btn-outline-success btn-sm">
                 <i class="fas fa-file-csv mr-1"></i>Export CSV
@@ -252,7 +252,7 @@
               <div class="form-group">
                 <label>Patient <span class="text-danger">*</span></label>
                 <div class="position-relative">
-                  <input wire:model="state.patient_search" type="text"
+                  <input wire:model.live="state.patient_search" type="text"
                          class="form-control @error('state.patient_id') is-invalid @enderror"
                          placeholder="Search name or Px#…" autocomplete="off">
                   @if(count($patientResults))
@@ -274,7 +274,7 @@
               <div class="form-group">
                 <label>Insurer <span class="text-danger">*</span></label>
                 <div class="position-relative">
-                  <input wire:model.debounce.250ms="state.insurer_search" type="text"
+                  <input wire:model.live.debounce.250ms="state.insurer_search" type="text"
                          class="form-control @error('state.insurer_id') is-invalid @enderror"
                          placeholder="Search insurer name, code, or scheme..." autocomplete="off">
                   @if(count($insurerResults))
@@ -292,7 +292,7 @@
                   </div>
                   @endif
                 </div>
-                <select wire:model.defer="state.insurer_id" class="d-none @error('state.insurer_id') is-invalid @enderror">
+                <select wire:model="state.insurer_id" class="d-none @error('state.insurer_id') is-invalid @enderror">
                   <option value="">— Select insurer —</option>
                   @foreach($insurers as $ins)
                     <option value="{{ $ins->id }}">{{ $ins->name }}</option>
@@ -305,7 +305,7 @@
             <div class="col-md-12">
               <div class="form-group">
                 <label>Linked Sale <span class="text-muted small">(optional — select a patient first)</span></label>
-                <select wire:model="state.sale_id" class="form-control" {{ !$state['patient_id'] ? 'disabled' : '' }}>
+                <select wire:model.live="state.sale_id" class="form-control" {{ !$state['patient_id'] ? 'disabled' : '' }}>
                   <option value="">— No linked sale —</option>
                   @foreach($patientSales as $ps)
                     <option value="{{ $ps['id'] }}">{{ $ps['label'] }}</option>
@@ -317,19 +317,19 @@
             <div class="col-md-4">
               <div class="form-group">
                 <label>Member ID</label>
-                <input wire:model.defer="state.member_id" type="text" class="form-control" placeholder="e.g. NHIS-123456">
+                <input wire:model="state.member_id" type="text" class="form-control" placeholder="e.g. NHIS-123456">
               </div>
             </div>
             <div class="col-md-4">
               <div class="form-group">
                 <label>Member Name</label>
-                <input wire:model.defer="state.member_name" type="text" class="form-control" placeholder="As on card">
+                <input wire:model="state.member_name" type="text" class="form-control" placeholder="As on card">
               </div>
             </div>
             <div class="col-md-4">
               <div class="form-group">
                 <label>Policy Number</label>
-                <input wire:model.defer="state.policy_number" type="text" class="form-control" placeholder="Policy #">
+                <input wire:model="state.policy_number" type="text" class="form-control" placeholder="Policy #">
               </div>
             </div>
             {{-- Claim amount --}}
@@ -338,7 +338,7 @@
                 <label>Claim Amount <span class="text-danger">*</span></label>
                 <div class="input-group">
                   <div class="input-group-prepend"><span class="input-group-text">{{ currency() }}</span></div>
-                  <input wire:model.defer="state.claim_amount" type="number" step="0.01" min="0"
+                  <input wire:model="state.claim_amount" type="number" step="0.01" min="0"
                          class="form-control @error('state.claim_amount') is-invalid @enderror" placeholder="0.00">
                   @error('state.claim_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -348,7 +348,7 @@
             <div class="col-md-8">
               <div class="form-group">
                 <label>Notes</label>
-                <textarea wire:model.defer="state.notes" class="form-control" rows="2" placeholder="Any notes…"></textarea>
+                <textarea wire:model="state.notes" class="form-control" rows="2" placeholder="Any notes…"></textarea>
               </div>
             </div>
           </div>
@@ -362,7 +362,7 @@
             <div class="col-md-4">
               <div class="form-group">
                 <label>Pre-Auth Status</label>
-                <select wire:model="state.pre_auth_status" class="form-control @error('state.pre_auth_status') is-invalid @enderror">
+                <select wire:model.live="state.pre_auth_status" class="form-control @error('state.pre_auth_status') is-invalid @enderror">
                   <option value="not_required">Not Required</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
@@ -375,7 +375,7 @@
             <div class="col-md-4">
               <div class="form-group">
                 <label>Pre-Auth Code</label>
-                <input wire:model.defer="state.pre_auth_code" type="text" class="form-control"
+                <input wire:model="state.pre_auth_code" type="text" class="form-control"
                        placeholder="Authorisation code…">
               </div>
             </div>
@@ -385,7 +385,7 @@
                 <label>Pre-Auth Amount</label>
                 <div class="input-group">
                   <div class="input-group-prepend"><span class="input-group-text">{{ currency() }}</span></div>
-                  <input wire:model.defer="state.pre_auth_amount" type="number" step="0.01" min="0"
+                  <input wire:model="state.pre_auth_amount" type="number" step="0.01" min="0"
                          class="form-control @error('state.pre_auth_amount') is-invalid @enderror" placeholder="0.00">
                   @error('state.pre_auth_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -394,20 +394,20 @@
             <div class="col-md-4">
               <div class="form-group">
                 <label>Authorisation Date</label>
-                <input wire:model.defer="state.pre_auth_date" type="date" class="form-control">
+                <input wire:model="state.pre_auth_date" type="date" class="form-control">
               </div>
             </div>
             <div class="col-md-4">
               <div class="form-group">
                 <label>Expiry Date</label>
-                <input wire:model.defer="state.pre_auth_expiry_date" type="date" class="form-control">
+                <input wire:model="state.pre_auth_expiry_date" type="date" class="form-control">
               </div>
             </div>
             @endif
             <div class="col-md-{{ $state['pre_auth_status'] === 'approved' ? '4' : '8' }}">
               <div class="form-group">
                 <label>Pre-Auth Notes</label>
-                <textarea wire:model.defer="state.pre_auth_notes" class="form-control" rows="2"
+                <textarea wire:model="state.pre_auth_notes" class="form-control" rows="2"
                           placeholder="Insurer notes, conditions…"></textarea>
               </div>
             </div>
@@ -442,20 +442,20 @@
           @if($pendingStatus === 'submitted')
             <div class="form-group">
               <label>Submission Date <span class="text-danger">*</span></label>
-              <input wire:model.defer="statusState.submission_date" type="date" class="form-control @error('statusState.submission_date') is-invalid @enderror">
+              <input wire:model="statusState.submission_date" type="date" class="form-control @error('statusState.submission_date') is-invalid @enderror">
               @error('statusState.submission_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
           @elseif(in_array($pendingStatus, ['approved', 'partially_approved']))
             <div class="form-group">
               <label>Approval Date <span class="text-danger">*</span></label>
-              <input wire:model.defer="statusState.approval_date" type="date" class="form-control @error('statusState.approval_date') is-invalid @enderror">
+              <input wire:model="statusState.approval_date" type="date" class="form-control @error('statusState.approval_date') is-invalid @enderror">
               @error('statusState.approval_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="form-group">
               <label>Approved Amount <span class="text-danger">*</span></label>
               <div class="input-group">
                 <div class="input-group-prepend"><span class="input-group-text">{{ currency() }}</span></div>
-                <input wire:model.defer="statusState.approved_amount" type="number" step="0.01" min="0"
+                <input wire:model="statusState.approved_amount" type="number" step="0.01" min="0"
                        class="form-control @error('statusState.approved_amount') is-invalid @enderror" placeholder="0.00">
                 @error('statusState.approved_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
               </div>
@@ -466,7 +466,7 @@
           @elseif($pendingStatus === 'rejected')
             <div class="form-group">
               <label>Rejection Reason <span class="text-danger">*</span></label>
-              <textarea wire:model.defer="statusState.rejection_reason"
+              <textarea wire:model="statusState.rejection_reason"
                         class="form-control @error('statusState.rejection_reason') is-invalid @enderror"
                         rows="3" placeholder="Reason given by the insurer…"></textarea>
               @error('statusState.rejection_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -474,7 +474,7 @@
           @elseif($pendingStatus === 'paid')
             <div class="form-group">
               <label>Payment Date <span class="text-danger">*</span></label>
-              <input wire:model.defer="statusState.payment_date" type="date" class="form-control @error('statusState.payment_date') is-invalid @enderror">
+              <input wire:model="statusState.payment_date" type="date" class="form-control @error('statusState.payment_date') is-invalid @enderror">
               @error('statusState.payment_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
           @endif

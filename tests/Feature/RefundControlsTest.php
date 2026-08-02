@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\Admin\RefundApprovalsComponent;
+use App\Livewire\Admin\RefundApprovalsComponent;
 use App\Models\AuditTrail;
 use App\Models\Category;
 use App\Models\Patient;
@@ -76,7 +76,7 @@ class RefundControlsTest extends TestCase
 
         Livewire::test(RefundApprovalsComponent::class)
             ->call('process', $refund->id)
-            ->assertDispatchedBrowserEvent('refund-receipt-ready');
+            ->assertDispatched('refund-receipt-ready');
 
         $refund = $refund->fresh();
         $this->assertSame(RefundLog::STATUS_PROCESSED, $refund->status);

@@ -30,11 +30,11 @@
                 <div class="row">
                     <div class="col-md-4 mb-2">
                         <label class="small font-weight-bold text-muted">Search</label>
-                        <input type="text" class="form-control" wire:model.debounce.400ms="search" placeholder="User, email, IP, browser...">
+                        <input type="text" class="form-control" wire:model.live.debounce.400ms="search" placeholder="User, email, IP, browser...">
                     </div>
                     <div class="col-md-3 mb-2">
                         <label class="small font-weight-bold text-muted">User</label>
-                        <select class="form-control" wire:model="userId">
+                        <select class="form-control" wire:model.live="userId">
                             <option value="">All users</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
@@ -43,11 +43,11 @@
                     </div>
                     <div class="col-md-2 mb-2">
                         <label class="small font-weight-bold text-muted">From</label>
-                        <input type="date" class="form-control" wire:model="fromDate">
+                        <input type="date" class="form-control" wire:model.live="fromDate">
                     </div>
                     <div class="col-md-2 mb-2">
                         <label class="small font-weight-bold text-muted">To</label>
-                        <input type="date" class="form-control" wire:model="toDate">
+                        <input type="date" class="form-control" wire:model.live="toDate">
                     </div>
                     <div class="col-md-1 mb-2 d-flex align-items-end">
                         <button class="btn btn-light border btn-block" wire:click="resetFilters"><i class="fas fa-undo"></i></button>

@@ -4,41 +4,41 @@ use App\Http\Controllers\Administrator\AdminDashboardController;
 use App\Http\Controllers\Cashier\ReceiptController;
 use App\Http\Controllers\Doctor\DoctorDashboardController;
 use App\Http\Controllers\Secretary\SecretaryDashboardController;
-use App\Http\Livewire\Admin\CategoryComponent;
-use App\Http\Livewire\Admin\ClinicalTaskCenterComponent;
-use App\Http\Livewire\Admin\OfflineHealthDashboardComponent;
-use App\Http\Livewire\Admin\ProductsComponent;
-use App\Http\Livewire\CartComponent;
-use App\Http\Livewire\Cashier\CashierDashboardComponent;
-use App\Http\Livewire\Cashier\CashierPatientClearanceComponent;
-use App\Http\Livewire\Cashier\SalesRecordsComponent;
-use App\Http\Livewire\Cashier\SellerDeskComponent;
-use App\Http\Livewire\Doctor\AllrecordsComponent;
-use App\Http\Livewire\Doctor\PatientAwaitingComponent;
-use App\Http\Livewire\Doctor\PatientRecordsComponent;
-use App\Http\Livewire\Doctor\ShowConsultationComponent;
-use App\Http\Livewire\Doctor\UpdateConsultationComponent;
-use App\Http\Livewire\Doctor\UsersComponent;
-use App\Http\Livewire\POSComponent;
-use App\Http\Livewire\OutstandingBalancesComponent;
-use App\Http\Livewire\RefundLogsComponent;
-use App\Http\Livewire\ReportsComponent;
-use App\Http\Livewire\Secretary\AppointmentsComponent;
-use App\Http\Livewire\Secretary\PatientsComponent;
-use App\Http\Livewire\Secretary\SpectaclesComponent;
-use App\Http\Livewire\Admin\UserRoleManagerComponent;
-use App\Http\Livewire\Admin\RolePermissionManagerComponent;
-use App\Http\Livewire\Admin\PasswordResetApprovalsComponent;
-use App\Http\Livewire\Admin\DiscountApprovalsComponent;
-use App\Http\Livewire\Admin\RefundApprovalsComponent;
-use App\Http\Livewire\Admin\ClearanceRevokeApprovalsComponent;
-use App\Http\Livewire\Admin\AllApprovalsComponent;
-use App\Http\Livewire\Admin\AuditTrailViewerComponent;
-use App\Http\Livewire\Admin\LicenseComponent;
-use App\Http\Livewire\Admin\DailyCashSummaryComponent;
-use App\Http\Livewire\Admin\InventoryAlertsComponent;
-use App\Http\Livewire\Admin\LoginHistoryComponent;
-use App\Http\Livewire\Admin\StockMovementComponent;
+use App\Livewire\Admin\CategoryComponent;
+use App\Livewire\Admin\ClinicalTaskCenterComponent;
+use App\Livewire\Admin\OfflineHealthDashboardComponent;
+use App\Livewire\Admin\ProductsComponent;
+use App\Livewire\CartComponent;
+use App\Livewire\Cashier\CashierDashboardComponent;
+use App\Livewire\Cashier\CashierPatientClearanceComponent;
+use App\Livewire\Cashier\SalesRecordsComponent;
+use App\Livewire\Cashier\SellerDeskComponent;
+use App\Livewire\Doctor\AllrecordsComponent;
+use App\Livewire\Doctor\PatientAwaitingComponent;
+use App\Livewire\Doctor\PatientRecordsComponent;
+use App\Livewire\Doctor\ShowConsultationComponent;
+use App\Livewire\Doctor\UpdateConsultationComponent;
+use App\Livewire\Doctor\UsersComponent;
+use App\Livewire\POSComponent;
+use App\Livewire\OutstandingBalancesComponent;
+use App\Livewire\RefundLogsComponent;
+use App\Livewire\ReportsComponent;
+use App\Livewire\Secretary\AppointmentsComponent;
+use App\Livewire\Secretary\PatientsComponent;
+use App\Livewire\Secretary\SpectaclesComponent;
+use App\Livewire\Admin\UserRoleManagerComponent;
+use App\Livewire\Admin\RolePermissionManagerComponent;
+use App\Livewire\Admin\PasswordResetApprovalsComponent;
+use App\Livewire\Admin\DiscountApprovalsComponent;
+use App\Livewire\Admin\RefundApprovalsComponent;
+use App\Livewire\Admin\ClearanceRevokeApprovalsComponent;
+use App\Livewire\Admin\AllApprovalsComponent;
+use App\Livewire\Admin\AuditTrailViewerComponent;
+use App\Livewire\Admin\LicenseComponent;
+use App\Livewire\Admin\DailyCashSummaryComponent;
+use App\Livewire\Admin\InventoryAlertsComponent;
+use App\Livewire\Admin\LoginHistoryComponent;
+use App\Livewire\Admin\StockMovementComponent;
 use App\Models\Spectacles;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Doctor\PatientMedicalRecordController;
@@ -46,13 +46,13 @@ use App\Http\Controllers\DiscountApprovalNoticeController;
 use App\Http\Controllers\Doctor\ReferralController;
 use App\Http\Controllers\Doctor\ClearanceNoticeController;
 use App\Http\Controllers\IncomeStatementExportController;
-use App\Http\Livewire\Doctor\ReferralComponent;
-use App\Http\Livewire\StaffMessagingComponent;
-use App\Http\Livewire\Admin\AdminSettingsComponent;
-use App\Http\Livewire\Admin\BackupManagerComponent;
-use App\Http\Livewire\Admin\ReportDeliveryComponent;
-use App\Http\Livewire\Admin\MailSettingsComponent;
-use App\Http\Livewire\Admin\SmsLogsComponent;
+use App\Livewire\Doctor\ReferralComponent;
+use App\Livewire\StaffMessagingComponent;
+use App\Livewire\Admin\AdminSettingsComponent;
+use App\Livewire\Admin\BackupManagerComponent;
+use App\Livewire\Admin\ReportDeliveryComponent;
+use App\Livewire\Admin\MailSettingsComponent;
+use App\Livewire\Admin\SmsLogsComponent;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -88,7 +88,7 @@ require __DIR__.'/auth.php';
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', 'App\Http\Livewire\UserProfileComponent')->name('user.profile');
+    Route::get('/profile', 'App\Livewire\UserProfileComponent')->name('user.profile');
 
     Route::get('/notifications/unread-count', function () {
         return response()->json([
@@ -172,11 +172,11 @@ Route::middleware(['auth', 'role:Super Admin|Manager'])->group(function () {
  //admin
 Route::get('/admin/reports', ReportsComponent::class)->name('admin.reports');
 Route::get('/admin/sales-records', SalesRecordsComponent::class)->name('admin.sales-records');
-Route::get('/admin/income-statement', \App\Http\Livewire\Admin\IncomeStatementComponent::class)->name('admin.income-statement')->middleware('feature:advanced_reports');
+Route::get('/admin/income-statement', \App\Livewire\Admin\IncomeStatementComponent::class)->name('admin.income-statement')->middleware('feature:advanced_reports');
 Route::get('/admin/income-statement/export/csv', [IncomeStatementExportController::class, 'exportCsv'])->name('admin.income-statement.export.csv')->middleware('feature:advanced_reports');
 Route::get('/admin/income-statement/export/pdf', [IncomeStatementExportController::class, 'exportPdf'])->name('admin.income-statement.export.pdf')->middleware('feature:advanced_reports');
 Route::get('/admin/income-statement/preview', [IncomeStatementExportController::class, 'preview'])->name('admin.income-statement.preview')->middleware('feature:advanced_reports');
-Route::get('/admin/diagnoses', \App\Http\Livewire\Admin\DiagnosisComponent::class)->name('admin.diagnoses');
+Route::get('/admin/diagnoses', \App\Livewire\Admin\DiagnosisComponent::class)->name('admin.diagnoses');
 Route::get('/admin/inventory-alerts', InventoryAlertsComponent::class)->name('admin.inventory-alerts')->middleware('feature:inventory');
 Route::get('/admin/stock-movements', StockMovementComponent::class)->name('admin.stock-movements')->middleware('feature:inventory');
 Route::get('/admin/daily-cash-summary', DailyCashSummaryComponent::class)->name('admin.daily-cash-summary');
@@ -198,7 +198,7 @@ Route::get('/admin/login-history', LoginHistoryComponent::class)->name('admin.lo
 Route::get('/admin/audit-trail', AuditTrailViewerComponent::class)->name('admin.audit-trail')->middleware('feature:audit_trail');
 Route::get('/admin/license', LicenseComponent::class)->name('admin.license')->middleware(['auth', 'role:Super Admin']);
 Route::get('/admin/sms-logs', SmsLogsComponent::class)->name('admin.sms-logs')->middleware('feature:sms_campaigns');
-Route::get('/admin/expenses', \App\Http\Livewire\Admin\ExpensesComponent::class)->name('admin.expenses')->middleware('feature:expense_tracking');
+Route::get('/admin/expenses', \App\Livewire\Admin\ExpensesComponent::class)->name('admin.expenses')->middleware('feature:expense_tracking');
 Route::get('/admin/expenses/receipt/{filename}', function (string $filename) {
     // Basename strips any path traversal attempts
     $path = 'expense-receipts/' . basename($filename);
@@ -209,8 +209,8 @@ Route::get('admin/dashboard', AdminDashboardController::class)->name('admin.dash
 Route::get('admin/clinical-task-center', ClinicalTaskCenterComponent::class)->name('admin.clinical-task-center');
 Route::get('admin/category', CategoryComponent::class)->name('admin.category');
 Route::get('admin/product', ProductsComponent::class)->name('admin.product');
-Route::get('admin/suppliers', \App\Http\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers')->middleware('feature:inventory');
-Route::get('admin/quotations', \App\Http\Livewire\Admin\QuotationComponent::class)->name('admin.quotations');
+Route::get('admin/suppliers', \App\Livewire\Admin\SupplierComponent::class)->name('admin.suppliers')->middleware('feature:inventory');
+Route::get('admin/quotations', \App\Livewire\Admin\QuotationComponent::class)->name('admin.quotations');
 Route::get('admin/quotations/{id}/pdf', function (int $id) {
     $q = \App\Models\Quotation::with('items', 'creator')->findOrFail($id);
     $setting = \App\Models\Setting::getSettings();
@@ -218,7 +218,7 @@ Route::get('admin/quotations/{id}/pdf', function (int $id) {
         ->setPaper('a4', 'portrait')
         ->stream("Quotation-{$q->quotation_number}.pdf");
 })->name('admin.quotations.pdf');
-Route::get('admin/purchase-orders', \App\Http\Livewire\Admin\PurchaseOrderComponent::class)->name('admin.purchase-orders');
+Route::get('admin/purchase-orders', \App\Livewire\Admin\PurchaseOrderComponent::class)->name('admin.purchase-orders');
 Route::get('admin/purchase-orders/{id}/pdf', function (int $id) {
     $po = \App\Models\PurchaseOrder::with('items', 'supplier', 'creator')->findOrFail($id);
     $setting = \App\Models\Setting::getSettings();
@@ -226,16 +226,16 @@ Route::get('admin/purchase-orders/{id}/pdf', function (int $id) {
         ->setPaper('a4', 'portrait')
         ->stream("PO-{$po->po_number}.pdf");
 })->name('admin.purchase-orders.pdf');
-Route::get('admin/patient-ledger', \App\Http\Livewire\Admin\PatientLedgerComponent::class)->name('admin.patient-ledger');
+Route::get('admin/patient-ledger', \App\Livewire\Admin\PatientLedgerComponent::class)->name('admin.patient-ledger');
 // Route::get('users', UsersComponent::class)->name('admin.users');
 Route::get('admin/settings', AdminSettingsComponent::class)->name('admin.settings');
 
 // Insurance module
-Route::get('/admin/insurance/claims', \App\Http\Livewire\Admin\InsuranceClaimsComponent::class)->name('admin.insurance.claims');
-Route::get('/admin/insurance/insurers', \App\Http\Livewire\Admin\InsurersComponent::class)->name('admin.insurance.insurers');
+Route::get('/admin/insurance/claims', \App\Livewire\Admin\InsuranceClaimsComponent::class)->name('admin.insurance.claims');
+Route::get('/admin/insurance/insurers', \App\Livewire\Admin\InsurersComponent::class)->name('admin.insurance.insurers');
 
 // Patient Recall dashboard
-Route::get('/admin/patient-recall', \App\Http\Livewire\Admin\PatientRecallComponent::class)->name('admin.patient-recall')->middleware('feature:sms_campaigns');
+Route::get('/admin/patient-recall', \App\Livewire\Admin\PatientRecallComponent::class)->name('admin.patient-recall')->middleware('feature:sms_campaigns');
 
 });
 
@@ -315,7 +315,7 @@ Route::get('/doctor/consultation/{consultation}/prescription/print',
     [PatientMedicalRecordController::class, 'printPrescription'])
     ->name('doctor.prescription.print');
 Route::get('/doctor/patient/{patient}/timeline',
-    \App\Http\Livewire\Doctor\PatientTimelineComponent::class)
+    \App\Livewire\Doctor\PatientTimelineComponent::class)
     ->name('doctor.patient-timeline');
 Route::get('/doctor/visit-summaries/download',
     [PatientMedicalRecordController::class, 'downloadVisitSummaries'])

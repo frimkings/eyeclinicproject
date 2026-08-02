@@ -22,12 +22,12 @@
         <div class="card-body py-2">
             <div class="row align-items-center">
                 <div class="col-md-4 mb-2 mb-md-0">
-                    <input wire:model.debounce.300ms="search" type="text"
+                    <input wire:model.live.debounce.300ms="search" type="text"
                            class="form-control form-control-sm"
                            placeholder="Search by PO number or supplier…">
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
-                    <select wire:model="status" class="form-control form-control-sm">
+                    <select wire:model.live="status" class="form-control form-control-sm">
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
                         <option value="ordered">Ordered</option>
@@ -37,7 +37,7 @@
                     </select>
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <select wire:model="supplierId" class="form-control form-control-sm">
+                    <select wire:model.live="supplierId" class="form-control form-control-sm">
                         <option value="">All Suppliers</option>
                         @foreach($suppliers as $s)
                             <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -45,7 +45,7 @@
                     </select>
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <select wire:model="invoiceStatus" class="form-control form-control-sm">
+                    <select wire:model.live="invoiceStatus" class="form-control form-control-sm">
                         <option value="">All Invoice Status</option>
                         <option value="none">No Invoice</option>
                         <option value="invoiced">Invoiced</option>
@@ -54,7 +54,7 @@
                     </select>
                 </div>
                 <div class="col-md-1">
-                    <select wire:model="perPage" class="form-control form-control-sm">
+                    <select wire:model.live="perPage" class="form-control form-control-sm">
                         <option value="15">15</option>
                         <option value="30">30</option>
                     </select>
@@ -204,7 +204,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">SUPPLIER</label>
-                            <select wire:model.defer="supplier_id" class="form-control form-control-sm">
+                            <select wire:model="supplier_id" class="form-control form-control-sm">
                                 <option value="">— No Supplier —</option>
                                 @foreach($suppliers as $s)
                                     <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -213,7 +213,7 @@
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">STATUS</label>
-                            <select wire:model.defer="status_field" class="form-control form-control-sm">
+                            <select wire:model="status_field" class="form-control form-control-sm">
                                 <option value="draft">Draft</option>
                                 <option value="ordered">Ordered</option>
                             </select>
@@ -222,19 +222,19 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">ORDER DATE *</label>
-                            <input type="date" wire:model.defer="order_date"
+                            <input type="date" wire:model="order_date"
                                    class="form-control form-control-sm @error('order_date') is-invalid @enderror">
                             @error('order_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">EXPECTED DELIVERY</label>
-                            <input type="date" wire:model.defer="expected_date" class="form-control form-control-sm">
+                            <input type="date" wire:model="expected_date" class="form-control form-control-sm">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">NOTES</label>
-                            <textarea wire:model.defer="notes" rows="4"
+                            <textarea wire:model="notes" rows="4"
                                       class="form-control form-control-sm" placeholder="Internal notes…"></textarea>
                         </div>
                     </div>
@@ -266,7 +266,7 @@
                                 <tr>
                                     <td class="position-relative">
                                         <input type="text"
-                                               wire:model.debounce.300ms="items.{{ $i }}.description"
+                                               wire:model.live.debounce.300ms="items.{{ $i }}.description"
                                                class="form-control form-control-sm @error('items.'.$i.'.description') is-invalid @enderror"
                                                placeholder="Description or search product…"
                                                autocomplete="off">
@@ -285,13 +285,13 @@
                                         @error('items.'.$i.'.description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model.lazy="items.{{ $i }}.quantity_ordered"
+                                        <input type="number" wire:model.blur="items.{{ $i }}.quantity_ordered"
                                                class="form-control form-control-sm text-right @error('items.'.$i.'.quantity_ordered') is-invalid @enderror"
                                                min="0.01" step="0.01">
                                         @error('items.'.$i.'.quantity_ordered')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model.lazy="items.{{ $i }}.unit_cost"
+                                        <input type="number" wire:model.blur="items.{{ $i }}.unit_cost"
                                                class="form-control form-control-sm text-right @error('items.'.$i.'.unit_cost') is-invalid @enderror"
                                                min="0" step="0.01">
                                         @error('items.'.$i.'.unit_cost')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -369,7 +369,7 @@
                                     <td class="text-right text-muted">{{ number_format($line['quantity_received'], 2) }}</td>
                                     <td class="text-right" style="width:110px;">
                                         <input type="number"
-                                               wire:model.defer="grnLines.{{ $i }}.receive_qty"
+                                               wire:model="grnLines.{{ $i }}.receive_qty"
                                                class="form-control form-control-sm text-right @error('grnLines.'.$i.'.receive_qty') is-invalid @enderror"
                                                min="0" step="0.01"
                                                max="{{ $line['quantity_ordered'] - $line['quantity_received'] }}">
@@ -377,13 +377,13 @@
                                     </td>
                                     <td>
                                         <input type="text"
-                                               wire:model.defer="grnLines.{{ $i }}.batch_number"
+                                               wire:model="grnLines.{{ $i }}.batch_number"
                                                class="form-control form-control-sm"
                                                placeholder="Batch…">
                                     </td>
                                     <td>
                                         <input type="date"
-                                               wire:model.defer="grnLines.{{ $i }}.expiry_date"
+                                               wire:model="grnLines.{{ $i }}.expiry_date"
                                                class="form-control form-control-sm">
                                     </td>
                                 </tr>
@@ -423,14 +423,14 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="small font-weight-bold text-muted">INVOICE NUMBER</label>
-                    <input type="text" wire:model.defer="inv_number" class="form-control form-control-sm"
+                    <input type="text" wire:model="inv_number" class="form-control form-control-sm"
                            placeholder="Supplier's invoice ref…">
                 </div>
                 <div class="row">
                     <div class="col-6">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">INVOICE DATE *</label>
-                            <input type="date" wire:model.defer="inv_date"
+                            <input type="date" wire:model="inv_date"
                                    class="form-control form-control-sm @error('inv_date') is-invalid @enderror">
                             @error('inv_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -438,7 +438,7 @@
                     <div class="col-6">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">DUE DATE</label>
-                            <input type="date" wire:model.defer="inv_due_date" class="form-control form-control-sm">
+                            <input type="date" wire:model="inv_due_date" class="form-control form-control-sm">
                         </div>
                     </div>
                 </div>
@@ -446,7 +446,7 @@
                     <label class="small font-weight-bold text-muted">INVOICE AMOUNT *</label>
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend"><span class="input-group-text">{{ currency() }}</span></div>
-                        <input type="number" wire:model.defer="inv_amount" step="0.01" min="0.01"
+                        <input type="number" wire:model="inv_amount" step="0.01" min="0.01"
                                class="form-control @error('inv_amount') is-invalid @enderror" placeholder="0.00">
                         @error('inv_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -479,7 +479,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="small font-weight-bold text-muted">PAYMENT DATE *</label>
-                    <input type="date" wire:model.defer="pay_date"
+                    <input type="date" wire:model="pay_date"
                            class="form-control form-control-sm @error('pay_date') is-invalid @enderror">
                     @error('pay_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -487,14 +487,14 @@
                     <label class="small font-weight-bold text-muted">AMOUNT PAID *</label>
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend"><span class="input-group-text">{{ currency() }}</span></div>
-                        <input type="number" wire:model.defer="pay_amount" step="0.01" min="0.01"
+                        <input type="number" wire:model="pay_amount" step="0.01" min="0.01"
                                class="form-control @error('pay_amount') is-invalid @enderror" placeholder="0.00">
                         @error('pay_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="small font-weight-bold text-muted">PAYMENT METHOD</label>
-                    <select wire:model.defer="pay_method" class="form-control form-control-sm">
+                    <select wire:model="pay_method" class="form-control form-control-sm">
                         <option value="cash">Cash</option>
                         <option value="bank_transfer">Bank Transfer</option>
                         <option value="cheque">Cheque</option>
@@ -503,7 +503,7 @@
                 </div>
                 <div class="form-group">
                     <label class="small font-weight-bold text-muted">REFERENCE / CHEQUE NO.</label>
-                    <input type="text" wire:model.defer="pay_reference" class="form-control form-control-sm"
+                    <input type="text" wire:model="pay_reference" class="form-control form-control-sm"
                            placeholder="Transaction ref, cheque number…">
                 </div>
             </div>

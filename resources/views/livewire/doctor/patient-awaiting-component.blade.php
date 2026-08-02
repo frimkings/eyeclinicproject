@@ -37,14 +37,14 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-muted text-uppercase">Search Patient</label>
-                            <input type="text" wire:model.debounce.300ms="searchTerm"
+                            <input type="text" wire:model.live.debounce.300ms="searchTerm"
                                    class="form-control" placeholder="Name or Folder #...">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-muted text-uppercase">Date Range (Clearance)</label>
                             <div class="input-group">
-                                <input type="date" wire:model="fromDate" class="form-control">
-                                <input type="date" wire:model="toDate"   class="form-control">
+                                <input type="date" wire:model.live="fromDate" class="form-control">
+                                <input type="date" wire:model.live="toDate"   class="form-control">
                             </div>
                         </div>
                         <div class="col-md-3">

@@ -77,7 +77,7 @@
                                 </div>
                                 <div class="filter-input-wrap filter-input-wrap--inline">
                                     <i class="fas fa-search filter-input-icon"></i>
-                                    <input type="text" wire:model.debounce.500ms="searchTerm"
+                                    <input type="text" wire:model.live.debounce.500ms="searchTerm"
                                            class="filter-range__input" style="padding-left:20px; text-align:left;"
                                            placeholder="Patient name or folder number…">
                                 </div>
@@ -93,12 +93,12 @@
                                 <div class="filter-range__controls">
                                     <div style="flex:1; min-width:0;">
                                         <div class="filter-date-label">From</div>
-                                        <input type="date" wire:model="startDate" class="filter-range__input" style="text-align:left; font-size:.78rem;">
+                                        <input type="date" wire:model.live="startDate" class="filter-range__input" style="text-align:left; font-size:.78rem;">
                                     </div>
                                     <span class="filter-range__sep">→</span>
                                     <div style="flex:1; min-width:0;">
                                         <div class="filter-date-label">To</div>
-                                        <input type="date" wire:model="endDate" class="filter-range__input" style="text-align:left; font-size:.78rem;">
+                                        <input type="date" wire:model.live="endDate" class="filter-range__input" style="text-align:left; font-size:.78rem;">
                                     </div>
                                 </div>
                             </div>
@@ -111,9 +111,9 @@
                                     <i class="fas fa-user-alt mr-1" style="color:#17a2b8;"></i>Age <span class="text-muted">(yrs)</span>
                                 </div>
                                 <div class="filter-range__controls">
-                                    <input type="number" wire:model.lazy="ageMin" class="filter-range__input" placeholder="Min" min="0" max="120">
+                                    <input type="number" wire:model.blur="ageMin" class="filter-range__input" placeholder="Min" min="0" max="120">
                                     <span class="filter-range__sep">–</span>
-                                    <input type="number" wire:model.lazy="ageMax" class="filter-range__input" placeholder="Max" min="0" max="120">
+                                    <input type="number" wire:model.blur="ageMax" class="filter-range__input" placeholder="Max" min="0" max="120">
                                 </div>
                             </div>
                         </div>
@@ -125,7 +125,7 @@
                                     <i class="fas fa-venus-mars mr-1" style="color:#e83e8c;"></i>Gender
                                 </div>
                                 <div class="filter-range__controls">
-                                    <select wire:model="genderFilter" class="filter-range__select" style="width:100%;">
+                                    <select wire:model.live="genderFilter" class="filter-range__select" style="width:100%;">
                                         <option value="">All Genders</option>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
@@ -169,7 +169,7 @@
                                         <div class="diag-list" style="max-height:220px; overflow-y:auto;">
                                             @forelse ($diagnoses as $diag)
                                                 <label class="diag-opt diag-option" data-name="{{ strtolower($diag->name) }}">
-                                                    <input type="checkbox" wire:model="diagnosisFilter" value="{{ $diag->id }}" class="diag-checkbox">
+                                                    <input type="checkbox" wire:model.live="diagnosisFilter" value="{{ $diag->id }}" class="diag-checkbox">
                                                     <span>{{ $diag->name }}</span>
                                                 </label>
                                             @empty
@@ -198,9 +198,9 @@
                                     <i class="fas fa-tachometer-alt mr-1" style="color:#fd7e14;"></i>IOP <span class="text-muted">(mmHg)</span>
                                 </div>
                                 <div class="filter-range__controls">
-                                    <input type="number" wire:model.lazy="iopMin" class="filter-range__input" placeholder="Min" min="0" max="100" step="0.5">
+                                    <input type="number" wire:model.blur="iopMin" class="filter-range__input" placeholder="Min" min="0" max="100" step="0.5">
                                     <span class="filter-range__sep">–</span>
-                                    <input type="number" wire:model.lazy="iopMax" class="filter-range__input" placeholder="Max" min="0" max="100" step="0.5">
+                                    <input type="number" wire:model.blur="iopMax" class="filter-range__input" placeholder="Max" min="0" max="100" step="0.5">
                                 </div>
                             </div>
                         </div>
@@ -212,9 +212,9 @@
                                     <i class="fas fa-dot-circle mr-1" style="color:#6f42c1;"></i>CDR <span class="text-muted">(0–1)</span>
                                 </div>
                                 <div class="filter-range__controls">
-                                    <input type="number" wire:model.lazy="cdrMin" class="filter-range__input" placeholder="0.0" min="0" max="1" step="0.1">
+                                    <input type="number" wire:model.blur="cdrMin" class="filter-range__input" placeholder="0.0" min="0" max="1" step="0.1">
                                     <span class="filter-range__sep">–</span>
-                                    <input type="number" wire:model.lazy="cdrMax" class="filter-range__input" placeholder="1.0" min="0" max="1" step="0.1">
+                                    <input type="number" wire:model.blur="cdrMax" class="filter-range__input" placeholder="1.0" min="0" max="1" step="0.1">
                                 </div>
                             </div>
                         </div>
@@ -226,14 +226,14 @@
                                     <i class="fas fa-eye mr-1" style="color:#28a745;"></i>Visual Acuity <span class="text-muted">(OD or OS)</span>
                                 </div>
                                 <div class="filter-range__controls">
-                                    <select wire:model="vaMin" class="filter-range__select">
+                                    <select wire:model.live="vaMin" class="filter-range__select">
                                         <option value="">Best</option>
                                         @foreach($vaOptions as $va)
                                             <option value="{{ $va }}">{{ $va }}</option>
                                         @endforeach
                                     </select>
                                     <span class="filter-range__sep">–</span>
-                                    <select wire:model="vaMax" class="filter-range__select">
+                                    <select wire:model.live="vaMax" class="filter-range__select">
                                         <option value="">Worst</option>
                                         @foreach($vaOptions as $va)
                                             <option value="{{ $va }}">{{ $va }}</option>
@@ -387,7 +387,7 @@
                             <thead style="background:linear-gradient(135deg,#2c3e50 0%,#3d5166 100%);">
                                 <tr>
                                     <th class="px-3 border-0" style="width:36px;">
-                                        <input type="checkbox" wire:model="selectAll"
+                                        <input type="checkbox" wire:model.live="selectAll"
                                                class="export-checkbox export-checkbox--all"
                                                title="Select all filtered records">
                                     </th>
@@ -422,7 +422,7 @@
                                 <tr class="{{ in_array((string)$record->id, array_map('strval', $selectedIds)) ? 'table-row--selected' : '' }}">
                                     <td class="px-3 align-middle">
                                         <input type="checkbox"
-                                               wire:model="selectedIds"
+                                               wire:model.live="selectedIds"
                                                value="{{ $record->id }}"
                                                class="export-checkbox">
                                     </td>

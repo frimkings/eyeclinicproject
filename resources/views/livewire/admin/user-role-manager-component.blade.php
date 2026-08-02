@@ -346,7 +346,7 @@
                 </div>
 
                 {{-- Modal Body --}}
-                <form wire:submit.prevent="store">
+                <form wire:submit="store">
                     <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
                         {{-- Name Field --}}
                         <div class="form-group">
@@ -354,7 +354,7 @@
                                 Full Name <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
-                                wire:model="name" 
+                                wire:model.live="name"
                                 class="form-control @error('name') is-invalid @enderror"
                                 placeholder="Enter full name">
                             @error('name') 
@@ -368,7 +368,7 @@
                                 Email Address <span class="text-danger">*</span>
                             </label>
                             <input type="email" 
-                                wire:model="email" 
+                                wire:model.live="email"
                                 class="form-control @error('email') is-invalid @enderror"
                                 placeholder="email@example.com">
                             @error('email') 
@@ -384,7 +384,7 @@
                             <div class="input-group">
                                 <input type="password"
                                     id="staff-password"
-                                    wire:model="password"
+                                    wire:model.live="password"
                                     class="form-control @error('password') is-invalid @enderror"
                                     placeholder="{{ $isEdit ? 'Leave blank to keep current password' : 'Enter secure password' }}">
                                 <div class="input-group-append">
@@ -413,7 +413,7 @@
                             <div class="input-group">
                                 <input type="password"
                                     id="staff-password-confirmation"
-                                    wire:model="password_confirmation"
+                                    wire:model.live="password_confirmation"
                                     class="form-control @error('password_confirmation') is-invalid @enderror"
                                     placeholder="{{ $isEdit ? 'Repeat new password when changing it' : 'Repeat secure password' }}">
                                 <div class="input-group-append">
@@ -454,7 +454,7 @@
                                                 <input type="checkbox"
                                                     class="custom-control-input"
                                                     id="role-{{ $role->id }}"
-                                                    wire:model="selectedRoles"
+                                                    wire:model.live="selectedRoles"
                                                     value="{{ $role->name }}">
                                                 <label class="custom-control-label" for="role-{{ $role->id }}">
                                                     {{ $role->name }}
@@ -488,7 +488,7 @@
                                             <span class="input-group-text"><i class="fas fa-phone text-muted"></i></span>
                                         </div>
                                         <input type="text"
-                                            wire:model.defer="phone"
+                                            wire:model="phone"
                                             class="form-control @error('phone') is-invalid @enderror"
                                             placeholder="+63 912 345 6789">
                                         @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -500,7 +500,7 @@
                                 <div class="form-group">
                                     <label class="font-weight-bold small">Staff ID</label>
                                     <input type="text"
-                                        wire:model.defer="staff_id"
+                                        wire:model="staff_id"
                                         class="form-control @error('staff_id') is-invalid @enderror"
                                         placeholder="e.g. EMP-0042">
                                     @error('staff_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -510,7 +510,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="font-weight-bold small">Gender</label>
-                                    <select wire:model.defer="gender"
+                                    <select wire:model="gender"
                                             class="custom-select @error('gender') is-invalid @enderror">
                                         <option value="">— Select —</option>
                                         <option value="Male">Male</option>
@@ -525,7 +525,7 @@
                                 <div class="form-group">
                                     <label class="font-weight-bold small">Date of Birth</label>
                                     <input type="date"
-                                        wire:model.defer="date_of_birth"
+                                        wire:model="date_of_birth"
                                         class="form-control @error('date_of_birth') is-invalid @enderror">
                                     @error('date_of_birth')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
@@ -535,7 +535,7 @@
                                 <div class="form-group">
                                     <label class="font-weight-bold small">Hire Date</label>
                                     <input type="date"
-                                        wire:model.defer="hire_date"
+                                        wire:model="hire_date"
                                         class="form-control @error('hire_date') is-invalid @enderror">
                                     @error('hire_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
@@ -545,7 +545,7 @@
                                 <div class="form-group mb-0">
                                     <label class="font-weight-bold small">Department</label>
                                     <input type="text"
-                                        wire:model.defer="department"
+                                        wire:model="department"
                                         class="form-control @error('department') is-invalid @enderror"
                                         placeholder="e.g. Ophthalmology, Administration">
                                     @error('department')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -583,7 +583,7 @@
                     </button>
                 </div>
 
-                <form wire:submit.prevent="doResetPassword">
+                <form wire:submit="doResetPassword">
                     <div class="modal-body">
                         <div class="text-center mb-3">
                             <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
@@ -599,7 +599,7 @@
                             <div class="input-group">
                                 <input type="password"
                                     id="reset-password"
-                                    wire:model="newPassword"
+                                    wire:model.live="newPassword"
                                     class="form-control @error('newPassword') is-invalid @enderror"
                                     placeholder="Min. 6 characters">
                                 <div class="input-group-append">
@@ -623,7 +623,7 @@
                             <div class="input-group">
                                 <input type="password"
                                     id="reset-password-confirmation"
-                                    wire:model="newPasswordConfirmation"
+                                    wire:model.live="newPasswordConfirmation"
                                     class="form-control @error('newPasswordConfirmation') is-invalid @enderror"
                                     placeholder="Repeat new password">
                                 <div class="input-group-append">
@@ -688,7 +688,7 @@
                         <div class="form-group">
                             <label class="font-weight-bold">Select CSV File <span class="text-danger">*</span></label>
                             <input type="file"
-                                   wire:model="importFile"
+                                   wire:model.live="importFile"
                                    accept=".csv,.txt"
                                    class="form-control-file @error('importFile') is-invalid @enderror">
                             @error('importFile')

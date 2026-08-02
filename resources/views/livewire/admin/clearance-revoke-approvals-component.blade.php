@@ -35,15 +35,15 @@
                     </div>
                 </div>
                 <div class="col-md-4 px-1">
-                    <input wire:model.debounce.300ms="search" type="text"
+                    <input wire:model.live.debounce.300ms="search" type="text"
                            class="form-control form-control-sm shadow-none"
                            placeholder="Search patient or reason…">
                 </div>
                 @if($activeTab === 'history')
                     <div class="col-md-3 px-1">
                         <div class="input-group input-group-sm">
-                            <input wire:model="fromDate" type="date" class="form-control">
-                            <input wire:model="toDate"   type="date" class="form-control">
+                            <input wire:model.live="fromDate" type="date" class="form-control">
+                            <input wire:model.live="toDate"   type="date" class="form-control">
                         </div>
                     </div>
                 @endif
@@ -166,7 +166,7 @@
             <div class="modal-body">
                 <div class="form-group mb-0">
                     <label class="font-weight-bold small">Reason for Rejection <span class="text-danger">*</span></label>
-                    <textarea wire:model.defer="rejectionReason"
+                    <textarea wire:model="rejectionReason"
                               class="form-control @error('rejectionReason') is-invalid @enderror"
                               rows="3"
                               placeholder="Explain why this revoke request is being rejected…"></textarea>

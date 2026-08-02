@@ -37,7 +37,7 @@
                                     <span class="input-group-text"><i class="fa fa-search"></i></span>
                                 </div>
                                 <input type="text"
-                                    wire:model.debounce.300ms="searchTerm"
+                                    wire:model.live.debounce.300ms="searchTerm"
                                     class="form-control"
                                     placeholder="Search category, type, or description...">
                             </div>
@@ -121,7 +121,7 @@
     <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel"
         aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog" role="document">
-            <form autocomplete="off" wire:submit.prevent="{{ $showEditModal ? 'updateCategory' : 'createCategory' }}">
+            <form autocomplete="off" wire:submit="{{ $showEditModal ? 'updateCategory' : 'createCategory' }}">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="categoryModalLabel">
@@ -136,7 +136,7 @@
                         <div class="form-group">
                             <label for="category-name">Name <span class="text-danger">*</span></label>
                             <input type="text"
-                                wire:model.defer="state.name"
+                                wire:model="state.name"
                                 class="form-control @error('state.name') is-invalid @enderror"
                                 id="category-name"
                                 placeholder="e.g. Drugs, Frames, Lenses">
@@ -147,7 +147,7 @@
 
                         <div class="form-group">
                             <label for="category-type">Category Type <span class="text-danger">*</span></label>
-                            <select wire:model.defer="state.type"
+                            <select wire:model="state.type"
                                 class="form-control @error('state.type') is-invalid @enderror"
                                 id="category-type">
                                 @foreach($categoryTypes as $value => $label)
@@ -161,7 +161,7 @@
 
                         <div class="form-group">
                             <label for="category-description">Description</label>
-                            <textarea wire:model.defer="state.description"
+                            <textarea wire:model="state.description"
                                 class="form-control @error('state.description') is-invalid @enderror"
                                 id="category-description"
                                 rows="3"
@@ -172,7 +172,7 @@
                         </div>
 
                         <div class="custom-control custom-switch">
-                            <input type="checkbox" wire:model.defer="state.is_active" class="custom-control-input" id="category-active">
+                            <input type="checkbox" wire:model="state.is_active" class="custom-control-input" id="category-active">
                             <label class="custom-control-label" for="category-active">Active in POS and inventory workflows</label>
                         </div>
                     </div>

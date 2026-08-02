@@ -27,7 +27,7 @@
                     <label class="small font-weight-bold text-muted">PATIENT</label>
                     <div class="position-relative">
                         <input type="text"
-                               wire:model.debounce.300ms="patientSearch"
+                               wire:model.live.debounce.300ms="patientSearch"
                                class="form-control form-control-sm"
                                placeholder="Search by name or PX number…"
                                autocomplete="off">
@@ -58,11 +58,11 @@
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
                     <label class="small font-weight-bold text-muted">FROM DATE</label>
-                    <input type="date" wire:model.lazy="fromDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.blur="fromDate" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-3">
                     <label class="small font-weight-bold text-muted">TO DATE</label>
-                    <input type="date" wire:model.lazy="toDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.blur="toDate" class="form-control form-control-sm">
                 </div>
             </div>
         </div>

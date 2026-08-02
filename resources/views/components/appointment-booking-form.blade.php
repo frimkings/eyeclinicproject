@@ -115,7 +115,7 @@ Features:
                         </div>
                     @else
                         <input type="text" 
-                               wire:model.debounce.300ms="appointmentPatientSearch" 
+                               wire:model.live.debounce.300ms="appointmentPatientSearch"
                                class="form-control @error('appointmentPatientId') is-invalid @enderror" 
                                placeholder="Search patient name or ID...">
                         
@@ -143,7 +143,7 @@ Features:
                 <label class="font-weight-bold">
                     Reason for Appointment <span class="text-danger">*</span>
                 </label>
-                <select wire:model="appointmentTitle"
+                <select wire:model.live="appointmentTitle"
                         class="form-control @error('appointmentTitle') is-invalid @enderror">
                     <option value="">-- Select a reason --</option>
                     @foreach($this->appointmentReasons as $reason)
@@ -157,7 +157,7 @@ Features:
 
             <div class="form-group">
                 <label class="font-weight-bold">Follow-up Recall Category</label>
-                <select wire:model="appointmentRecallCategory"
+                <select wire:model.live="appointmentRecallCategory"
                         class="form-control @error('appointmentRecallCategory') is-invalid @enderror">
                     <option value="">Use appointment reason</option>
                     @foreach($this->appointmentRecallCategories as $category)
@@ -175,7 +175,7 @@ Features:
                     Date/Time <span class="text-danger">*</span>
                 </label>
                 <input type="datetime-local" 
-                       wire:model.defer="appointmentScheduledAt" 
+                       wire:model="appointmentScheduledAt"
                        class="form-control @error('appointmentScheduledAt') is-invalid @enderror"
                        min="{{ now()->format('Y-m-d\TH:i') }}">
                 @error('appointmentScheduledAt') 
@@ -185,7 +185,7 @@ Features:
 
             <div class="form-group">
                 <label class="font-weight-bold">Reminder Channel</label>
-                <select wire:model="appointmentReminderChannel"
+                <select wire:model.live="appointmentReminderChannel"
                         class="form-control @error('appointmentReminderChannel') is-invalid @enderror">
                     <option value="whatsapp">WhatsApp</option>
                     <option value="sms">SMS</option>
@@ -200,7 +200,7 @@ Features:
             {{-- Notes (Optional) --}}
             <div class="form-group mb-4">
                 <label class="font-weight-bold">Notes (Optional)</label>
-                <textarea wire:model.defer="appointmentNotes" 
+                <textarea wire:model="appointmentNotes"
                           class="form-control" 
                           rows="2" 
                           placeholder="Additional notes or instructions..."></textarea>

@@ -59,19 +59,19 @@
         <div class="card-body py-3">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
-                    <input type="text" wire:model.debounce.300ms="search"
+                    <input type="text" wire:model.live.debounce.300ms="search"
                            class="form-control form-control-sm bg-light border-0"
                            placeholder="Search name, phone, message…">
                 </div>
                 <div class="col-md-2">
-                    <select wire:model="filterStatus" class="form-control form-control-sm bg-light border-0">
+                    <select wire:model.live="filterStatus" class="form-control form-control-sm bg-light border-0">
                         <option value="">All statuses</option>
                         <option value="success">Delivered</option>
                         <option value="failed">Failed</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select wire:model="filterTemplate" class="form-control form-control-sm bg-light border-0">
+                    <select wire:model.live="filterTemplate" class="form-control form-control-sm bg-light border-0">
                         <option value="">All templates</option>
                         @foreach($templates as $tpl)
                             <option value="{{ $tpl }}">{{ ucwords(str_replace('_', ' ', $tpl)) }}</option>
@@ -79,11 +79,11 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" wire:model="dateFrom"
+                    <input type="date" wire:model.live="dateFrom"
                            class="form-control form-control-sm bg-light border-0" placeholder="From">
                 </div>
                 <div class="col-md-2">
-                    <input type="date" wire:model="dateTo"
+                    <input type="date" wire:model.live="dateTo"
                            class="form-control form-control-sm bg-light border-0" placeholder="To">
                 </div>
                 <div class="col-md-1">

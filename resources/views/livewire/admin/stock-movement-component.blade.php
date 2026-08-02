@@ -48,16 +48,16 @@
                             <i class="fas fa-plus-circle mr-1"></i> Receive New Stock
                         </h3>
                     </div>
-                    <form wire:submit.prevent="receiveStock">
+                    <form wire:submit="receiveStock">
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Find Product</label>
-                                <input type="text" class="form-control" wire:model.debounce.300ms="productSearch" placeholder="Search product, batch or category...">
+                                <input type="text" class="form-control" wire:model.live.debounce.300ms="productSearch" placeholder="Search product, batch or category...">
                             </div>
 
                             <div class="form-group">
                                 <label>Product <span class="text-danger">*</span></label>
-                                <select class="form-control @error('productId') is-invalid @enderror" wire:model="productId">
+                                <select class="form-control @error('productId') is-invalid @enderror" wire:model.live="productId">
                                     <option value="">Select product...</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}">
@@ -70,45 +70,45 @@
 
                             <div class="form-group">
                                 <label>Supplier</label>
-                                <input type="text" class="form-control @error('supplier') is-invalid @enderror" wire:model.defer="supplier" placeholder="Supplier name">
+                                <input type="text" class="form-control @error('supplier') is-invalid @enderror" wire:model="supplier" placeholder="Supplier name">
                                 @error('supplier') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Quantity <span class="text-danger">*</span></label>
-                                    <input type="number" min="1" class="form-control @error('quantity') is-invalid @enderror" wire:model.defer="quantity">
+                                    <input type="number" min="1" class="form-control @error('quantity') is-invalid @enderror" wire:model="quantity">
                                     @error('quantity') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Cost Price</label>
-                                    <input type="number" min="0" step="0.01" class="form-control @error('costPrice') is-invalid @enderror" wire:model.defer="costPrice">
+                                    <input type="number" min="0" step="0.01" class="form-control @error('costPrice') is-invalid @enderror" wire:model="costPrice">
                                     @error('costPrice') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label>Batch Number</label>
-                                <input type="text" class="form-control @error('batchNumber') is-invalid @enderror" wire:model.defer="batchNumber">
+                                <input type="text" class="form-control @error('batchNumber') is-invalid @enderror" wire:model="batchNumber">
                                 @error('batchNumber') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Manufacture Date</label>
-                                    <input type="date" class="form-control @error('manufactureDate') is-invalid @enderror" wire:model.defer="manufactureDate">
+                                    <input type="date" class="form-control @error('manufactureDate') is-invalid @enderror" wire:model="manufactureDate">
                                     @error('manufactureDate') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Expiry Date</label>
-                                    <input type="date" class="form-control @error('expiryDate') is-invalid @enderror" wire:model.defer="expiryDate">
+                                    <input type="date" class="form-control @error('expiryDate') is-invalid @enderror" wire:model="expiryDate">
                                     @error('expiryDate') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
                             <div class="form-group mb-0">
                                 <label>Notes</label>
-                                <textarea class="form-control @error('notes') is-invalid @enderror" rows="3" wire:model.defer="notes" placeholder="Invoice number, delivery note, condition of goods..."></textarea>
+                                <textarea class="form-control @error('notes') is-invalid @enderror" rows="3" wire:model="notes" placeholder="Invoice number, delivery note, condition of goods..."></textarea>
                                 @error('notes') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -135,15 +135,15 @@
                         <div class="row align-items-end">
                             <div class="col-md-5 mb-2">
                                 <label class="small text-muted font-weight-bold">Search Movements</label>
-                                <input type="text" class="form-control" wire:model.debounce.400ms="search" placeholder="Reference, product, supplier, batch...">
+                                <input type="text" class="form-control" wire:model.live.debounce.400ms="search" placeholder="Reference, product, supplier, batch...">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="small text-muted font-weight-bold">From</label>
-                                <input type="date" class="form-control" wire:model="fromDate">
+                                <input type="date" class="form-control" wire:model.live="fromDate">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="small text-muted font-weight-bold">To</label>
-                                <input type="date" class="form-control" wire:model="toDate">
+                                <input type="date" class="form-control" wire:model.live="toDate">
                             </div>
                             <div class="col-md-1 mb-2">
                                 <button class="btn btn-light border btn-block" wire:click="$set('search','')" title="Clear search">

@@ -50,7 +50,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                             </div>
-                            <input wire:model.debounce.300ms="searchTerm"
+                            <input wire:model.live.debounce.300ms="searchTerm"
                                 type="text" class="form-control border-left-0"
                                 placeholder="Search name, contact, phone…">
                             @if($searchTerm)
@@ -185,7 +185,7 @@
                         {{-- Name --}}
                         <div class="col-md-6 form-group">
                             <label>Supplier Name <span class="text-danger">*</span></label>
-                            <input wire:model.defer="state.name" type="text"
+                            <input wire:model="state.name" type="text"
                                 class="form-control @error('state.name') is-invalid @enderror"
                                 placeholder="e.g. Luxottica Ghana Ltd">
                             @error('state.name')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -193,7 +193,7 @@
                         {{-- Contact Person --}}
                         <div class="col-md-6 form-group">
                             <label>Contact Person</label>
-                            <input wire:model.defer="state.contact_person" type="text"
+                            <input wire:model="state.contact_person" type="text"
                                 class="form-control @error('state.contact_person') is-invalid @enderror"
                                 placeholder="e.g. Ama Asante">
                             @error('state.contact_person')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -201,7 +201,7 @@
                         {{-- Phone --}}
                         <div class="col-md-6 form-group">
                             <label>Phone</label>
-                            <input wire:model.defer="state.phone" type="text"
+                            <input wire:model="state.phone" type="text"
                                 class="form-control @error('state.phone') is-invalid @enderror"
                                 placeholder="e.g. 0244000000">
                             @error('state.phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -209,7 +209,7 @@
                         {{-- Email --}}
                         <div class="col-md-6 form-group">
                             <label>Email</label>
-                            <input wire:model.defer="state.email" type="email"
+                            <input wire:model="state.email" type="email"
                                 class="form-control @error('state.email') is-invalid @enderror"
                                 placeholder="supplier@example.com">
                             @error('state.email')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -217,7 +217,7 @@
                         {{-- Address --}}
                         <div class="col-md-8 form-group">
                             <label>Address</label>
-                            <input wire:model.defer="state.address" type="text"
+                            <input wire:model="state.address" type="text"
                                 class="form-control @error('state.address') is-invalid @enderror"
                                 placeholder="Street / Area / City">
                             @error('state.address')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -225,7 +225,7 @@
                         {{-- Lead Time --}}
                         <div class="col-md-4 form-group">
                             <label>Lead Time (days)</label>
-                            <input wire:model.defer="state.lead_time_days" type="number"
+                            <input wire:model="state.lead_time_days" type="number"
                                 min="1" max="365"
                                 class="form-control @error('state.lead_time_days') is-invalid @enderror"
                                 placeholder="e.g. 7">
@@ -234,7 +234,7 @@
                         {{-- Notes --}}
                         <div class="col-md-12 form-group">
                             <label>Notes</label>
-                            <textarea wire:model.defer="state.notes" rows="2"
+                            <textarea wire:model="state.notes" rows="2"
                                 class="form-control @error('state.notes') is-invalid @enderror"
                                 placeholder="Payment terms, delivery conditions, etc."></textarea>
                             @error('state.notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -242,7 +242,7 @@
                         {{-- Active toggle --}}
                         <div class="col-md-12 form-group mb-0">
                             <div class="custom-control custom-switch">
-                                <input wire:model.defer="state.is_active"
+                                <input wire:model="state.is_active"
                                     type="checkbox" class="custom-control-input" id="supplierActive">
                                 <label class="custom-control-label" for="supplierActive">Active supplier</label>
                             </div>

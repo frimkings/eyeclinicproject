@@ -6,7 +6,7 @@
                 <!-- Product Select -->
                 <div class="col-md-5">
                     <label class="small font-weight-bold">Product <span class="text-danger">*</span></label>
-                    <select wire:model="selectedProductId" class="form-control form-control-sm">
+                    <select wire:model.live="selectedProductId" class="form-control form-control-sm">
                         <option value="">-- Select Product --</option>
                         @foreach($productsList as $product)
                             <option value="{{ $product->id }}">
@@ -20,14 +20,14 @@
                 <!-- Quantity -->
                 <div class="col-md-2">
                     <label class="small font-weight-bold">Quantity <span class="text-danger">*</span></label>
-                    <input type="number" wire:model="productQuantity" min="1" class="form-control form-control-sm">
+                    <input type="number" wire:model.live="productQuantity" min="1" class="form-control form-control-sm">
                     @error('productQuantity') <small class="text-danger">{{ $message }}</small> @enderror
                 </div>
 
                 <!-- Price (auto-fill) -->
                 <div class="col-md-2">
                     <label class="small font-weight-bold">Price ({{ currency() }})</label>
-                    <input type="text" wire:model="productPrice" class="form-control form-control-sm" readonly>
+                    <input type="text" wire:model.live="productPrice" class="form-control form-control-sm" readonly>
                 </div>
 
                 <!-- Add Button -->
@@ -96,7 +96,7 @@
 
         @if(count($cartItems) > 0)
             <div class="card-footer text-right">
-                <button wire:click.prevent="$emit('cartUpdated')" class="btn btn-sm btn-primary">
+                <button wire:click.prevent="$dispatch('cartUpdated')" class="btn btn-sm btn-primary">
                     <i class="fas fa-save mr-1"></i>Save Cart
                 </button>
             </div>

@@ -242,7 +242,7 @@
 
 {{-- Chart.js --}}
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     const ctx = document.getElementById('cashierSalesChart');
     if (!ctx) return;
 

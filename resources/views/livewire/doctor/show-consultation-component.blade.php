@@ -87,7 +87,7 @@
             <history>
                 <div class="row">
                     <div class="form-floating col-12">
-                        <textarea wire:model.defer="state.chiefComplaint" class="form-control"
+                        <textarea wire:model="state.chiefComplaint" class="form-control"
                             class="form-control @error('chiefComplaint') is-invalid @enderror" id="chiefComplaint"
                             placeholder="Leave a comment here" id="CC"> @error('chiefComplaint')
                                 <div class="invalid-feedback">
@@ -105,7 +105,7 @@
                 <div wire:ignore class="row">
                     <div class="col-12">
                         <label for="odq" class="col-sm-12 col-form-label row ">Direct Questions</label>
-                        <select class="odq col-sm-12 col-form-label" wire:model.defer="state.odq" multiple="multiple">
+                        <select class="odq col-sm-12 col-form-label" wire:model="state.odq" multiple="multiple">
                             <option value="discharges">discharges</option>
                             <option value="tearing">tearing</option>
                             <option value="photophobia">photophobia</option>
@@ -120,7 +120,7 @@
                 </div>
                 <div class="row">
                     <div class="form-floating mt-3 col-12">
-                        <textarea wire:model.defer="state.others" class="form-control"
+                        <textarea wire:model="state.others" class="form-control"
                             placeholder="Leave a comment here" id="others"></textarea>
                         <label for="others" class="col-sm-12 col-form-label">..Others</label>
                     </div>
@@ -147,13 +147,13 @@
                             <tbody>
                                 <tr>
                                     <th scope="row">0D</th>
-                                    <td><input wire:model.defer="state.vaOD6m" type="text"
+                                    <td><input wire:model="state.vaOD6m" type="text"
                                             class=" form-control form-control-sm visualAcuity" list="distance_va">1
                                     </td>
-                                    <td><input wire:model.defer="state.vaOD4m" type="text"
+                                    <td><input wire:model="state.vaOD4m" type="text"
                                             class="form-control form-control-sm visualAcuity" list="near_va">2
                                     </td>
-                                    <td><input wire:model.defer="state.phOD6m" type="text"
+                                    <td><input wire:model="state.phOD6m" type="text"
                                             class="form-control form-control-sm visualAcuity" list="distance_va">3
                                     </td>
 
@@ -161,13 +161,13 @@
                                 </tr>
                                 <tr>
                                     <th scope="row">OS</th>
-                                    <td><input wire:model.defer="state.vaOS6m" type="text"
+                                    <td><input wire:model="state.vaOS6m" type="text"
                                             class=" form-control form-control-sm visualAcuity" list="distance_va">4
                                     </td>
-                                    <td><input wire:model.defer="state.vaOS4m" type="text"
+                                    <td><input wire:model="state.vaOS4m" type="text"
                                             class="form-control form-control-sm visualAcuity" list="near_va">5
                                     </td>
-                                    <td><input wire:model.defer="state.phOS6m" type="text"
+                                    <td><input wire:model="state.phOS6m" type="text"
                                             class="form-control form-control-sm visualAcuity" list="distance_va">6
                                     </td>
                                 </tr>
@@ -196,10 +196,10 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><input wire:model.defer="state.currentSrxOD" type="text"
+                                    <td><input wire:model="state.currentSrxOD" type="text"
                                             class=" form-control form-control-sm currentSRX" list="">
                                     </td>
-                                    <td><input wire:model.defer="state.currentSrxOS" type="text"
+                                    <td><input wire:model="state.currentSrxOS" type="text"
                                             class=" form-control form-control-sm currentSRX">
                                     </td>
 
@@ -225,7 +225,7 @@
                 </div>
                 <div class="row">
                     <div class="form-floating mt-3 col-12">
-                        <textarea wire:model.defer="state.notes" class="form-control" id="notes"></textarea>
+                        <textarea wire:model="state.notes" class="form-control" id="notes"></textarea>
                         <label for="notes" class="col-sm-12 col-form-label">..Notes</label>
                     </div>
                 </div>
@@ -262,9 +262,9 @@
                         <tbody>
                             <tr>
                                 <th scope="row">Lids</th>
-                                <td><input wire:model.defer="state.lidsOD" type="text"
+                                <td><input wire:model="state.lidsOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.lidsOS" type="text"
+                                <td><input wire:model="state.lidsOS" type="text"
                                         class="form-control form-control-sm externals" list="nea">
                                 </td>
 
@@ -272,108 +272,108 @@
                             </tr>
                             <tr>
                                 <th scope="row">Conjunctiva</th>
-                                <td><input wire:model.defer="state.conjunctivaOD" type="text"
+                                <td><input wire:model="state.conjunctivaOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.conjunctivaOS" type="text"
+                                <td><input wire:model="state.conjunctivaOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Cornea</th>
-                                <td><input wire:model.defer="state.corneaOD" type="text"
+                                <td><input wire:model="state.corneaOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.corneaOS" type="text"
+                                <td><input wire:model="state.corneaOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">AC</th>
-                                <td><input wire:model.defer="state.acOD" type="text"
+                                <td><input wire:model="state.acOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.acOS" type="text"
+                                <td><input wire:model="state.acOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Iris</th>
-                                <td><input wire:model.defer="state.irisOD" type="text"
+                                <td><input wire:model="state.irisOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.irisOS" type="text"
+                                <td><input wire:model="state.irisOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Pupil</th>
-                                <td><input wire:model.defer="state.pupilOD" type="text"
+                                <td><input wire:model="state.pupilOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.pupilOS" type="text"
+                                <td><input wire:model="state.pupilOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Lens</th>
-                                <td><input wire:model.defer="state.lensOD" type="text"
+                                <td><input wire:model="state.lensOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.lensOS" type="text"
+                                <td><input wire:model="state.lensOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Vitreous</th>
-                                <td><input wire:model.defer="state.vitreousOD" type="text"
+                                <td><input wire:model="state.vitreousOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.vitreousOS" type="text"
+                                <td><input wire:model="state.vitreousOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Fundus</th>
-                                <td><input wire:model.defer="state.fundusOD" type="text"
+                                <td><input wire:model="state.fundusOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.fundusOS" type="text"
+                                <td><input wire:model="state.fundusOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">CDR</th>
-                                <td><input wire:model.defer="state.cdrOD" type="text"
+                                <td><input wire:model="state.cdrOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.cdrOS" type="text"
+                                <td><input wire:model="state.cdrOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Macula</th>
-                                <td><input wire:model.defer="state.maculaOD" type="text"
+                                <td><input wire:model="state.maculaOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.maculaOS" type="text"
+                                <td><input wire:model="state.maculaOS" type="text"
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">Periphery</th>
-                                <td><input wire:model.defer="state.peripheryOD" type="text"
+                                <td><input wire:model="state.peripheryOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model.defer="state.peripheryOS" type="text"
+                                <td><input wire:model="state.peripheryOS" type="text"
                                         class="form-control form-control-sm externals">
                                 </td>
 
                             </tr>
                             <tr>
                                 <th scope="row">IOP</th>
-                                <td><input wire:model.defer="state.IOPOD" type="number"
+                                <td><input wire:model="state.IOPOD" type="number"
                                         class=" form-control form-control-sm externals"></td>
-                                <td><input wire:model.defer="state.IOPOS" type="number"
+                                <td><input wire:model="state.IOPOS" type="number"
                                         class="form-control form-control-sm externals">
                                 </td>
 
@@ -446,7 +446,7 @@
 
 
     {{-- modal --}}
-    <form autocomplete="off" wire:submit.prevent="addSpectaclePrescription">
+    <form autocomplete="off" wire:submit="addSpectaclePrescription">
         <div class="modal fade" id="mdodal-info" wire.ignore.self>
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content bg-info">
@@ -505,46 +505,46 @@
                                     <tbody>
                                         <tr>
                                             <th scope="row">OD</th>
-                                            <td><input wire:model.defer="specs.distanceOdSphere" type="text"
+                                            <td><input wire:model="specs.distanceOdSphere" type="text"
                                                     class="form-control form-control-sm externals" list="nea">
                                             </td>
 
-                                            <td><input wire:model.defer="specs.distanceOdCyl" type="text"
+                                            <td><input wire:model="specs.distanceOdCyl" type="text"
                                                     class="form-control form-control-sm externals" list="nea">
                                             </td>
-                                            <td><input wire:model.defer="specs.distanceOdAxis" type="text"
+                                            <td><input wire:model="specs.distanceOdAxis" type="text"
                                                     class=" form-control form-control-sm externals" list="distance">
                                             </td>
-                                            <td><input wire:model.defer="specs.distanceOdVa" type="text"
+                                            <td><input wire:model="specs.distanceOdVa" type="text"
                                                     class=" form-control form-control-sm externals" list="distance">
                                             </td>
 
-                                            <td><input wire:model.defer="specs.addOd" type="text"
+                                            <td><input wire:model="specs.addOd" type="text"
                                                     class=" form-control form-control-sm externals" list="distance">
                                             </td>
-                                            <td><input wire:model.defer="specs.addOdVa" type="text"
+                                            <td><input wire:model="specs.addOdVa" type="text"
                                                     class="form-control form-control-sm externals" list="nea">
                                             </td>
                                         </tr>
                                         <th scope="row">OS</th>
-                                        <td><input wire:model.defer="specs.distanceOsSphere" type="text"
+                                        <td><input wire:model="specs.distanceOsSphere" type="text"
                                                 class="form-control form-control-sm externals" list="nea">
                                         </td>
 
-                                        <td><input wire:model.defer="specs.distanceOsCyl" type="text"
+                                        <td><input wire:model="specs.distanceOsCyl" type="text"
                                                 class="form-control form-control-sm externals" list="nea">
                                         </td>
-                                        <td><input wire:model.defer="specs.distanceOsAxis" type="text"
+                                        <td><input wire:model="specs.distanceOsAxis" type="text"
                                                 class=" form-control form-control-sm externals" list="distance">
                                         </td>
-                                        <td><input wire:model.defer="specs.distanceOsVa" type="text"
+                                        <td><input wire:model="specs.distanceOsVa" type="text"
                                                 class=" form-control form-control-sm externals" list="distance">
                                         </td>
 
-                                        <td><input wire:model.defer="specs.addOs" type="text"
+                                        <td><input wire:model="specs.addOs" type="text"
                                                 class=" form-control form-control-sm externals" list="distance">
                                         </td>
-                                        <td><input wire:model.defer="specs.addOsVa" type="text"
+                                        <td><input wire:model="specs.addOsVa" type="text"
                                                 class="form-control form-control-sm externals" list="nea">
                                         </td>
                                     </tbody>
@@ -561,7 +561,7 @@
                             </div>
                             <div class="col-12 col-sm-4">
                                 <label for="lensType">Lens Type</label>
-                                <select class="custom-select" id="lensType" wire:model.defer="specs.lensType"
+                                <select class="custom-select" id="lensType" wire:model="specs.lensType"
                                     class="form-control @error('lensType') is-invalid @enderror" id="lensType" required>
                                     <option>......</option>
                                     <option value="SV Photo, AR">SV Photo, AR</option>
@@ -622,7 +622,7 @@
                     <div class="col-12">
                         <div class="form-group">
                             <label for="gender">Status</label>
-                            <select class="custom-select" id="gender2" wire:model.defer="specs.paymentStatus"
+                            <select class="custom-select" id="gender2" wire:model="specs.paymentStatus"
                                 class="form-control @error('gender') is-invalid @enderror" id="gender"
                                 placeholder="gender">
                                 <option>......</option>

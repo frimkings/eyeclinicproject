@@ -26,7 +26,7 @@
                         type="text"
                         id="product_search"
                         placeholder="Scan Barcode or Search Product Name..."
-                        wire:model.debounce.300ms="searchQuery"
+                        wire:model.live.debounce.300ms="searchQuery"
                         class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                         autocomplete="off"
                     />
@@ -64,7 +64,7 @@
                                 <p class="text-xs text-gray-500">SKU: COF001</p>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="number" wire:model.lazy="cart.item_id_1.qty" value="2" min="1" class="w-16 border-gray-300 rounded-md text-sm text-center p-1">
+                                <input type="number" wire:model.blur="cart.item_id_1.qty" value="2" min="1" class="w-16 border-gray-300 rounded-md text-sm text-center p-1">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">$12.50</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">$25.00</td>
@@ -81,7 +81,7 @@
                                 <p class="text-xs text-gray-500">SKU: MLK003</p>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="number" wire:model.lazy="cart.item_id_2.qty" value="1" min="1" class="w-16 border-gray-300 rounded-md text-sm text-center p-1">
+                                <input type="number" wire:model.blur="cart.item_id_2.qty" value="1" min="1" class="w-16 border-gray-300 rounded-md text-sm text-center p-1">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">$4.99</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">$4.99</td>

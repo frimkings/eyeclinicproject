@@ -3,7 +3,7 @@
 ])
 
 <div
-    x-data="{ value: @entangle($attributes->wire('model')) }"
+    x-data="{ value: @entangle($attributes->wire('model')).live }"
     x-on:change="value = $event.target.value"
     x-init="
         new Pikaday({ 
@@ -19,11 +19,11 @@
         });"
 >
     <input
-        {{ $attributes->whereDoesntStartWith('wire:model') }}
+        {{ $attributes->whereDoesntStartWith('wire:model.live') }}
         x-ref="input"
         x-bind:value="value"
         type="text"
         placeholder="YYYY-MM-DD"
-        class="form-control @error($attributes->get('wire:model.defer')) is-invalid @enderror"
+        class="form-control @error($attributes->get('wire:model')) is-invalid @enderror"
     />
 </div>

@@ -6,7 +6,7 @@
                 <small class="text-muted text-uppercase font-weight-bold">End-of-day reconciliation</small>
             </div>
             <div class="d-flex" style="gap:.5rem;">
-                <input type="date" class="form-control" wire:model="reportDate">
+                <input type="date" class="form-control" wire:model.live="reportDate">
                 <button class="btn btn-primary" wire:click="print"><i class="fas fa-print mr-1"></i>Print</button>
             </div>
         </div>

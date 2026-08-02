@@ -69,17 +69,17 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-white"><i class="fas fa-calendar text-muted"></i></span>
                             </div>
-                            <input wire:model.lazy="fromDate" type="date" class="form-control border-left-0" title="From date">
+                            <input wire:model.blur="fromDate" type="date" class="form-control border-left-0" title="From date">
                         </div>
                         <div class="input-group" style="max-width:160px;">
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-white"><i class="fas fa-calendar text-muted"></i></span>
                             </div>
-                            <input wire:model.lazy="toDate" type="date" class="form-control border-left-0" title="To date">
+                            <input wire:model.blur="toDate" type="date" class="form-control border-left-0" title="To date">
                         </div>
 
                         {{-- Category filter --}}
-                        <select wire:model="categoryId" class="form-control" style="max-width:180px;">
+                        <select wire:model.live="categoryId" class="form-control" style="max-width:180px;">
                             <option value="">All Categories</option>
                             @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -91,7 +91,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                             </div>
-                            <input wire:model.debounce.300ms="search"
+                            <input wire:model.live.debounce.300ms="search"
                                 type="text" class="form-control border-left-0"
                                 placeholder="Description or reference…">
                             @if($search)
@@ -223,7 +223,7 @@
                 @if($expenses->hasPages())
                     <div class="card-footer d-flex align-items-center justify-content-between">
                         {{ $expenses->links() }}
-                        <select wire:model="perPage" class="form-control form-control-sm" style="width:auto;">
+                        <select wire:model.live="perPage" class="form-control form-control-sm" style="width:auto;">
                             <option value="15">15 / page</option>
                             <option value="30">30 / page</option>
                             <option value="50">50 / page</option>
@@ -328,19 +328,19 @@
                     <div class="row">
                         <div class="col-md-8 form-group">
                             <label>Category Name <span class="text-danger">*</span></label>
-                            <input wire:model.defer="categoryState.name" type="text"
+                            <input wire:model="categoryState.name" type="text"
                                 class="form-control @error('categoryState.name') is-invalid @enderror"
                                 placeholder="e.g. Staff Salaries">
                             @error('categoryState.name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4 form-group">
                             <label>Color</label>
-                            <input wire:model.defer="categoryState.color" type="color"
+                            <input wire:model="categoryState.color" type="color"
                                 class="form-control" style="height:38px; padding:2px;">
                         </div>
                         <div class="col-md-12 form-group">
                             <label>Income Statement Section <span class="text-danger">*</span></label>
-                            <select wire:model.defer="categoryState.section"
+                            <select wire:model="categoryState.section"
                                 class="form-control @error('categoryState.section') is-invalid @enderror">
                                 @foreach($sectionLabels as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -351,12 +351,12 @@
                         </div>
                         <div class="col-md-12 form-group">
                             <label>Description</label>
-                            <input wire:model.defer="categoryState.description" type="text"
+                            <input wire:model="categoryState.description" type="text"
                                 class="form-control" placeholder="Optional note">
                         </div>
                         <div class="col-md-12 form-group mb-0">
                             <div class="custom-control custom-switch">
-                                <input wire:model.defer="categoryState.is_active"
+                                <input wire:model="categoryState.is_active"
                                     type="checkbox" class="custom-control-input" id="catActive">
                                 <label class="custom-control-label" for="catActive">Active</label>
                             </div>
@@ -394,14 +394,14 @@
                         {{-- Date --}}
                         <div class="col-md-6 form-group">
                             <label>Date <span class="text-danger">*</span></label>
-                            <input wire:model.defer="state.expense_date" type="date"
+                            <input wire:model="state.expense_date" type="date"
                                 class="form-control @error('state.expense_date') is-invalid @enderror">
                             @error('state.expense_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         {{-- Amount --}}
                         <div class="col-md-6 form-group">
                             <label>Amount ({{ currency() }}) <span class="text-danger">*</span></label>
-                            <input wire:model.defer="state.amount" type="number" step="0.01" min="0.01"
+                            <input wire:model="state.amount" type="number" step="0.01" min="0.01"
                                 class="form-control @error('state.amount') is-invalid @enderror"
                                 placeholder="0.00">
                             @error('state.amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -409,7 +409,7 @@
                         {{-- Category --}}
                         <div class="col-md-12 form-group">
                             <label>Category</label>
-                            <select wire:model.defer="state.expense_category_id"
+                            <select wire:model="state.expense_category_id"
                                 class="form-control @error('state.expense_category_id') is-invalid @enderror">
                                 <option value="">— Uncategorised —</option>
                                 @foreach($categories as $cat)
@@ -421,7 +421,7 @@
                         {{-- Description --}}
                         <div class="col-md-12 form-group">
                             <label>Description <span class="text-danger">*</span></label>
-                            <input wire:model.defer="state.description" type="text"
+                            <input wire:model="state.description" type="text"
                                 class="form-control @error('state.description') is-invalid @enderror"
                                 placeholder="e.g. Monthly rent payment">
                             @error('state.description')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -429,7 +429,7 @@
                         {{-- Reference --}}
                         <div class="col-md-6 form-group">
                             <label>Receipt / Invoice #</label>
-                            <input wire:model.defer="state.reference" type="text"
+                            <input wire:model="state.reference" type="text"
                                 class="form-control @error('state.reference') is-invalid @enderror"
                                 placeholder="e.g. INV-2026-0042">
                             @error('state.reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -437,7 +437,7 @@
                         {{-- Notes --}}
                         <div class="col-md-6 form-group">
                             <label>Notes</label>
-                            <input wire:model.defer="state.notes" type="text"
+                            <input wire:model="state.notes" type="text"
                                 class="form-control"
                                 placeholder="Optional note">
                         </div>
@@ -455,7 +455,7 @@
                                     </button>
                                 </div>
                             @endif
-                            <input wire:model="receiptFile" type="file" class="form-control-file"
+                            <input wire:model.live="receiptFile" type="file" class="form-control-file"
                                    accept="image/*,application/pdf">
                             @error('receiptFile')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                             @if($receiptFile)

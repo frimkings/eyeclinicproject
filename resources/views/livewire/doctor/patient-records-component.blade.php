@@ -137,7 +137,7 @@
                         <div style="position:relative;">
                             <div class="search-box">
                                 <i class="fas fa-search search-box__icon"></i>
-                                <input type="text" wire:model="searchTerm" class="search-box__input" placeholder="Search records...">
+                                <input type="text" wire:model.live="searchTerm" class="search-box__input" placeholder="Search records...">
                             </div>
                         </div>
                     </div>
@@ -316,7 +316,7 @@
                                     <tbody>
                                         @forelse($patientRecords as $record)
                                             <tr>
-                                                <td><input type="checkbox" class="modern-checkbox" wire:model="selectedVisitSummaries" value="{{ $record->id }}" title="Select for combined PDF"></td>
+                                                <td><input type="checkbox" class="modern-checkbox" wire:model.live="selectedVisitSummaries" value="{{ $record->id }}" title="Select for combined PDF"></td>
                                                 <td>
                                                     <div class="visit-date">{{ $record->created_at->format('d M, Y') }}</div>
                                                     <div class="visit-time">{{ $record->created_at->format('h:i A') }}</div>
@@ -485,7 +485,7 @@
                         </div>
                     @endif
 
-                    <form wire:submit.prevent="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
+                    <form wire:submit="{{ $isEditMode ? 'updateConsultation' : 'createConsultation' }}">
                         {{-- Chief Complaint & History --}}
                         <div class="card border mb-3 {{ $consultationFieldsLocked ? 'consultation-section-locked' : '' }}">
                             <div class="card-header bg-light">
@@ -501,7 +501,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="font-weight-bold">Chief Complaint <span
                                                 class="text-danger">*</span></label>
-                                        <textarea wire:model.defer="state.chiefComplaint"
+                                        <textarea wire:model="state.chiefComplaint"
                                             class="form-control @error('state.chiefComplaint') is-invalid @enderror"
                                             rows="3" placeholder="Enter patient's main complaint"
                                             {{ $consultationFieldsLocked ? 'disabled' : '' }}></textarea>
@@ -510,7 +510,7 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="font-weight-bold">Other History</label>
-                                        <textarea wire:model.defer="state.others" class="form-control" rows="3"
+                                        <textarea wire:model="state.others" class="form-control" rows="3"
                                             placeholder="Additional medical history"
                                             {{ $consultationFieldsLocked ? 'disabled' : '' }}></textarea>
                                     </div>
@@ -610,21 +610,21 @@
                                         <div class="col-md-5">
                                             @if(Str::contains($odKey, 'IOP'))
                                                 <input type="number" step="0.1" min="0" max="80"
-                                                    wire:model.defer="state.{{ $odKey }}"
+                                                    wire:model="state.{{ $odKey }}"
                                                     class="form-control form-control-sm @error('state.' . $odKey) is-invalid @enderror"
                                                     placeholder="mmHg"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                             @elseif(Str::startsWith($odKey, 'va'))
-                                                <select wire:model.defer="state.{{ $odKey }}"
+                                                <select wire:model="state.{{ $odKey }}"
                                                     class="form-control form-control-sm"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                                     <option value="">— select —</option>
-                                                    @foreach(\App\Http\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
+                                                    @foreach(\App\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
                                                         <option value="{{ $label }}">{{ $label }}{{ $logmar !== null ? ' ('.($logmar >= 0 ? '+' : '').$logmar.')' : ' (NM)' }}</option>
                                                     @endforeach
                                                 </select>
                                             @else
-                                                <input type="text" wire:model.defer="state.{{ $odKey }}"
+                                                <input type="text" wire:model="state.{{ $odKey }}"
                                                     class="form-control form-control-sm"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                             @endif
@@ -634,21 +634,21 @@
                                         <div class="col-md-5">
                                             @if(Str::contains($osKey, 'IOP'))
                                                 <input type="number" step="0.1" min="0" max="80"
-                                                    wire:model.defer="state.{{ $osKey }}"
+                                                    wire:model="state.{{ $osKey }}"
                                                     class="form-control form-control-sm @error('state.' . $osKey) is-invalid @enderror"
                                                     placeholder="mmHg"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                             @elseif(Str::startsWith($osKey, 'va'))
-                                                <select wire:model.defer="state.{{ $osKey }}"
+                                                <select wire:model="state.{{ $osKey }}"
                                                     class="form-control form-control-sm"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                                     <option value="">— select —</option>
-                                                    @foreach(\App\Http\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
+                                                    @foreach(\App\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
                                                         <option value="{{ $label }}">{{ $label }}{{ $logmar !== null ? ' ('.($logmar >= 0 ? '+' : '').$logmar.')' : ' (NM)' }}</option>
                                                     @endforeach
                                                 </select>
                                             @else
-                                                <input type="text" wire:model.defer="state.{{ $osKey }}"
+                                                <input type="text" wire:model="state.{{ $osKey }}"
                                                     class="form-control form-control-sm"
                                                     {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                                             @endif
@@ -681,7 +681,7 @@
                             <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
                         </div>
                         <input type="text" class="form-control" placeholder="Search for a diagnosis..."
-                            wire:model.debounce.300ms="diagnosisSearch"
+                            wire:model.live.debounce.300ms="diagnosisSearch"
                             {{ $consultationFieldsLocked ? 'disabled' : '' }}>
                     </div>
 
@@ -753,13 +753,13 @@
                             </div>
                         @endif
 
-                        <textarea wire:model.defer="clinicalAddendum"
+                        <textarea wire:model="clinicalAddendum"
                             class="form-control clinical-notes-textarea @error('clinicalAddendum') is-invalid @enderror"
                             rows="5" placeholder="Add a signed addendum, management update, or follow-up note..."></textarea>
                         @error('clinicalAddendum') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         <small class="text-success">Stored separately with the author and timestamp; the original note cannot be overwritten.</small>
                     @else
-                        <textarea wire:model.defer="state.notes" class="form-control clinical-notes-textarea" rows="8"
+                        <textarea wire:model="state.notes" class="form-control clinical-notes-textarea" rows="8"
                             placeholder="Enter additional clinical observations, management plans, or notes..."></textarea>
                     @endif
                 </div>
@@ -883,7 +883,7 @@
                         {{-- Product Search --}}
                         <label class="font-weight-bold mb-2">Search Product</label>
                         <div class="position-relative mb-3">
-                            <input type="text" wire:model.debounce.300ms="productSearch"
+                            <input type="text" wire:model.live.debounce.300ms="productSearch"
                                 class="form-control form-control-lg" placeholder="Type product name..."
                                 autocomplete="off">
                             <i class="fas fa-search position-absolute"
@@ -1065,7 +1065,7 @@
                                                 <td>
                                                     @if(!$isLocked)
                                                         <input type="number"
-                                                            wire:model.lazy="productsList.{{ $index }}.quantity"
+                                                            wire:model.blur="productsList.{{ $index }}.quantity"
                                                             wire:change="updateProductQuantity({{ $index }}, $event.target.value)"
                                                             class="form-control form-control-sm text-center" min="1"
                                                             style="width: 50px;">
@@ -1283,7 +1283,7 @@
                         </div>
                     @endif
 
-                    <form wire:submit.prevent="saveRefraction">
+                    <form wire:submit="saveRefraction">
                         <div class="card border mb-3">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 font-weight-bold">Basic Information</h6>
@@ -1292,13 +1292,13 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="font-weight-bold">P.D (mm) <span class="text-danger">*</span></label>
-                                        <input type="number" wire:model.defer="state.pd"
+                                        <input type="number" wire:model="state.pd"
                                             class="form-control @error('state.pd') is-invalid @enderror" step="0.1">
                                         @error('state.pd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
                                     <div class="col-md-6">
                                         <label>Lens Type & Coating *</label>
-                                        <select wire:model="state.lensType" class="form-control">
+                                        <select wire:model.live="state.lensType" class="form-control">
                                             <option value="">Select Type...</option>
                                             @if(filled($state['lensType'] ?? null) && !$lensOptions->flatten()->contains('display_name', $state['lensType']))
                                                 <option value="{{ $state['lensType'] }}">{{ $state['lensType'] }} (Existing)</option>
@@ -1350,12 +1350,12 @@
                                             <tr>
                                                 <td class="font-weight-bold text-center">OD</td>
                                                 <td>
-                                                    <input type="text" wire:model.defer="state.refractionOD"
+                                                    <input type="text" wire:model="state.refractionOD"
                                                         class="form-control">
                                                 </td>
                                                 <td>
-                                                    @php $vaOpts = \App\Http\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable(); @endphp
-                                                    <select wire:model.defer="state.refractionOD_distance_va" class="form-control form-control-sm">
+                                                    @php $vaOpts = \App\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable(); @endphp
+                                                    <select wire:model="state.refractionOD_distance_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
                                                         @foreach($vaOpts as $lbl => $lm)
                                                             <option value="{{ $lbl }}">{{ $lbl }}{{ $lm !== null ? ' ('.($lm >= 0 ? '+' : '').$lm.')' : ' (NM)' }}</option>
@@ -1363,13 +1363,13 @@
                                                     </select>
                                                 </td>
                                                 <td>
-                                                    <input type="text" wire:model.defer="state.refractionOD_ADD"
+                                                    <input type="text" wire:model="state.refractionOD_ADD"
                                                         class="form-control form-control-sm" placeholder="+2.50">
                                                 </td>
                                                 <td>
-                                                    <select wire:model.defer="state.refractionOD_near_va" class="form-control form-control-sm">
+                                                    <select wire:model="state.refractionOD_near_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
-                                                        @php $nearVaOpts = \App\Http\Livewire\Doctor\PatientRecordsComponent::nearVisualAcuityOptions(); @endphp
+                                                        @php $nearVaOpts = \App\Livewire\Doctor\PatientRecordsComponent::nearVisualAcuityOptions(); @endphp
                                                         @if(filled($state['refractionOD_near_va'] ?? null) && !in_array($state['refractionOD_near_va'], $nearVaOpts, true))
                                                             <option value="{{ $state['refractionOD_near_va'] }}">{{ $state['refractionOD_near_va'] }} (Existing)</option>
                                                         @endif
@@ -1382,11 +1382,11 @@
                                             <tr>
                                                 <td class="font-weight-bold text-center">OS</td>
                                                 <td>
-                                                    <input type="text" wire:model.defer="state.refractionOS"
+                                                    <input type="text" wire:model="state.refractionOS"
                                                         class="form-control form-control-sm">
                                                 </td>
                                                 <td>
-                                                    <select wire:model.defer="state.refractionOS_distance_va" class="form-control form-control-sm">
+                                                    <select wire:model="state.refractionOS_distance_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
                                                         @foreach($vaOpts as $lbl => $lm)
                                                             <option value="{{ $lbl }}">{{ $lbl }}{{ $lm !== null ? ' ('.($lm >= 0 ? '+' : '').$lm.')' : ' (NM)' }}</option>
@@ -1394,11 +1394,11 @@
                                                     </select>
                                                 </td>
                                                 <td>
-                                                    <input type="text" wire:model.defer="state.refractionOS_ADD"
+                                                    <input type="text" wire:model="state.refractionOS_ADD"
                                                         class="form-control form-control-sm" placeholder="+2.50">
                                                 </td>
                                                 <td>
-                                                    <select wire:model.defer="state.refractionOS_near_va" class="form-control form-control-sm">
+                                                    <select wire:model="state.refractionOS_near_va" class="form-control form-control-sm">
                                                         <option value="">—</option>
                                                         @if(filled($state['refractionOS_near_va'] ?? null) && !in_array($state['refractionOS_near_va'], $nearVaOpts, true))
                                                             <option value="{{ $state['refractionOS_near_va'] }}">{{ $state['refractionOS_near_va'] }} (Existing)</option>
@@ -1415,7 +1415,7 @@
 
                                 <div class="mt-3">
                                     <label class="font-weight-bold">Notes</label>
-                                    <textarea wire:model.defer="state.refractionnotes" class="form-control" rows="3"></textarea>
+                                    <textarea wire:model="state.refractionnotes" class="form-control" rows="3"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1460,11 +1460,11 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <form wire:submit.prevent="uploadPatientDocument">
+                                    <form wire:submit="uploadPatientDocument">
                                         <div class="form-row">
                                             <div class="col-md-6 mb-3">
                                                 <label class="font-weight-bold small">Document Type</label>
-                                                <select wire:model="documentType" class="form-control form-control-sm">
+                                                <select wire:model.live="documentType" class="form-control form-control-sm">
                                                     <option value="fundus_photo">Fundus Photo</option>
                                                     <option value="oct">OCT</option>
                                                     <option value="visual_field">Visual Field</option>
@@ -1475,7 +1475,7 @@
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label class="font-weight-bold small">Visit</label>
-                                                <select wire:model="documentConsultationId" class="form-control form-control-sm">
+                                                <select wire:model.live="documentConsultationId" class="form-control form-control-sm">
                                                     <option value="">General patient file</option>
                                                     @foreach($patientRecords as $record)
                                                         <option value="{{ $record->id }}">{{ $record->created_at->format('d M Y') }}</option>
@@ -1487,7 +1487,7 @@
 
                                         <div class="mb-3">
                                             <label class="font-weight-bold small">Title</label>
-                                            <input type="text" wire:model.defer="documentTitle" class="form-control form-control-sm"
+                                            <input type="text" wire:model="documentTitle" class="form-control form-control-sm"
                                                 placeholder="e.g. Left eye OCT macula">
                                             @error('documentTitle') <small class="text-danger">{{ $message }}</small> @enderror
                                         </div>
@@ -1495,7 +1495,7 @@
                                         <div class="mb-3">
                                             <label class="font-weight-bold small">File</label>
                                             <input type="file"
-                                                wire:model="documentFiles"
+                                                wire:model.live="documentFiles"
                                                 wire:key="patient-document-upload-{{ $documentUploadKey }}"
                                                 class="form-control form-control-sm"
                                                 accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
@@ -1507,7 +1507,7 @@
 
                                         <div class="mb-3">
                                             <label class="font-weight-bold small">Notes</label>
-                                            <textarea wire:model.defer="documentNotes" class="form-control form-control-sm" rows="2"></textarea>
+                                            <textarea wire:model="documentNotes" class="form-control form-control-sm" rows="2"></textarea>
                                             @error('documentNotes') <small class="text-danger">{{ $message }}</small> @enderror
                                         </div>
 
@@ -1641,12 +1641,12 @@
         $select.val(values).trigger('change.select2');
     }
 
-    document.addEventListener('livewire:load', function () {
+    document.addEventListener('livewire:init', function () {
         initOdqSelect();
 
         // Re-apply after every Livewire component update (handles parent
         // container being re-rendered which bypasses wire:ignore).
-        Livewire.hook('message.processed', function () {
+        Livewire.hook('morph.updated', function () {
             setTimeout(initOdqSelect, 60);
         });
 
@@ -2269,11 +2269,11 @@
             }, 10000); // 10 seconds
         });
 
-        document.addEventListener('livewire:load', function () {
+        document.addEventListener('livewire:init', function () {
             renderPatientClinicalTrendCharts();
 
             if (window.Livewire && window.Livewire.hook) {
-                window.Livewire.hook('message.processed', function () {
+                window.Livewire.hook('morph.updated', function () {
                     renderPatientClinicalTrendCharts();
                 });
             }

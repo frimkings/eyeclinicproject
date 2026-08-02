@@ -313,7 +313,7 @@
                         <span class="input-group-text"><i class="fas fa-folder text-muted"></i></span>
                     </div>
                     <input type="text"
-                           wire:model.defer="newPath"
+                           wire:model="newPath"
                            wire:keydown.enter="addPath"
                            class="form-control @error('newPath') is-invalid @enderror"
                            placeholder="e.g.  E:\backups  or  D:\MyClinicBackups">
@@ -392,7 +392,7 @@
                             </span>
                         </div>
                         <input type="text"
-                               wire:model.defer="newFolderName"
+                               wire:model="newFolderName"
                                wire:keydown.enter="createFolder"
                                wire:keydown.escape="toggleCreateFolder"
                                class="form-control @error('newFolderName') is-invalid @enderror"

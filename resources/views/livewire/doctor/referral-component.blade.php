@@ -29,13 +29,13 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
                         </div>
-                        <input type="text" wire:model.debounce.400ms="searchQuery"
+                        <input type="text" wire:model.live.debounce.400ms="searchQuery"
                             class="form-control border-left-0"
                             placeholder="Patient, referral to, diagnosis…">
                     </div>
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <select wire:model="typeFilter" class="form-control form-control-sm">
+                    <select wire:model.live="typeFilter" class="form-control form-control-sm">
                         <option value="">All Types</option>
                         <option value="referral">Referral</option>
                         <option value="medical_report">Medical Report</option>
@@ -43,7 +43,7 @@
                     </select>
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <select wire:model="statusFilter" class="form-control form-control-sm">
+                    <select wire:model.live="statusFilter" class="form-control form-control-sm">
                         <option value="">All Statuses</option>
                         <option value="pending">Pending</option>
                         <option value="completed">Completed</option>
@@ -51,13 +51,13 @@
                     </select>
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <input type="date" wire:model="fromDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="fromDate" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-2 mb-2 mb-md-0">
-                    <input type="date" wire:model="toDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="toDate" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-1">
-                    <select wire:model="perPage" class="form-control form-control-sm">
+                    <select wire:model.live="perPage" class="form-control form-control-sm">
                         <option value="10">10</option>
                         <option value="15">15</option>
                         <option value="25">25</option>
@@ -241,7 +241,7 @@
                     <div class="col-md-{{ $letterType === 'referral' ? '6' : '12' }}">
                         <div class="form-group">
                             <label class="form-label">Date <span class="text-danger">*</span></label>
-                            <input type="date" wire:model="referralDate"
+                            <input type="date" wire:model.live="referralDate"
                                 class="form-control @error('referralDate') is-invalid @enderror">
                             @error('referralDate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -250,7 +250,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Referral To <span class="text-danger">*</span></label>
-                            <input type="text" wire:model="referralTo"
+                            <input type="text" wire:model.live="referralTo"
                                 class="form-control @error('referralTo') is-invalid @enderror"
                                 placeholder="e.g. KATH – Ophthalmology Dept.">
                             @error('referralTo')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -271,7 +271,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                             </div>
-                            <input type="text" wire:model="patientSearch"
+                            <input type="text" wire:model.live="patientSearch"
                                 class="form-control border-left-0"
                                 placeholder="Type patient name or PX number…">
                             @if($selectedPatientId)
@@ -308,7 +308,7 @@
                                     <span class="linked-badge"><i class="fas fa-lock fa-xs mr-1"></i>Linked</span>
                                 @endif
                             </label>
-                            <input type="text" wire:model="patientName"
+                            <input type="text" wire:model.live="patientName"
                                 class="form-control @error('patientName') is-invalid @enderror"
                                 placeholder="Full name"
                                 {{ $selectedPatientId ? 'readonly' : '' }}>
@@ -318,7 +318,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Age / Sex</label>
-                            <input type="text" wire:model="patientAgeSex" class="form-control"
+                            <input type="text" wire:model.live="patientAgeSex" class="form-control"
                                 placeholder="e.g. 34yrs / M"
                                 {{ $selectedPatientId ? 'readonly' : '' }}>
                         </div>
@@ -326,7 +326,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Contact</label>
-                            <input type="text" wire:model="patientContact" class="form-control"
+                            <input type="text" wire:model.live="patientContact" class="form-control"
                                 placeholder="Phone"
                                 {{ $selectedPatientId ? 'readonly' : '' }}>
                         </div>
@@ -342,15 +342,15 @@
                 <div class="form-section__title"><i class="fas fa-stethoscope mr-2"></i>Clinical Findings</div>
                 <div class="form-group">
                     <label class="form-label">Chief Complaint</label>
-                    <input type="text" wire:model="complaint" class="form-control" placeholder="Patient's main complaint">
+                    <input type="text" wire:model.live="complaint" class="form-control" placeholder="Patient's main complaint">
                 </div>
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">VA — OD (Right)</label>
-                            <select wire:model="vaOd" class="form-control">
+                            <select wire:model.live="vaOd" class="form-control">
                                 <option value="">-- select --</option>
-                                @foreach(\App\Http\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
+                                @foreach(\App\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
                                     <option value="{{ $label }}">{{ $label }}{{ $logmar !== null ? ' ('.($logmar >= 0 ? '+' : '').$logmar.')' : ' (NM)' }}</option>
                                 @endforeach
                             </select>
@@ -359,9 +359,9 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">VA — OS (Left)</label>
-                            <select wire:model="vaOs" class="form-control">
+                            <select wire:model.live="vaOs" class="form-control">
                                 <option value="">-- select --</option>
-                                @foreach(\App\Http\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
+                                @foreach(\App\Livewire\Doctor\PatientRecordsComponent::vaLogMarTable($vaNotation) as $label => $logmar)
                                     <option value="{{ $label }}">{{ $label }}{{ $logmar !== null ? ' ('.($logmar >= 0 ? '+' : '').$logmar.')' : ' (NM)' }}</option>
                                 @endforeach
                             </select>
@@ -370,13 +370,13 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">IOP</label>
-                            <input type="text" wire:model="iop" class="form-control" placeholder="e.g. OD 16 / OS 18">
+                            <input type="text" wire:model.live="iop" class="form-control" placeholder="e.g. OD 16 / OS 18">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Refraction</label>
-                            <input type="text" wire:model="refraction" class="form-control" placeholder="e.g. -2.00 DS">
+                            <input type="text" wire:model.live="refraction" class="form-control" placeholder="e.g. -2.00 DS">
                         </div>
                     </div>
                 </div>
@@ -384,13 +384,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Anterior Segment</label>
-                            <input type="text" wire:model="anteriorSegment" class="form-control" placeholder="Anterior findings">
+                            <input type="text" wire:model.live="anteriorSegment" class="form-control" placeholder="Anterior findings">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Posterior Segment</label>
-                            <input type="text" wire:model="posteriorSegment" class="form-control" placeholder="Posterior findings">
+                            <input type="text" wire:model.live="posteriorSegment" class="form-control" placeholder="Posterior findings">
                         </div>
                     </div>
                 </div>
@@ -410,11 +410,11 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Reason for Referral</label>
-                    <textarea wire:model="reasonForReferral" class="form-control" rows="2" placeholder="Why is this patient being referred?"></textarea>
+                    <textarea wire:model.live="reasonForReferral" class="form-control" rows="2" placeholder="Why is this patient being referred?"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Management Given / Notes</label>
-                    <textarea wire:model="management" class="form-control" rows="2" placeholder="Treatment already given…"></textarea>
+                    <textarea wire:model.live="management" class="form-control" rows="2" placeholder="Treatment already given…"></textarea>
                 </div>
             </div>
             @endif
@@ -427,7 +427,7 @@
                 <div class="form-section__title"><i class="fas fa-notes-medical mr-2"></i>Clinical Details</div>
                 <div class="form-group">
                     <label class="form-label">Clinical Findings</label>
-                    <textarea wire:model="clinicalFindings" class="form-control" rows="3"
+                    <textarea wire:model.live="clinicalFindings" class="form-control" rows="3"
                         placeholder="Describe clinical findings on examination…"></textarea>
                 </div>
                 <div class="form-group">
@@ -443,11 +443,11 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Management / Treatment</label>
-                    <textarea wire:model="treatment" class="form-control" rows="2" placeholder="Treatment and management plan"></textarea>
+                    <textarea wire:model.live="treatment" class="form-control" rows="2" placeholder="Treatment and management plan"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Recommendation</label>
-                    <textarea wire:model="recommendation" class="form-control" rows="2" placeholder="Recommendations for the patient"></textarea>
+                    <textarea wire:model.live="recommendation" class="form-control" rows="2" placeholder="Recommendations for the patient"></textarea>
                 </div>
             </div>
             @endif
@@ -462,7 +462,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Excused From <span class="text-danger">*</span></label>
-                            <input type="date" wire:model="excuseFromDate"
+                            <input type="date" wire:model.live="excuseFromDate"
                                 class="form-control @error('excuseFromDate') is-invalid @enderror">
                             @error('excuseFromDate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -470,7 +470,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Excused Until <span class="text-danger">*</span></label>
-                            <input type="date" wire:model="excuseToDate"
+                            <input type="date" wire:model.live="excuseToDate"
                                 class="form-control @error('excuseToDate') is-invalid @enderror">
                             @error('excuseToDate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -478,7 +478,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Letter Notes</label>
-                    <textarea wire:model.defer="excuseNotes" rows="6"
+                    <textarea wire:model="excuseNotes" rows="6"
                         class="form-control @error('excuseNotes') is-invalid @enderror"
                         placeholder="Enter the wording to print on the letter"></textarea>
                     <small class="form-text text-muted">Prefilled and fully editable. Date placeholders are filled automatically on the letter.</small>
@@ -501,7 +501,7 @@
             <div class="form-section">
                 <div class="form-section__title"><i class="fas fa-flag mr-2"></i>Record Status</div>
                 <div class="form-group mb-0">
-                    <select wire:model="status" class="form-control">
+                    <select wire:model.live="status" class="form-control">
                         <option value="pending">Pending</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
@@ -546,7 +546,7 @@
 </div>
 
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     window.addEventListener('show-delete-confirm', () => $('#deleteConfirmModal').modal('show'));
     window.addEventListener('hide-delete-confirm', () => $('#deleteConfirmModal').modal('hide'));
     window.addEventListener('notify', e => {

@@ -1,3 +1,4 @@
+<section>
 <div>
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,7 +21,7 @@
                             <input type="text"
                                    class="form-control"
                                    placeholder="Search by patient name, PX number or transaction ID..."
-                                   wire:model.debounce.300ms="searchQuery">
+                                   wire:model.live.debounce.300ms="searchQuery">
                             @if($searchQuery)
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary" wire:click="$set('searchQuery','')">
@@ -31,7 +32,7 @@
                         </div>
                     </div>
                     <div class="col-md-2 ml-auto text-right">
-                        <select class="form-control form-control-sm" wire:model="perPage">
+                        <select class="form-control form-control-sm" wire:model.live="perPage">
                             <option value="10">10 / page</option>
                             <option value="15">15 / page</option>
                             <option value="25">25 / page</option>
@@ -347,7 +348,7 @@
                                 </div>
                                 <input type="number"
                                        class="form-control @error('collectAmount') is-invalid @enderror"
-                                       wire:model.debounce.300ms="collectAmount"
+                                       wire:model.live.debounce.300ms="collectAmount"
                                        step="0.01"
                                        min="0.01"
                                        max="{{ max(0, (float) $selectedSale->total_amount - (float) $selectedSale->amount_paid) }}"
@@ -359,7 +360,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label font-weight-bold">Payment Method</label>
-                            <select class="form-control" wire:model="paymentMethod">
+                            <select class="form-control" wire:model.live="paymentMethod">
                                 <option value="cash">Cash</option>
                                 <option value="momo">Mobile Money</option>
                                 <option value="card">Card</option>
@@ -368,7 +369,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label font-weight-bold">Notes</label>
-                            <input type="text" class="form-control" wire:model.debounce.300ms="paymentNotes" placeholder="Optional">
+                            <input type="text" class="form-control" wire:model.live.debounce.300ms="paymentNotes" placeholder="Optional">
                         </div>
                     </div>
 
@@ -414,7 +415,7 @@
 </div>
 
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     window.addEventListener('print-released-receipt', function (event) {
         const receiptWindow = window.releasedReceiptWindow && !window.releasedReceiptWindow.closed
             ? window.releasedReceiptWindow
@@ -460,3 +461,4 @@ document.addEventListener('livewire:load', function () {
     flex: 0 0 auto;
 }
 </style>
+</section>

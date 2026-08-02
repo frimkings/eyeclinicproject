@@ -124,7 +124,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-end mb-3">
                         <div class="input-group" style="max-width:300px">
-                            <input wire:model.debounce.300ms="searchTerm"
+                            <input wire:model.live.debounce.300ms="searchTerm"
                                    type="search"
                                    class="form-control form-control-sm"
                                    placeholder="Search patient name, folder, contact…">
@@ -215,7 +215,7 @@
                         <div class="col-sm-6 col-md-4 mb-2">
                             <label class="small text-muted mb-1">Search Patient</label>
                             <div class="input-group input-group-sm">
-                                <input wire:model.debounce.300ms="clearedSearch"
+                                <input wire:model.live.debounce.300ms="clearedSearch"
                                        type="search"
                                        class="form-control"
                                        placeholder="Name or folder number…">
@@ -227,7 +227,7 @@
                         {{-- Date From --}}
                         <div class="col-sm-6 col-md-2 mb-2">
                             <label class="small text-muted mb-1">From</label>
-                            <input wire:model.lazy="dateFrom"
+                            <input wire:model.blur="dateFrom"
                                    type="date"
                                    class="form-control form-control-sm"
                                    max="{{ now()->toDateString() }}">
@@ -235,7 +235,7 @@
                         {{-- Date To --}}
                         <div class="col-sm-6 col-md-2 mb-2">
                             <label class="small text-muted mb-1">To</label>
-                            <input wire:model.lazy="dateTo"
+                            <input wire:model.blur="dateTo"
                                    type="date"
                                    class="form-control form-control-sm"
                                    min="{{ $dateFrom }}"
@@ -244,7 +244,7 @@
                         {{-- Payment Status --}}
                         <div class="col-sm-6 col-md-2 mb-2">
                             <label class="small text-muted mb-1">Payment</label>
-                            <select wire:model="statusFilter" class="form-control form-control-sm">
+                            <select wire:model.live="statusFilter" class="form-control form-control-sm">
                                 <option value="">All</option>
                                 <option value="Paid">Paid</option>
                                 <option value="Unpaid">Unpaid</option>
@@ -253,7 +253,7 @@
                         {{-- Gender --}}
                         <div class="col-sm-6 col-md-1 mb-2">
                             <label class="small text-muted mb-1">Gender</label>
-                            <select wire:model="genderFilter" class="form-control form-control-sm">
+                            <select wire:model.live="genderFilter" class="form-control form-control-sm">
                                 <option value="">All</option>
                                 <option value="Male">M</option>
                                 <option value="Female">F</option>
@@ -305,7 +305,7 @@
                                     <td class="align-middle">
                                         @if($editingClearanceId === $clearance->id)
                                             <div class="d-flex align-items-center" style="gap:4px">
-                                                <select wire:model="editingPaymentStatus"
+                                                <select wire:model.live="editingPaymentStatus"
                                                         class="form-control form-control-sm"
                                                         style="width:90px">
                                                     <option value="Paid">Paid</option>
@@ -440,7 +440,7 @@
                             <i class="fas fa-concierge-bell mr-2 text-success"></i>Service
                         </label>
                         <select class="custom-select custom-select-lg"
-                                wire:model.defer="selectedServiceId"
+                                wire:model="selectedServiceId"
                                 id="selectedServiceId"
                                 onchange="toggleClearancePaymentMethod(this.value)">
                             <option value="">Select service…</option>
@@ -540,7 +540,7 @@
                     @endif
                     <div class="form-group mb-0">
                         <label class="font-weight-bold small">Reason <span class="text-danger">*</span></label>
-                        <textarea wire:model.defer="revokeReason"
+                        <textarea wire:model="revokeReason"
                                   class="form-control @error('revokeReason') is-invalid @enderror"
                                   rows="3"
                                   placeholder="Explain why this clearance should be revoked…"></textarea>

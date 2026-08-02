@@ -147,31 +147,31 @@
                     <div class="row g-2">
                         <div class="col-md-4">
                             <input type="text"
-                                   wire:model.debounce.400ms="search"
+                                   wire:model.live.debounce.400ms="search"
                                    class="form-control form-control-sm"
                                    placeholder="Search by transaction ID or patient name...">
                         </div>
                         <div class="col-md-2">
                             <input type="date"
-                                   wire:model="dateFrom"
+                                   wire:model.live="dateFrom"
                                    class="form-control form-control-sm"
                                    title="From date">
                         </div>
                         <div class="col-md-2">
                             <input type="date"
-                                   wire:model="dateTo"
+                                   wire:model.live="dateTo"
                                    class="form-control form-control-sm"
                                    title="To date">
                         </div>
                         <div class="col-md-2">
-                            <select wire:model="filterType" class="form-control form-control-sm">
+                            <select wire:model.live="filterType" class="form-control form-control-sm">
                                 <option value="">All Types</option>
                                 <option value="percentage">Percentage (%)</option>
                                 <option value="fixed">Fixed Amount ({{ currency() }})</option>
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <select wire:model="filterApprover" class="form-control form-control-sm">
+                            <select wire:model.live="filterApprover" class="form-control form-control-sm">
                                 <option value="">All Approvers</option>
                                 @foreach($approvers as $approver)
                                     <option value="{{ $approver->id }}">{{ $approver->name }}</option>

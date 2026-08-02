@@ -39,14 +39,14 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form wire:submit.prevent="{{ $isEditing ? 'update' : 'store' }}">
+                    <form wire:submit="{{ $isEditing ? 'update' : 'store' }}">
                         <div class="row align-items-start">
                             <div class="col-md-8">
                                 <div class="form-group mb-0">
                                     <input type="text"
                                            class="form-control form-control-lg dx-name-input @error('name') is-invalid @enderror"
                                            placeholder="e.g. Acute Angle Closure Glaucoma"
-                                           wire:model.defer="name"
+                                           wire:model="name"
                                            autofocus>
                                     @error('name')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -123,7 +123,7 @@
                             <input type="text"
                                    class="form-control border-left-0"
                                    placeholder="Search diagnoses…"
-                                   wire:model="search"
+                                   wire:model.live="search"
                                    style="width:220px;">
                             @if($search)
                                 <div class="input-group-append">
@@ -252,7 +252,7 @@
                                         <input id="importFilePicker"
                                                type="file"
                                                accept=".csv,text/csv,text/plain"
-                                               wire:model="importFile"
+                                               wire:model.live="importFile"
                                                class="dx-file-input">
                                     </div>
 
@@ -299,7 +299,7 @@
                                     <th style="width:44px;" class="text-center">
                                         <input type="checkbox"
                                                class="dx-row-check"
-                                               wire:model="selectAllPage"
+                                               wire:model.live="selectAllPage"
                                                title="Select all visible diagnoses">
                                     </th>
                                     <th style="width:60px;" class="text-center">#</th>
@@ -333,7 +333,7 @@
                                             <input type="checkbox"
                                                    class="dx-row-check"
                                                    value="{{ $diagnosis->id }}"
-                                                   wire:model="selectedDiagnosisIds">
+                                                   wire:model.live="selectedDiagnosisIds">
                                         </td>
                                         <td class="text-center text-muted" style="font-size:.8rem;">
                                             {{ ($diagnoses->currentPage() - 1) * $diagnoses->perPage() + $index + 1 }}
@@ -347,7 +347,7 @@
                                                     <div class="dx-inline-edit">
                                                         <input type="text"
                                                                class="form-control form-control-sm dx-inline-input @error('inlineName') is-invalid @enderror"
-                                                               wire:model.defer="inlineName"
+                                                               wire:model="inlineName"
                                                                wire:keydown.enter="saveInlineEdit"
                                                                wire:keydown.escape="cancelInlineEdit"
                                                                autofocus>

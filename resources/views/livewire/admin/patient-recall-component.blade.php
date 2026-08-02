@@ -103,7 +103,7 @@
           <div class="d-flex align-items-center flex-wrap w-100" style="gap:8px;">
             <div class="input-group" style="max-width:260px;">
               <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-              <input wire:model.debounce.300ms="search" type="text" class="form-control" placeholder="Search name or Px#…">
+              <input wire:model.live.debounce.300ms="search" type="text" class="form-control" placeholder="Search name or Px#…">
             </div>
             @if($activeTab === 'due' && $dueCount > 0)
             <div class="ml-auto">

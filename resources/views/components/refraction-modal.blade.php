@@ -1,6 +1,6 @@
 <div wire:ignore.self class="modal fade" id="addRefractionModal">
     <div class="modal-dialog modal-lg" role="document"> <div class="modal-content">
-            <form wire:submit.prevent="createRefraction">
+            <form wire:submit="createRefraction">
                 <div class="modal-header flex-column">
                     <div class="icon-box">
                         <i class="material-icons">&#xE5CD;</i>
@@ -26,19 +26,19 @@
                                     <tr>
                                         <th scope="row">OD</th>
                                         <td>
-                                            <input wire:model.defer="state.refractionOD"
+                                            <input wire:model="state.refractionOD"
                                                 class="form-control form-control-sm externals text-center" disabled>
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOD_distance_va"
+                                            <input type="text" wire:model="state.refractionOD_distance_va"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOD_ADD"
+                                            <input type="text" wire:model="state.refractionOD_ADD"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOD_near_va"
+                                            <input type="text" wire:model="state.refractionOD_near_va"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                     </tr>
@@ -46,19 +46,19 @@
                                     <tr>
                                         <th scope="row">OS</th>
                                         <td>
-                                            <input wire:model.defer="state.refractionOS"
+                                            <input wire:model="state.refractionOS"
                                                 class="form-control form-control-sm externals text-center" disabled>
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOS_distance_va"
+                                            <input type="text" wire:model="state.refractionOS_distance_va"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOS_ADD"
+                                            <input type="text" wire:model="state.refractionOS_ADD"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                         <td>
-                                            <input type="text" wire:model.defer="state.refractionOS_near_va"
+                                            <input type="text" wire:model="state.refractionOS_near_va"
                                                 class="form-control form-control-sm text-center">
                                         </td>
                                     </tr>
@@ -71,7 +71,7 @@
                                     <tr>
                                         <th style="width: 150px;">PD (Pupillary Distance)</th>
                                         <td>
-                                            <input type="number" wire:model.defer="state.pd"
+                                            <input type="number" wire:model="state.pd"
                                                 class="form-control form-control-sm externals text-center @error('pd') is-invalid @enderror">
                                             @error('pd') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                         </td>
@@ -80,7 +80,7 @@
                                         <th style="width: 150px;">Lens Type</th>
                                         <td>
                                             <select class="custom-select form-control @error('lensType') is-invalid @enderror"
-                                                wire:model.defer="state.lensType" required>
+                                                wire:model="state.lensType" required>
                                                 <option>......</option>
                                                 <option value="SV Photo, AR">SV Photo, AR</option>
                                                 <option value="SV White">SV White</option>

@@ -24,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
   public function boot()
 {
+    // Transitional compatibility for Livewire 2 components. Livewire 3
+    // replaced dispatchBrowserEvent() with dispatch().
+    \Livewire\Component::macro('dispatchBrowserEvent', function (string $event, array $data = []) {
+        return $this->dispatch($event, ...$data);
+    });
+
     // @feature('feature_name') ... @else ... @endfeature
     Blade::if('feature', fn(string $f) => LicenseService::has($f));
 

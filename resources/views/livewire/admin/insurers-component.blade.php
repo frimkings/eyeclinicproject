@@ -26,9 +26,9 @@
           <div class="d-flex align-items-center flex-wrap w-100" style="gap:8px;">
             <div class="input-group" style="max-width:260px;">
               <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-              <input wire:model.debounce.300ms="search" type="text" class="form-control" placeholder="Search name or code…">
+              <input wire:model.live.debounce.300ms="search" type="text" class="form-control" placeholder="Search name or code…">
             </div>
-            <select wire:model="schemeFilter" class="form-control" style="max-width:160px;">
+            <select wire:model.live="schemeFilter" class="form-control" style="max-width:160px;">
               <option value="">All Schemes</option>
               <option value="NHIS">NHIS</option>
               <option value="Private">Private</option>
@@ -135,20 +135,20 @@
         <div class="modal-body">
           <div class="form-group">
             <label>Insurer Name <span class="text-danger">*</span></label>
-            <input wire:model.defer="state.name" type="text" class="form-control @error('state.name') is-invalid @enderror" placeholder="e.g. National Health Insurance Scheme">
+            <input wire:model="state.name" type="text" class="form-control @error('state.name') is-invalid @enderror" placeholder="e.g. National Health Insurance Scheme">
             @error('state.name')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">
                 <label>Code</label>
-                <input wire:model.defer="state.code" type="text" class="form-control" placeholder="e.g. NHIS">
+                <input wire:model="state.code" type="text" class="form-control" placeholder="e.g. NHIS">
               </div>
             </div>
             <div class="col-md-6">
               <div class="form-group">
                 <label>Scheme Type <span class="text-danger">*</span></label>
-                <select wire:model.defer="state.scheme_type" class="form-control @error('state.scheme_type') is-invalid @enderror">
+                <select wire:model="state.scheme_type" class="form-control @error('state.scheme_type') is-invalid @enderror">
                   <option value="NHIS">NHIS</option>
                   <option value="Private">Private</option>
                   <option value="Corporate">Corporate</option>
@@ -161,23 +161,23 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label>Contact Person</label>
-                <input wire:model.defer="state.contact_person" type="text" class="form-control" placeholder="Name">
+                <input wire:model="state.contact_person" type="text" class="form-control" placeholder="Name">
               </div>
             </div>
             <div class="col-md-6">
               <div class="form-group">
                 <label>Contact Phone</label>
-                <input wire:model.defer="state.contact_phone" type="text" class="form-control" placeholder="Phone number">
+                <input wire:model="state.contact_phone" type="text" class="form-control" placeholder="Phone number">
               </div>
             </div>
           </div>
           <div class="form-group">
             <label>Notes</label>
-            <textarea wire:model.defer="state.notes" class="form-control" rows="2" placeholder="Any additional notes…"></textarea>
+            <textarea wire:model="state.notes" class="form-control" rows="2" placeholder="Any additional notes…"></textarea>
           </div>
           <div class="form-group mb-0">
             <div class="custom-control custom-switch">
-              <input wire:model.defer="state.active" type="checkbox" class="custom-control-input" id="insurerActive">
+              <input wire:model="state.active" type="checkbox" class="custom-control-input" id="insurerActive">
               <label class="custom-control-label" for="insurerActive">Active</label>
             </div>
           </div>

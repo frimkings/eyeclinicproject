@@ -80,7 +80,7 @@
                                        class="custom-file-input @error('importFile') is-invalid @enderror"
                                        id="patientImportFile"
                                        accept=".csv,text/csv,text/plain"
-                                       wire:model="importFile">
+                                       wire:model.live="importFile">
                                 <label class="custom-file-label" for="patientImportFile">
                                     {{ $importFile ? $importFile->getClientOriginalName() : 'Choose CSV file' }}
                                 </label>
@@ -124,15 +124,15 @@
                         </div>
                     @endif
 
-                    <form wire:submit.prevent="saveEntry">
+                    <form wire:submit="saveEntry">
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">PX NUMBER</label>
-                            <input type="text" wire:model.defer="state.pxnumber" class="form-control bg-light border-0" placeholder="Auto-generated" disabled>
+                            <input type="text" wire:model="state.pxnumber" class="form-control bg-light border-0" placeholder="Auto-generated" disabled>
                         </div>
 
                         <div class="form-group position-relative">
                             <label class="small font-weight-bold text-muted">FULL NAME</label>
-                            <input type="text" wire:model.debounce.300ms="nameSearch" class="form-control bg-light border-0 @error('name') is-invalid @enderror" placeholder="Enter patient name...">
+                            <input type="text" wire:model.live.debounce.300ms="nameSearch" class="form-control bg-light border-0 @error('name') is-invalid @enderror" placeholder="Enter patient name...">
                             @error('name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             @if(!empty($suggestions))
                                 <div class="list-group position-absolute w-100 shadow-lg mt-1" style="z-index: 1050;">
@@ -153,19 +153,19 @@
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">EMAIL ADDRESS</label>
-                            <input type="email" wire:model.defer="state.email" class="form-control bg-light border-0 @error('email') is-invalid @enderror">
+                            <input type="email" wire:model="state.email" class="form-control bg-light border-0 @error('email') is-invalid @enderror">
                             @error('email') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="row">
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">CONTACT</label>
-                                <input type="text" wire:model.defer="state.contact" class="form-control bg-light border-0 @error('contact') is-invalid @enderror">
+                                <input type="text" wire:model="state.contact" class="form-control bg-light border-0 @error('contact') is-invalid @enderror">
                                 @error('contact') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">CIVIL STATUS</label>
-                                <select wire:model.defer="state.civil_status" class="form-control bg-light border-0 @error('civil_status') is-invalid @enderror">
+                                <select wire:model="state.civil_status" class="form-control bg-light border-0 @error('civil_status') is-invalid @enderror">
                                     <option value="">Select</option>
                                     <option value="Single">Single</option>
                                     <option value="Married">Married</option>
@@ -180,7 +180,7 @@
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">BIRTHDAY</label>
                                 <div class="input-group">
-                                    <input id="registry-dob" type="text" wire:model.lazy="dobDisplay"
+                                    <input id="registry-dob" type="text" wire:model.blur="dobDisplay"
                                            class="form-control bg-light border-0 registry-date-picker @error('dob') is-invalid @enderror"
                                            data-trigger="registry-dob-trigger" placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
                                     <div class="input-group-append">
@@ -194,7 +194,7 @@
                             </div>
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">GENDER</label>
-                                <select wire:model.defer="state.gender" class="form-control bg-light border-0 @error('gender') is-invalid @enderror">
+                                <select wire:model="state.gender" class="form-control bg-light border-0 @error('gender') is-invalid @enderror">
                                     <option value="">Select</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
@@ -206,13 +206,13 @@
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">OCCUPATION</label>
-                            <input type="text" wire:model.defer="state.occupation" class="form-control bg-light border-0 @error('occupation') is-invalid @enderror">
+                            <input type="text" wire:model="state.occupation" class="form-control bg-light border-0 @error('occupation') is-invalid @enderror">
                             @error('occupation') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">ADDRESS</label>
-                            <textarea wire:model.defer="state.address" class="form-control bg-light border-0 @error('address') is-invalid @enderror" rows="3"></textarea>
+                            <textarea wire:model="state.address" class="form-control bg-light border-0 @error('address') is-invalid @enderror" rows="3"></textarea>
                             @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
@@ -276,7 +276,7 @@
                             </div>
                             <div class="form-group mb-2">
                                 <label class="small text-muted">Insurer</label>
-                                <select wire:model.defer="state.insurer_id" class="form-control form-control-sm bg-light border-0 @error('insurer_id') is-invalid @enderror">
+                                <select wire:model="state.insurer_id" class="form-control form-control-sm bg-light border-0 @error('insurer_id') is-invalid @enderror">
                                     <option value="">— None / Cash Patient —</option>
                                     @foreach($insurers as $ins)
                                         <option value="{{ $ins->id }}">{{ $ins->name }}</option>
@@ -287,21 +287,21 @@
                             <div class="row">
                                 <div class="col-4 form-group mb-0">
                                     <label class="small text-muted">Member ID</label>
-                                    <input type="text" wire:model.defer="state.insurance_member_id"
+                                    <input type="text" wire:model="state.insurance_member_id"
                                            class="form-control form-control-sm bg-light border-0 @error('insurance_member_id') is-invalid @enderror"
                                            placeholder="e.g. NHIS-123456">
                                     @error('insurance_member_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-4 form-group mb-0">
                                     <label class="small text-muted">Member Name</label>
-                                    <input type="text" wire:model.defer="state.insurance_member_name"
+                                    <input type="text" wire:model="state.insurance_member_name"
                                            class="form-control form-control-sm bg-light border-0 @error('insurance_member_name') is-invalid @enderror"
                                            placeholder="As on card">
                                     @error('insurance_member_name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-4 form-group mb-0">
                                     <label class="small text-muted">Policy Number</label>
-                                    <input type="text" wire:model.defer="state.insurance_policy_number"
+                                    <input type="text" wire:model="state.insurance_policy_number"
                                            class="form-control form-control-sm bg-light border-0 @error('insurance_policy_number') is-invalid @enderror"
                                            placeholder="Policy #">
                                     @error('insurance_policy_number') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
@@ -383,7 +383,7 @@
                         <div class="col-md-3">
                             <label class="small font-weight-bold text-muted text-uppercase mb-1">Search Profile</label>
                             <div class="input-group">
-                                <input type="text" wire:model.debounce.500ms="pxSearch" class="form-control bg-light border-0" placeholder="Name or PX Number...">
+                                <input type="text" wire:model.live.debounce.500ms="pxSearch" class="form-control bg-light border-0" placeholder="Name or PX Number...">
                                 @if($pxSearch)
                                     <div class="input-group-append">
                                         <button class="btn btn-light border-0 bg-light text-muted" wire:click="$set('pxSearch', '')">
@@ -398,7 +398,7 @@
                             <div class="small text-muted mb-1">From <span class="float-right mr-5">To</span></div>
                             <div class="d-flex" style="gap:4px;">
                                 <div class="input-group" style="min-width:0;flex:1;">
-                                    <input id="registry-from-date" type="text" wire:model.lazy="fromDateDisplay"
+                                    <input id="registry-from-date" type="text" wire:model.blur="fromDateDisplay"
                                            class="form-control bg-light border-0 registry-date-picker" data-trigger="registry-from-date-trigger"
                                            placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
                                     <div class="input-group-append">
@@ -408,7 +408,7 @@
                                     </div>
                                 </div>
                                 <div class="input-group" style="min-width:0;flex:1;">
-                                    <input id="registry-to-date" type="text" wire:model.lazy="toDateDisplay"
+                                    <input id="registry-to-date" type="text" wire:model.blur="toDateDisplay"
                                            class="form-control bg-light border-0 registry-date-picker" data-trigger="registry-to-date-trigger"
                                            placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
                                     <div class="input-group-append">
@@ -429,7 +429,7 @@
                             <label class="small font-weight-bold text-muted text-uppercase mb-1">
                                 <i class="fas fa-shield-alt mr-1 text-primary"></i>Insurer
                             </label>
-                            <select wire:model="insurerFilter" class="form-control bg-light border-0">
+                            <select wire:model.live="insurerFilter" class="form-control bg-light border-0">
                                 <option value="">All Patients</option>
                                 @foreach($insurers as $ins)
                                     <option value="{{ $ins->id }}">{{ $ins->name }}</option>
@@ -449,7 +449,7 @@
                                 <tr>
                                     <th style="width: 40px;">
                                         <div class="custom-control custom-checkbox">
-                                            <input type="checkbox" wire:model="selectAll" class="custom-control-input" id="selectAll">
+                                            <input type="checkbox" wire:model.live="selectAll" class="custom-control-input" id="selectAll">
                                             <label class="custom-control-label" for="selectAll"></label>
                                         </div>
                                     </th>
@@ -464,7 +464,7 @@
                                     <tr>
                                         <td>
                                             <div class="custom-control custom-checkbox">
-                                                <input type="checkbox" wire:model="selectedPatients" value="{{ $px->id }}" class="custom-control-input" id="px-{{ $px->id }}">
+                                                <input type="checkbox" wire:model.live="selectedPatients" value="{{ $px->id }}" class="custom-control-input" id="px-{{ $px->id }}">
                                                 <label class="custom-control-label" for="px-{{ $px->id }}"></label>
                                             </div>
                                         </td>
@@ -570,10 +570,10 @@
 
         initializeRegistryDatePickers();
         document.addEventListener('DOMContentLoaded', initializeRegistryDatePickers);
-        document.addEventListener('livewire:load', initializeRegistryDatePickers);
+        document.addEventListener('livewire:init', initializeRegistryDatePickers);
 
         if (window.Livewire && typeof Livewire.hook === 'function') {
-            Livewire.hook('message.processed', initializeRegistryDatePickers);
+            Livewire.hook('morph.updated', initializeRegistryDatePickers);
         }
     })();
 </script>

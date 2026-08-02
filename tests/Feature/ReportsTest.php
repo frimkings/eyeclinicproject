@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Livewire\ReportsComponent;
+use App\Livewire\ReportsComponent;
 use App\Models\Patient;
 use App\Models\Sales;
 use App\Models\User;
@@ -218,6 +218,6 @@ class ReportsTest extends TestCase
             ->set('fromDate', now()->format('Y-m-d'))
             ->set('toDate', now()->format('Y-m-d'))
             ->call('loadChart')
-            ->assertDispatchedBrowserEvent('update-chart');
+            ->assertDispatched('update-chart');
     }
 }

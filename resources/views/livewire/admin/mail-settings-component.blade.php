@@ -115,7 +115,7 @@
                             <div class="form-group">
                                 <label class="small font-weight-bold">SMTP Host</label>
                                 <input type="text"
-                                       wire:model.defer="smtpHost"
+                                       wire:model="smtpHost"
                                        class="form-control @error('smtpHost') is-invalid @enderror"
                                        placeholder="e.g. smtp.gmail.com">
                                 @error('smtpHost')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -125,7 +125,7 @@
                             <div class="form-group">
                                 <label class="small font-weight-bold">Port</label>
                                 <input type="number"
-                                       wire:model.defer="smtpPort"
+                                       wire:model="smtpPort"
                                        class="form-control @error('smtpPort') is-invalid @enderror"
                                        min="1" max="65535">
                                 @error('smtpPort')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -157,7 +157,7 @@
                                 <span class="input-group-text"><i class="fas fa-at text-muted"></i></span>
                             </div>
                             <input type="email"
-                                   wire:model.defer="smtpUsername"
+                                   wire:model="smtpUsername"
                                    class="form-control @error('smtpUsername') is-invalid @enderror"
                                    placeholder="your@email.com"
                                    autocomplete="off">
@@ -178,7 +178,7 @@
                                 <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
                             </div>
                             <input type="password"
-                                   wire:model.defer="smtpPassword"
+                                   wire:model="smtpPassword"
                                    class="form-control @error('smtpPassword') is-invalid @enderror"
                                    placeholder="••••••••••••"
                                    autocomplete="new-password">
@@ -195,7 +195,7 @@
                             <div class="form-group mb-0">
                                 <label class="small font-weight-bold">From Address</label>
                                 <input type="email"
-                                       wire:model.defer="fromAddress"
+                                       wire:model="fromAddress"
                                        class="form-control @error('fromAddress') is-invalid @enderror"
                                        placeholder="noreply@myclinic.com">
                                 @error('fromAddress')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -205,7 +205,7 @@
                             <div class="form-group mb-0">
                                 <label class="small font-weight-bold">From Name</label>
                                 <input type="text"
-                                       wire:model.defer="fromName"
+                                       wire:model="fromName"
                                        class="form-control @error('fromName') is-invalid @enderror"
                                        placeholder="My Eye Clinic">
                                 @error('fromName')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -236,7 +236,7 @@
                                 <span class="input-group-text"><i class="fas fa-paper-plane text-muted"></i></span>
                             </div>
                             <input type="email"
-                                   wire:model.defer="testRecipient"
+                                   wire:model="testRecipient"
                                    class="form-control @error('testRecipient') is-invalid @enderror"
                                    placeholder="your@email.com">
                             @error('testRecipient')<div class="invalid-feedback">{{ $message }}</div>@enderror

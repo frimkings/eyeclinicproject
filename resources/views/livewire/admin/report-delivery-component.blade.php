@@ -72,7 +72,7 @@
                             <input type="checkbox"
                                    class="custom-control-input"
                                    id="reportEnabled"
-                                   wire:model="enabled">
+                                   wire:model.live="enabled">
                             <label class="custom-control-label" for="reportEnabled"></label>
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                         <label class="font-weight-bold small text-muted text-uppercase" style="letter-spacing:.05em">
                             Day of Week
                         </label>
-                        <select wire:model="day" class="form-control @error('day') is-invalid @enderror">
+                        <select wire:model.live="day" class="form-control @error('day') is-invalid @enderror">
                             <option value="0">Sunday</option>
                             <option value="1">Monday</option>
                             <option value="2">Tuesday</option>
@@ -131,7 +131,7 @@
                                 <span class="input-group-text"><i class="fas fa-clock text-muted"></i></span>
                             </div>
                             <input type="time"
-                                   wire:model="time"
+                                   wire:model.live="time"
                                    class="form-control @error('time') is-invalid @enderror">
                             @error('time')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -159,7 +159,7 @@
                             <span class="input-group-text"><i class="fas fa-at text-muted"></i></span>
                         </div>
                         <input type="email"
-                               wire:model.defer="newRecipient"
+                               wire:model="newRecipient"
                                wire:keydown.enter="addRecipient"
                                class="form-control @error('newRecipient') is-invalid @enderror"
                                placeholder="name@example.com">

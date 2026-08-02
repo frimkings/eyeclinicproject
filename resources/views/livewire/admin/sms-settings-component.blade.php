@@ -34,12 +34,12 @@
                     <h5 class="mb-0 font-weight-bold"><i class="fas fa-sms mr-2"></i> SMS API Configuration</h5>
                 </div>
                 <div class="card-body">
-                    <form wire:submit.prevent="save">
+                    <form wire:submit="save">
 
                         {{-- API Base URL --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">API BASE URL</label>
-                            <input type="url" wire:model.defer="smsApiUrl"
+                            <input type="url" wire:model="smsApiUrl"
                                    class="form-control bg-light border-0 @error('smsApiUrl') is-invalid @enderror"
                                    placeholder="http://dashboard.eazismspro.com/sms/api">
                             @error('smsApiUrl') <span class="text-danger small">{{ $message }}</span> @enderror
@@ -52,7 +52,7 @@
                         {{-- API Key --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">API KEY</label>
-                            <input type="password" wire:model.defer="smsApiKey"
+                            <input type="password" wire:model="smsApiKey"
                                    class="form-control bg-light border-0 @error('smsApiKey') is-invalid @enderror"
                                    placeholder="Leave blank to keep the existing key"
                                    autocomplete="new-password">
@@ -63,7 +63,7 @@
                         {{-- Sender ID --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">SENDER ID</label>
-                            <input type="text" wire:model.defer="smsSenderId"
+                            <input type="text" wire:model="smsSenderId"
                                    class="form-control bg-light border-0 @error('smsSenderId') is-invalid @enderror"
                                    placeholder="e.g. EYECLINIC"
                                    maxlength="11">
@@ -93,7 +93,7 @@
                     <div class="form-group">
                         <label class="small font-weight-bold text-muted">TEST PHONE NUMBER</label>
                         <div class="input-group">
-                            <input type="text" wire:model.defer="testPhone"
+                            <input type="text" wire:model="testPhone"
                                    class="form-control bg-light border-0"
                                    placeholder="e.g. 0241234567">
                             <div class="input-group-append">
@@ -148,7 +148,7 @@
                         The reminder fires daily at 09:00 when a patient's renewal date is within the configured number of days.
                     </p>
 
-                    <form wire:submit.prevent="saveRenewalSettings">
+                    <form wire:submit="saveRenewalSettings">
                         <div class="form-group d-flex align-items-center justify-content-between">
                             <div>
                                 <label class="small font-weight-bold text-muted mb-0">ENABLE RENEWAL REMINDERS</label>
@@ -156,7 +156,7 @@
                             </div>
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" class="custom-control-input" id="renewalEnabled"
-                                       wire:model="spectacleRenewalEnabled">
+                                       wire:model.live="spectacleRenewalEnabled">
                                 <label class="custom-control-label" for="renewalEnabled"></label>
                             </div>
                         </div>
@@ -164,7 +164,7 @@
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">DAYS BEFORE RENEWAL TO SEND REMINDER</label>
                             <div class="input-group" style="max-width:200px">
-                                <input type="number" wire:model.defer="spectacleRenewalReminderDays"
+                                <input type="number" wire:model="spectacleRenewalReminderDays"
                                        class="form-control bg-light border-0 @error('spectacleRenewalReminderDays') is-invalid @enderror"
                                        min="1" max="90" placeholder="30">
                                 <div class="input-group-append">

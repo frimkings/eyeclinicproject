@@ -28,32 +28,32 @@
                     <h5 class="mb-0 font-weight-bold"><i class="fas fa-cogs mr-2"></i> Clinic Information</h5>
                 </div>
                 <div class="card-body">
-                    <form wire:submit.prevent="updateSettings">
+                    <form wire:submit="updateSettings">
                         {{-- Clinic Name --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">CLINIC NAME</label>
-                            <input type="text" wire:model.defer="state.clinic_name" class="form-control bg-light border-0 @error('state.clinic_name') is-invalid @enderror" placeholder="e.g., BrightSight Eye Clinic">
+                            <input type="text" wire:model="state.clinic_name" class="form-control bg-light border-0 @error('state.clinic_name') is-invalid @enderror" placeholder="e.g., BrightSight Eye Clinic">
                             @error('state.clinic_name') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- Clinic Address --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">CLINIC ADDRESS</label>
-                            <textarea wire:model.defer="state.clinic_address" class="form-control bg-light border-0 @error('state.clinic_address') is-invalid @enderror" rows="2" placeholder="e.g., 123 Visionary St., Optic City"></textarea>
+                            <textarea wire:model="state.clinic_address" class="form-control bg-light border-0 @error('state.clinic_address') is-invalid @enderror" rows="2" placeholder="e.g., 123 Visionary St., Optic City"></textarea>
                             @error('state.clinic_address') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- Clinic Contact --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">CONTACT NUMBER</label>
-                            <input type="text" wire:model.defer="state.clinic_contact" class="form-control bg-light border-0 @error('state.clinic_contact') is-invalid @enderror" placeholder="e.g., +123 456 7890">
+                            <input type="text" wire:model="state.clinic_contact" class="form-control bg-light border-0 @error('state.clinic_contact') is-invalid @enderror" placeholder="e.g., +123 456 7890">
                             @error('state.clinic_contact') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- Clinic Email --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">EMAIL ADDRESS</label>
-                            <input type="email" wire:model.defer="state.clinic_email" class="form-control bg-light border-0 @error('state.clinic_email') is-invalid @enderror" placeholder="e.g., info@brightsight.com">
+                            <input type="email" wire:model="state.clinic_email" class="form-control bg-light border-0 @error('state.clinic_email') is-invalid @enderror" placeholder="e.g., info@brightsight.com">
                             @error('state.clinic_email') <span class="text-danger small">{{ $message }}</span> @enderror
                             <small class="form-text text-muted">Leave blank if the clinic does not use an email address.</small>
                         </div>
@@ -61,7 +61,7 @@
                         {{-- Currency --}}
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">CURRENCY</label>
-                            <select wire:model="currency_symbol" class="form-control bg-light border-0 @error('currency_symbol') is-invalid @enderror">
+                            <select wire:model.live="currency_symbol" class="form-control bg-light border-0 @error('currency_symbol') is-invalid @enderror">
                                 @foreach(\App\Models\Setting::CURRENCIES as $symbol => $label)
                                     <option value="{{ $symbol }}">{{ $label }}</option>
                                 @endforeach
@@ -75,12 +75,12 @@
                             <label class="small font-weight-bold text-muted">VISUAL ACUITY NOTATION</label>
                             <div class="pt-1">
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" wire:model="va_notation" value="6m"
+                                    <input type="radio" wire:model.live="va_notation" value="6m"
                                         id="va6m" class="custom-control-input">
                                     <label for="va6m" class="custom-control-label">6 metre &nbsp;<span class="text-muted">(6/6, 6/12…)</span></label>
                                 </div>
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" wire:model="va_notation" value="20ft"
+                                    <input type="radio" wire:model.live="va_notation" value="20ft"
                                         id="va20ft" class="custom-control-input">
                                     <label for="va20ft" class="custom-control-label">20 foot &nbsp;<span class="text-muted">(20/20, 20/40…)</span></label>
                                 </div>
@@ -94,7 +94,7 @@
                         <div class="form-group">
                             <label class="small font-weight-bold text-muted">CLINIC LOGO</label>
                             <div class="custom-file">
-                                <input type="file" wire:model="newLogo" class="custom-file-input @error('newLogo') is-invalid @enderror" id="customFile{{ $uploadInputKey }}" wire:key="clinic-logo-{{ $uploadInputKey }}">
+                                <input type="file" wire:model.live="newLogo" class="custom-file-input @error('newLogo') is-invalid @enderror" id="customFile{{ $uploadInputKey }}" wire:key="clinic-logo-{{ $uploadInputKey }}">
                                 <label class="custom-file-label" for="customFile{{ $uploadInputKey }}">{{ $newLogo ? $newLogo->getClientOriginalName() : 'Choose file...' }}</label>
                             </div>
                             @error('newLogo') <span class="text-danger small">{{ $message }}</span> @enderror

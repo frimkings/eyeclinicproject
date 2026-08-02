@@ -37,11 +37,11 @@
                 <p class="sidebar-label"><i class="fas fa-calendar-alt mr-1"></i>Date Range</p>
                 <div class="form-group mb-2">
                     <label class="small text-muted mb-1">From</label>
-                    <input type="date" wire:model="fromDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="fromDate" class="form-control form-control-sm">
                 </div>
                 <div class="form-group mb-0">
                     <label class="small text-muted mb-1">To</label>
-                    <input type="date" wire:model="toDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="toDate" class="form-control form-control-sm">
                 </div>
             </div>
             @else
@@ -68,7 +68,7 @@
                 </p>
                 <input
                     type="text"
-                    wire:model.debounce.500ms="searchQuery"
+                    wire:model.live.debounce.500ms="searchQuery"
                     class="form-control form-control-sm"
                     placeholder="{{ $analyticsView === 'items' ? 'Product name...' : 'Transaction or Patient...' }}"
                 >
@@ -79,16 +79,16 @@
             <div class="mb-4 pb-3 border-bottom">
                 <p class="sidebar-label"><i class="fas fa-cog mr-1"></i>Options</p>
                 <div class="custom-control custom-switch mb-2">
-                    <input type="checkbox" class="custom-control-input" id="showRefundedSwitch" wire:model="showRefunded">
+                    <input type="checkbox" class="custom-control-input" id="showRefundedSwitch" wire:model.live="showRefunded">
                     <label class="custom-control-label small" for="showRefundedSwitch">Include Refunds</label>
                 </div>
-                <select wire:model="paymentStatus" class="form-control form-control-sm">
+                <select wire:model.live="paymentStatus" class="form-control form-control-sm">
                     <option value="">All Payment Statuses</option>
                     <option value="paid">Paid</option>
                     <option value="partial">Partial</option>
                     <option value="unpaid">Unpaid</option>
                 </select>
-                <select wire:model="purchaseType" class="form-control form-control-sm mt-2">
+                <select wire:model.live="purchaseType" class="form-control form-control-sm mt-2">
                     <option value="">All Purchase Types</option>
                     <option value="patient">Patient Purchase</option>
                     <option value="direct">Direct Purchase / Walk-in</option>
@@ -99,7 +99,7 @@
             {{-- PER PAGE --}}
             <div class="mb-4 pb-3 border-bottom">
                 <p class="sidebar-label"><i class="fas fa-list-ol mr-1"></i>Per Page</p>
-                <select wire:model="perPage" class="form-control form-control-sm">
+                <select wire:model.live="perPage" class="form-control form-control-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -264,7 +264,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
                             <h6 class="mb-0 font-weight-bold"><i class="fas fa-chart-area mr-2 text-primary"></i>Revenue &amp; Profit Trend</h6>
-                            <select wire:model="chartPeriod" class="form-control form-control-sm w-auto">
+                            <select wire:model.live="chartPeriod" class="form-control form-control-sm w-auto">
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
                                 <option value="monthly">Monthly</option>
@@ -937,7 +937,7 @@
                 <div class="form-group mb-0">
                     <label class="font-weight-bold">Reason for Refund <span class="text-danger">*</span></label>
                     <textarea
-                        wire:model.defer="refundReason"
+                        wire:model="refundReason"
                         class="form-control @error('refundReason') is-invalid @enderror"
                         rows="4"
                         placeholder="Provide a detailed reason for this refund…"
@@ -1000,7 +1000,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     /* ─── Chart ─── */
     let chart = null;
 

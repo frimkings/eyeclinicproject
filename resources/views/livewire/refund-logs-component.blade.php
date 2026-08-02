@@ -22,20 +22,20 @@
             <div class="row no-gutters">
                 <div class="col-md-3 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Search</label>
-                    <input wire:model.debounce.300ms="search" type="text"
+                    <input wire:model.live.debounce.300ms="search" type="text"
                            class="form-control form-control-sm shadow-none"
                            placeholder="TXN ID or reason…">
                 </div>
                 <div class="col-md-3 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Date Range</label>
                     <div class="input-group input-group-sm">
-                        <input wire:model="fromDate" type="date" class="form-control">
-                        <input wire:model="toDate"   type="date" class="form-control">
+                        <input wire:model.live="fromDate" type="date" class="form-control">
+                        <input wire:model.live="toDate"   type="date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Staff</label>
-                    <select wire:model="staffId" class="form-control form-control-sm">
+                    <select wire:model.live="staffId" class="form-control form-control-sm">
                         <option value="">All Staff</option>
                         @foreach($staff as $s)
                             <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -44,7 +44,7 @@
                 </div>
                 <div class="col-md-2 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Per page</label>
-                    <select wire:model="perPage" class="form-control form-control-sm">
+                    <select wire:model.live="perPage" class="form-control form-control-sm">
                         <option value="15">15</option>
                         <option value="25">25</option>
                         <option value="50">50</option>

@@ -376,7 +376,7 @@
 
 {{-- Chart.js --}}
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     const ctx = document.getElementById('secretaryPatientsChart');
     if (!ctx) return;
 

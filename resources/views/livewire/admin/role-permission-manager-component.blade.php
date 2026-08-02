@@ -313,7 +313,7 @@
 
                 <div class="form-group">
                     <label class="font-weight-bold small">Role Name <span class="text-danger">*</span></label>
-                    <input wire:model.defer="roleName"
+                    <input wire:model="roleName"
                            id="roleNameInput"
                            type="text"
                            class="form-control @error('roleName') is-invalid @enderror"
@@ -328,7 +328,7 @@
                         Dashboard After Login
                         <span class="text-muted font-weight-normal">— where this role lands on login</span>
                     </label>
-                    <select wire:model.defer="dashboardRoute" class="form-control">
+                    <select wire:model="dashboardRoute" class="form-control">
                         <option value="">— User Profile (default fallback) —</option>
                         <option value="admin.dashboard">Admin Dashboard</option>
                         <option value="doctor.dashboard">Doctor Dashboard</option>
@@ -380,7 +380,7 @@
                                            onmouseover="this.style.background='#f0f4ff'"
                                            onmouseout="this.style.background=''">
                                         <input type="checkbox"
-                                               wire:model="selectedPermissions"
+                                               wire:model.live="selectedPermissions"
                                                value="{{ $perm->id }}"
                                                class="mr-2"
                                                style="width:16px;height:16px;flex-shrink:0;">
@@ -439,7 +439,7 @@
                 <div class="form-row align-items-end mb-3">
                     <div class="col">
                         <label class="font-weight-bold small">Assign User</label>
-                        <select wire:model.defer="userToAssign" class="form-control @error('userToAssign') is-invalid @enderror">
+                        <select wire:model="userToAssign" class="form-control @error('userToAssign') is-invalid @enderror">
                             <option value="">Choose staff member...</option>
                             @foreach($assignableUsers as $user)
                                 <option value="{{ $user->id }}">
@@ -497,7 +497,7 @@
             <div class="modal-body">
                 <div class="form-group mb-2">
                     <label class="font-weight-bold small">Permission Name <span class="text-danger">*</span></label>
-                    <input wire:model.defer="permissionName"
+                    <input wire:model="permissionName"
                            id="permissionNameInput"
                            type="text"
                            class="form-control @error('permissionName') is-invalid @enderror"

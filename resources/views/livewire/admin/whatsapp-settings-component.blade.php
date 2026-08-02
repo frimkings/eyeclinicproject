@@ -38,7 +38,7 @@
             <div class="row">
                 <div class="col-md-6 form-group">
                     <label>Phone Number ID <span class="text-danger">*</span></label>
-                    <input wire:model.defer="phoneNumberId" type="text"
+                    <input wire:model="phoneNumberId" type="text"
                         class="form-control @error('phoneNumberId') is-invalid @enderror"
                         placeholder="e.g. 123456789012345">
                     <small class="text-muted">Found in Meta Developer → App → WhatsApp → API Setup</small>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="col-md-6 form-group">
                     <label>Access Token</label>
-                    <input wire:model.defer="accessToken" type="password"
+                    <input wire:model="accessToken" type="password"
                         class="form-control"
                         placeholder="Leave blank to keep existing token"
                         autocomplete="new-password">
@@ -76,13 +76,13 @@
                 <div class="row">
                     <div class="col-md-6 form-group mb-0">
                         <label class="small">Template Name</label>
-                        <input wire:model.defer="apptTemplate" type="text"
+                        <input wire:model="apptTemplate" type="text"
                             class="form-control form-control-sm"
                             placeholder="e.g. appointment_reminder">
                     </div>
                     <div class="col-md-3 form-group mb-0">
                         <label class="small">Language Code</label>
-                        <input wire:model.defer="apptTemplateLang" type="text"
+                        <input wire:model="apptTemplateLang" type="text"
                             class="form-control form-control-sm"
                             placeholder="e.g. en">
                     </div>
@@ -97,7 +97,7 @@
                 </p>
                 <div class="col-md-6 form-group mb-0 px-0">
                     <label class="small">Template Name</label>
-                    <input wire:model.defer="birthdayTemplate" type="text"
+                    <input wire:model="birthdayTemplate" type="text"
                         class="form-control form-control-sm"
                         placeholder="e.g. birthday_wishes (leave blank to use SMS only)">
                 </div>
@@ -111,7 +111,7 @@
                 </p>
                 <div class="col-md-6 form-group mb-0 px-0">
                     <label class="small">Template Name</label>
-                    <input wire:model.defer="recallTemplate" type="text"
+                    <input wire:model="recallTemplate" type="text"
                         class="form-control form-control-sm"
                         placeholder="e.g. patient_recall (leave blank to use SMS only)">
                 </div>
@@ -125,7 +125,7 @@
                 </p>
                 <div class="col-md-6 form-group mb-0 px-0">
                     <label class="small">Template Name</label>
-                    <input wire:model.defer="renewalTemplate" type="text"
+                    <input wire:model="renewalTemplate" type="text"
                         class="form-control form-control-sm"
                         placeholder="e.g. spectacle_renewal (leave blank to use SMS only)">
                 </div>
@@ -143,17 +143,17 @@
             <p class="small text-muted mb-2">Controls how birthday wishes, patient recalls, and spectacle renewal reminders are sent.</p>
             <div class="d-flex" style="gap: 12px; flex-wrap: wrap;">
                 <div class="custom-control custom-radio">
-                    <input wire:model.defer="bulkChannel" type="radio" value="sms"
+                    <input wire:model="bulkChannel" type="radio" value="sms"
                         class="custom-control-input" id="bulkSms">
                     <label class="custom-control-label" for="bulkSms">SMS only</label>
                 </div>
                 <div class="custom-control custom-radio">
-                    <input wire:model.defer="bulkChannel" type="radio" value="whatsapp"
+                    <input wire:model="bulkChannel" type="radio" value="whatsapp"
                         class="custom-control-input" id="bulkWa">
                     <label class="custom-control-label" for="bulkWa">WhatsApp only</label>
                 </div>
                 <div class="custom-control custom-radio">
-                    <input wire:model.defer="bulkChannel" type="radio" value="both"
+                    <input wire:model="bulkChannel" type="radio" value="both"
                         class="custom-control-input" id="bulkBoth">
                     <label class="custom-control-label" for="bulkBoth">Both (SMS + WhatsApp)</label>
                 </div>
@@ -180,7 +180,7 @@
             <div class="row align-items-end">
                 <div class="col-md-5 form-group mb-0">
                     <label>Phone Number</label>
-                    <input wire:model.defer="testPhone" type="text"
+                    <input wire:model="testPhone" type="text"
                         class="form-control @error('testPhone') is-invalid @enderror"
                         placeholder="e.g. 0244000000">
                     @error('testPhone')<div class="invalid-feedback">{{ $message }}</div>@enderror

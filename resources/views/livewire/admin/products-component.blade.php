@@ -1,4 +1,5 @@
 <div>
+<div>
     {{-- Header --}}
     <div class="content-header">
         <div class="container-fluid">
@@ -56,11 +57,11 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form wire:submit.prevent="saveLensOption" class="row align-items-end mb-4">
+                        <form wire:submit="saveLensOption" class="row align-items-end mb-4">
                             <div class="col-md-4">
                                 <div class="form-group mb-md-0">
                                     <label>Lens Family <span class="text-danger">*</span></label>
-                                    <select wire:model.defer="lensState.family" class="form-control @error('family') is-invalid @enderror">
+                                    <select wire:model="lensState.family" class="form-control @error('family') is-invalid @enderror">
                                         <option value="">Select family...</option>
                                         @foreach(\App\Models\LensOption::FAMILIES as $family)
                                             <option value="{{ $family }}">{{ $family }}</option>
@@ -72,7 +73,7 @@
                             <div class="col-md-5">
                                 <div class="form-group mb-md-0">
                                     <label>Display Name <span class="text-danger">*</span></label>
-                                    <input type="text" wire:model.defer="lensState.display_name"
+                                    <input type="text" wire:model="lensState.display_name"
                                            class="form-control @error('display_name') is-invalid @enderror"
                                            placeholder="e.g. SV Blue Block">
                                     @error('display_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -196,7 +197,7 @@
                                                class="custom-file-input @error('importFile') is-invalid @enderror"
                                                id="productImportFile"
                                                accept=".csv,text/csv,text/plain"
-                                               wire:model="importFile">
+                                               wire:model.live="importFile">
                                         <label class="custom-file-label" for="productImportFile">
                                             {{ $importFile ? $importFile->getClientOriginalName() : 'Choose CSV file' }}
                                         </label>
@@ -241,13 +242,13 @@
                         </div>
                     </div>
                     
-                    <form wire:submit.prevent="{{ $editingProduct ? 'updateProduct' : 'createProduct' }}">
+                    <form wire:submit="{{ $editingProduct ? 'updateProduct' : 'createProduct' }}">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Name <span class="text-danger">*</span></label>
-                                        <input type="text" wire:model.defer="state.name" 
+                                        <input type="text" wire:model="state.name"
                                                class="form-control @error('name') is-invalid @enderror"
                                                placeholder="Product name">
                                         @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -257,7 +258,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Batch Number <span class="text-danger">*</span></label>
-                                        <input type="text" wire:model.defer="state.batch_number" 
+                                        <input type="text" wire:model="state.batch_number"
                                                class="form-control @error('batch_number') is-invalid @enderror"
                                                placeholder="e.g., BTH001">
                                         @error('batch_number') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -267,7 +268,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Category <span class="text-danger">*</span></label>
-                                        <select wire:model.defer="state.category_id" 
+                                        <select wire:model="state.category_id"
                                                 class="form-control @error('category_id') is-invalid @enderror">
                                             <option value="">-- Select category --</option>
                                             @foreach($categories as $cat)
@@ -283,7 +284,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Quantity <span class="text-danger">*</span></label>
-                                        <input type="number" min="0" wire:model.defer="state.quantity"
+                                        <input type="number" min="0" wire:model="state.quantity"
                                                class="form-control @error('quantity') is-invalid @enderror"
                                                placeholder="0">
                                         @error('quantity') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -293,7 +294,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Cost Price <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" min="0" wire:model.lazy="state.cost_price"
+                                        <input type="number" step="0.01" min="0" wire:model.blur="state.cost_price"
                                                class="form-control @error('cost_price') is-invalid @enderror"
                                                placeholder="0.00">
                                         @error('cost_price') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -303,7 +304,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Selling Price <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" min="0" wire:model.lazy="state.selling_price"
+                                        <input type="number" step="0.01" min="0" wire:model.blur="state.selling_price"
                                                class="form-control @error('selling_price') is-invalid @enderror"
                                                placeholder="0.00">
                                         @error('selling_price') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -317,7 +318,7 @@
                                         </label>
                                         <div class="input-group">
                                             <input type="number" step="0.01" min="0"
-                                                   wire:model.lazy="state.profit_margin"
+                                                   wire:model.blur="state.profit_margin"
                                                    class="form-control"
                                                    placeholder="e.g. 20">
                                             <div class="input-group-append">
@@ -333,7 +334,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Manufacture Date <span class="text-danger">*</span></label>
-                                        <input type="date" wire:model.defer="state.manufacture_date" 
+                                        <input type="date" wire:model="state.manufacture_date"
                                                class="form-control @error('manufacture_date') is-invalid @enderror">
                                         @error('manufacture_date') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                     </div>
@@ -342,7 +343,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Expiry Date <span class="text-danger">*</span></label>
-                                        <input type="date" wire:model.defer="state.expiry_date" 
+                                        <input type="date" wire:model="state.expiry_date"
                                                class="form-control @error('expiry_date') is-invalid @enderror">
                                         @error('expiry_date') <span class="invalid-feedback">{{ $message }}</span> @enderror
                                     </div>
@@ -431,7 +432,7 @@
                         <div class="col-md-6">
                             <div class="input-group">
                                 <input type="text" 
-                                       wire:model.debounce.500ms="searchTerm" 
+                                       wire:model.live.debounce.500ms="searchTerm"
                                        class="form-control" 
                                        placeholder="Search by name, batch number{{ $searchByCategory ? '' : ' or category' }}...">
                                 <div class="input-group-append">
@@ -447,7 +448,7 @@
                                 <input type="checkbox" 
                                        class="custom-control-input" 
                                        id="searchByCategoryToggle" 
-                                       wire:model="searchByCategory">
+                                       wire:model.live="searchByCategory">
                                 <label class="custom-control-label" for="searchByCategoryToggle">
                                     Search by Category
                                 </label>
@@ -455,7 +456,7 @@
 
                             @if($searchByCategory)
                                 <div class="d-inline-block" style="width: 250px;">
-                                    <select wire:model="selectedCategoryFilter" class="form-control form-control-sm">
+                                    <select wire:model.live="selectedCategoryFilter" class="form-control form-control-sm">
                                         <option value="">-- All Categories --</option>
                                         @foreach($categories as $cat)
                                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -474,7 +475,7 @@
                                     <th style="width: 42px;" class="text-center">
                                         <input type="checkbox"
                                                class="product-row-check"
-                                               wire:model="selectAllPage"
+                                               wire:model.live="selectAllPage"
                                                title="Select all visible products">
                                     </th>
                                     <th style="width: 50px;">#</th>
@@ -505,7 +506,7 @@
                                             <input type="checkbox"
                                                    class="product-row-check"
                                                    value="{{ $product->id }}"
-                                                   wire:model="selectedProductIds">
+                                                   wire:model.live="selectedProductIds">
                                         </td>
                                         <td>{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
                                         <td>
@@ -668,3 +669,4 @@
         }
     }
 </style>
+</div>

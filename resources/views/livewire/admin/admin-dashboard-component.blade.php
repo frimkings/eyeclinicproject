@@ -452,7 +452,7 @@
 
 {{-- Chart.js — fires after Livewire mounts the DOM --}}
 <script>
-document.addEventListener('livewire:load', function () {
+document.addEventListener('livewire:init', function () {
     const ctx = document.getElementById('dashboardRevenueChart');
     if (!ctx) return;
 

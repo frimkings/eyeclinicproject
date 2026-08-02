@@ -167,7 +167,7 @@
                 </div>
                 <div class="card-body">
                     <div class="form-group mb-2">
-                        <textarea wire:model.defer="licenseKey"
+                        <textarea wire:model="licenseKey"
                                   class="form-control font-monospace"
                                   rows="3"
                                   placeholder="EYECLINIC-PRO-..."></textarea>

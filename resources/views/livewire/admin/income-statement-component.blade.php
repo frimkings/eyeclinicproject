@@ -68,11 +68,11 @@
             <div class="row mt-3">
                 <div class="col-md-3 col-6 mb-2">
                     <label class="muted-label mb-1">From</label>
-                    <input type="date" wire:model="fromDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="fromDate" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-3 col-6 mb-2">
                     <label class="muted-label mb-1">To</label>
-                    <input type="date" wire:model="toDate" class="form-control form-control-sm">
+                    <input type="date" wire:model.live="toDate" class="form-control form-control-sm">
                 </div>
             </div>
         </div>
@@ -325,7 +325,7 @@
                     @endif
                     <div class="form-group">
                         <label class="muted-label">Type</label>
-                        <select wire:model="section" class="form-control" {{ $isLocked ? 'disabled' : '' }}>
+                        <select wire:model.live="section" class="form-control" {{ $isLocked ? 'disabled' : '' }}>
                             @foreach($sections as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
@@ -333,7 +333,7 @@
                     </div>
                     <div class="form-group mb-2">
                         <label class="muted-label">Entry</label>
-                        <select wire:model="selectedPreset" class="form-control @error('name') is-invalid @enderror" {{ $isLocked ? 'disabled' : '' }}>
+                        <select wire:model.live="selectedPreset" class="form-control @error('name') is-invalid @enderror" {{ $isLocked ? 'disabled' : '' }}>
                             <option value="">Select entry</option>
                             @foreach($entryPresets[$section] ?? [] as $preset)
                                 <option value="{{ $preset }}">{{ $preset }}</option>
@@ -344,33 +344,33 @@
                     </div>
                     <div class="form-group">
                         <label class="muted-label">Type Custom Entry</label>
-                        <input type="text" wire:model.defer="customName" class="form-control @error('name') is-invalid @enderror" placeholder="Optional, overrides selected entry" {{ $isLocked ? 'disabled' : '' }}>
+                        <input type="text" wire:model="customName" class="form-control @error('name') is-invalid @enderror" placeholder="Optional, overrides selected entry" {{ $isLocked ? 'disabled' : '' }}>
                         <small class="form-text text-muted">Use this when the line is not in the dropdown.</small>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="muted-label">Amount</label>
-                                <input type="number" step="0.01" wire:model.defer="amount" class="form-control @error('amount') is-invalid @enderror" {{ $section === \App\Models\IncomeStatementEntry::TAX || $isLocked ? 'disabled' : '' }}>
+                                <input type="number" step="0.01" wire:model="amount" class="form-control @error('amount') is-invalid @enderror" {{ $section === \App\Models\IncomeStatementEntry::TAX || $isLocked ? 'disabled' : '' }}>
                                 @error('amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="muted-label">Tax %</label>
-                                <input type="number" step="0.01" wire:model.defer="percentage" class="form-control @error('percentage') is-invalid @enderror" {{ $section === \App\Models\IncomeStatementEntry::TAX && !$isLocked ? '' : 'disabled' }}>
+                                <input type="number" step="0.01" wire:model="percentage" class="form-control @error('percentage') is-invalid @enderror" {{ $section === \App\Models\IncomeStatementEntry::TAX && !$isLocked ? '' : 'disabled' }}>
                                 @error('percentage')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="muted-label">Date</label>
-                        <input type="date" wire:model.defer="entryDate" class="form-control @error('entryDate') is-invalid @enderror" {{ $isLocked ? 'disabled' : '' }}>
+                        <input type="date" wire:model="entryDate" class="form-control @error('entryDate') is-invalid @enderror" {{ $isLocked ? 'disabled' : '' }}>
                         @error('entryDate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="form-group">
                         <label class="muted-label">Notes</label>
-                        <textarea wire:model.defer="notes" class="form-control" rows="2" {{ $isLocked ? 'disabled' : '' }}></textarea>
+                        <textarea wire:model="notes" class="form-control" rows="2" {{ $isLocked ? 'disabled' : '' }}></textarea>
                     </div>
                     <button type="button" wire:click="saveEntry" class="btn btn-primary btn-block" {{ $isLocked ? 'disabled' : '' }}>
                         Save Line
@@ -384,7 +384,7 @@
                     </button>
                     <div class="form-group">
                         <label class="muted-label">Type</label>
-                        <select wire:model="templateSection" class="form-control">
+                        <select wire:model.live="templateSection" class="form-control">
                             @foreach($sections as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
@@ -392,28 +392,28 @@
                     </div>
                     <div class="form-group">
                         <label class="muted-label">Template Name</label>
-                        <input type="text" wire:model.defer="templateName" class="form-control @error('templateName') is-invalid @enderror" placeholder="Rent, Nurse Salary, Loan Interest">
+                        <input type="text" wire:model="templateName" class="form-control @error('templateName') is-invalid @enderror" placeholder="Rent, Nurse Salary, Loan Interest">
                         @error('templateName')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="muted-label">Amount</label>
-                                <input type="number" step="0.01" wire:model.defer="templateAmount" class="form-control @error('templateAmount') is-invalid @enderror" {{ $templateSection === \App\Models\IncomeStatementEntry::TAX ? 'disabled' : '' }}>
+                                <input type="number" step="0.01" wire:model="templateAmount" class="form-control @error('templateAmount') is-invalid @enderror" {{ $templateSection === \App\Models\IncomeStatementEntry::TAX ? 'disabled' : '' }}>
                                 @error('templateAmount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="muted-label">Tax %</label>
-                                <input type="number" step="0.01" wire:model.defer="templatePercentage" class="form-control @error('templatePercentage') is-invalid @enderror" {{ $templateSection === \App\Models\IncomeStatementEntry::TAX ? '' : 'disabled' }}>
+                                <input type="number" step="0.01" wire:model="templatePercentage" class="form-control @error('templatePercentage') is-invalid @enderror" {{ $templateSection === \App\Models\IncomeStatementEntry::TAX ? '' : 'disabled' }}>
                                 @error('templatePercentage')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="muted-label">Notes</label>
-                        <textarea wire:model.defer="templateNotes" class="form-control" rows="2"></textarea>
+                        <textarea wire:model="templateNotes" class="form-control" rows="2"></textarea>
                     </div>
                     <button type="button" wire:click="saveTemplate" class="btn btn-secondary btn-block">Save Template</button>
 
@@ -469,7 +469,7 @@
                     @else
                         <div class="form-group">
                             <label class="muted-label">Lock Notes</label>
-                            <textarea wire:model.defer="lockNotes" class="form-control" rows="2"></textarea>
+                            <textarea wire:model="lockNotes" class="form-control" rows="2"></textarea>
                         </div>
                         <button type="button" wire:click="lockPeriod" class="btn btn-warning btn-block">Lock Period</button>
                     @endif
@@ -483,35 +483,35 @@
                                 <div class="w-100">
                                     <div class="form-group mb-2">
                                         <label class="muted-label">Name</label>
-                                        <input type="text" wire:model.defer="editingName" class="form-control form-control-sm @error('editingName') is-invalid @enderror">
+                                        <input type="text" wire:model="editingName" class="form-control form-control-sm @error('editingName') is-invalid @enderror">
                                         @error('editingName')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group mb-2">
                                                 <label class="muted-label">Amount</label>
-                                                <input type="number" step="0.01" wire:model.defer="editingAmount" class="form-control form-control-sm @error('editingAmount') is-invalid @enderror" {{ $entry->section === \App\Models\IncomeStatementEntry::TAX ? 'disabled' : '' }}>
+                                                <input type="number" step="0.01" wire:model="editingAmount" class="form-control form-control-sm @error('editingAmount') is-invalid @enderror" {{ $entry->section === \App\Models\IncomeStatementEntry::TAX ? 'disabled' : '' }}>
                                                 @error('editingAmount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group mb-2">
                                                 <label class="muted-label">Tax %</label>
-                                                <input type="number" step="0.01" wire:model.defer="editingPercentage" class="form-control form-control-sm @error('editingPercentage') is-invalid @enderror" {{ $entry->section === \App\Models\IncomeStatementEntry::TAX ? '' : 'disabled' }}>
+                                                <input type="number" step="0.01" wire:model="editingPercentage" class="form-control form-control-sm @error('editingPercentage') is-invalid @enderror" {{ $entry->section === \App\Models\IncomeStatementEntry::TAX ? '' : 'disabled' }}>
                                                 @error('editingPercentage')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group mb-2">
                                                 <label class="muted-label">Date</label>
-                                                <input type="date" wire:model.defer="editingDate" class="form-control form-control-sm @error('editingDate') is-invalid @enderror">
+                                                <input type="date" wire:model="editingDate" class="form-control form-control-sm @error('editingDate') is-invalid @enderror">
                                                 @error('editingDate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                             </div>
                                         </div>
                                     </div>
                                     <div class="form-group mb-2">
                                         <label class="muted-label">Notes</label>
-                                        <textarea wire:model.defer="editingNotes" class="form-control form-control-sm" rows="2"></textarea>
+                                        <textarea wire:model="editingNotes" class="form-control form-control-sm" rows="2"></textarea>
                                     </div>
                                     <div class="text-right">
                                         <button type="button" wire:click="updateEntry" class="btn btn-sm btn-primary">Save</button>

@@ -1,3 +1,4 @@
+<div>
 <div class="container-fluid py-4">
     <style>
         .badge-success-light { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
@@ -27,13 +28,13 @@
             <div class="row no-gutters">
                 <div class="col-md-3 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Live Search</label>
-                    <input wire:model.debounce.300ms="searchTerm" type="text" class="form-control form-control-sm shadow-none" placeholder="Name or TXN ID">
+                    <input wire:model.live.debounce.300ms="searchTerm" type="text" class="form-control form-control-sm shadow-none" placeholder="Name or TXN ID">
                 </div>
                 <div class="col-md-3 px-1">
                     <label class="small font-weight-bold text-uppercase text-muted">Date Range</label>
                     <div class="input-group input-group-sm">
-                        <input wire:model="fromDate" type="date" class="form-control">
-                        <input wire:model="toDate" type="date" class="form-control">
+                        <input wire:model.live="fromDate" type="date" class="form-control">
+                        <input wire:model.live="toDate" type="date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-4 px-1">
@@ -181,7 +182,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-5">
                             <label class="font-weight-bold small">Request Type</label>
-                            <select wire:model.defer="initiateRefundType"
+                            <select wire:model="initiateRefundType"
                                     class="form-control @error('initiateRefundType') is-invalid @enderror">
                                 <option value="refund">Refund</option>
                                 <option value="void">Void</option>
@@ -192,7 +193,7 @@
                         </div>
                         <div class="form-group col-md-7">
                             <label class="font-weight-bold small">Reason Code</label>
-                            <select wire:model.defer="initiateRefundReasonCode"
+                            <select wire:model="initiateRefundReasonCode"
                                     class="form-control @error('initiateRefundReasonCode') is-invalid @enderror">
                                 <option value="">Select a reason</option>
                                 @foreach(\App\Models\RefundLog::REASON_CODES as $code => $label)
@@ -207,7 +208,7 @@
                     <div class="form-group mb-0">
                         <label class="font-weight-bold small">Reason <span class="text-danger">*</span></label>
                         <textarea
-                            wire:model.defer="initiateRefundReason"
+                            wire:model="initiateRefundReason"
                             class="form-control @error('initiateRefundReason') is-invalid @enderror"
                             rows="4"
                             placeholder="Describe why the customer is requesting a refund…"></textarea>
@@ -345,4 +346,5 @@
         window.addEventListener('show-initiateRefundModal', () => $('#initiateRefundModal').modal('show'));
         window.addEventListener('hide-initiateRefundModal', () => $('#initiateRefundModal').modal('hide'));
     </script>
+</div>
 </div>

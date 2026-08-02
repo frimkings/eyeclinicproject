@@ -76,22 +76,22 @@
             <div class="bg-white rounded-lg shadow-lg relative flex flex-col w-full outline-none focus:outline-none p-6">
                 <h3 class="text-2xl font-semibold mb-4">{{ $isEdit ? 'Update User' : 'Create New User' }}</h3>
                 
-                <form wire:submit.prevent="store">
+                <form wire:submit="store">
                     <div class="mb-4">
                         <label class="block text-sm font-bold mb-2">Name</label>
-                        <input type="text" wire:model="name" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <input type="text" wire:model.live="name" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
                         @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-bold mb-2">Email</label>
-                        <input type="email" wire:model="email" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <input type="email" wire:model.live="email" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
                         @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-bold mb-2">Role</label>
-                        <select wire:model="role" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <select wire:model.live="role" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
                             <option value="0">Super Admin</option>
                             <option value="1">User</option>
                             <option value="2">Editor</option>
@@ -105,7 +105,7 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-bold mb-2">Password {{ $isEdit ? '(Leave blank to keep current)' : '' }}</label>
-                        <input type="password" wire:model="password" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <input type="password" wire:model.live="password" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-400 outline-none">
                         @error('password') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
