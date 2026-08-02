@@ -6,6 +6,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Cached values are limited to scalar and array data by default. This
+    | prevents arbitrary PHP objects from being restored from cache payloads.
+    |
+    */
+
+    'serializable_classes' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Cache Store
     |--------------------------------------------------------------------------
     |

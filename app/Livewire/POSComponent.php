@@ -2206,8 +2206,10 @@ class POSComponent extends Component
             ->when($this->selectedCategoryId, fn($q) => $q->where('category_id', $this->selectedCategoryId))
             ->paginate(12);
 
-        $categories     = Cache::remember('pos.categories', 300, fn() => Category::orderBy('name')->get());
-        $clinicSettings = Cache::remember('pos.settings', 300, fn() => Setting::getSettings());
+        // These are Eloquent objects consumed directly by the view. Laravel 13
+        // intentionally blocks cached object unserialization by default.
+        $categories = Category::orderBy('name')->get();
+        $clinicSettings = Setting::getSettings();
 
         $cartProducts = $this->fetchCartProducts();
 
