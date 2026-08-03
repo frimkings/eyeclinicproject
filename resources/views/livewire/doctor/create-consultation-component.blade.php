@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <form wire:submit="saveConsulatation" autocomplete="off">
 
     <div class="container-fluid mt-3  col-12">
@@ -637,4 +638,5 @@
     <option value="N10">
 
 </datalist>
+</div>
 

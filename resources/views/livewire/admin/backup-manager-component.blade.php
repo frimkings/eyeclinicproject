@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid py-4">
 
     {{-- Header --}}
@@ -728,3 +729,4 @@
     word-break: break-all;
 }
 </style>
+</div>

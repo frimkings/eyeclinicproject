@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid mt-3  col-12">
     {{-- <div class="mb-3">
         <button wire:click.prevent="openAddSpectaclePrescriptionModal" class="btn btn-primary float-right">
@@ -669,3 +670,4 @@
       });
 });
     </script>
+</div>

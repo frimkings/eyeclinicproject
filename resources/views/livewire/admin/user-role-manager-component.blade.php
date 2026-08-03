@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid py-4">
     {{-- Header Section --}}
     <div class="mb-4">
@@ -811,3 +812,4 @@
         button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     });
 </script>
+</div>

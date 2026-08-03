@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid py-4">
 
     {{-- Header --}}
@@ -182,3 +183,4 @@
     .opacity-50 { opacity: 0.5; }
     .opacity-1 { opacity: 1 !important; }
 </style>
+</div>

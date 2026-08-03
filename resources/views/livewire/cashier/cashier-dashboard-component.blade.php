@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="content p-3" style="background:#f0f2f5; min-height:100vh;">
 <div class="container-fluid">
 
@@ -349,3 +350,4 @@ document.addEventListener('livewire:init', function () {
 .kpi-card__value--purple { color: #6f42c1; }
 .kpi-card__value--yellow { color: #e0a800; }
 </style>
+</div>

@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -351,3 +352,4 @@ function insertPlaceholder(key, placeholder) {
     el.focus();
 }
 </script>
+</div>

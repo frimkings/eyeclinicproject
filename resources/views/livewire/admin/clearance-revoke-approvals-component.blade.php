@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="container-fluid py-4">
 
     {{-- Header --}}
@@ -203,3 +204,4 @@
         });
     }
 </script>
+</div>

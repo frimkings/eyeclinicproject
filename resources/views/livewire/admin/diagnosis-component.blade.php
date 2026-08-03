@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div>
 
     {{-- ── Page Header ── --}}
@@ -838,3 +839,4 @@
 }
 .dx-empty__sub a { color: #3b82f6; }
 </style>
+</div>

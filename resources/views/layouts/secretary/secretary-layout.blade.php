@@ -25,9 +25,6 @@
         <x-footer />
     </div>
 
-    <script defer src="{{ asset('backend/plugins/vendor-js/alpine.min.js') }}"></script>
-    
-    @livewireScripts
     @livewireCalendarScripts
 </body>
 </html>

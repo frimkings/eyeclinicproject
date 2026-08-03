@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="emr-root">
 
     {{-- Premium Patient Profile Header --}}
@@ -2298,3 +2299,4 @@
             }, 250);
         });
 </script>
+</div>

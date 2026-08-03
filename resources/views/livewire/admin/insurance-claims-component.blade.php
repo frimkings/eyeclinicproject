@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div>
   {{-- Page Header --}}
   <div class="content-header">
@@ -536,3 +537,4 @@
   }
 }
 </style>
+</div>

@@ -1,3 +1,4 @@
+<div data-livewire-root>
 <div class="appt-page bg-light min-vh-100">
 
     {{-- ===== PAGE HEADER ===== --}}
@@ -977,3 +978,4 @@ function handleCalendarDrop(event, newDate) {
     .calendar-day, .calendar-weekday { min-width: 120px; }
 }
 </style>
+</div>

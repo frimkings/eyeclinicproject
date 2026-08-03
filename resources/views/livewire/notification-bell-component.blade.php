@@ -69,7 +69,6 @@
         </div>
 
     </div>
-</li>
 
 {{-- Lightweight JS poller — updates only the badge number every 15 s without disturbing the Livewire component or the Bootstrap dropdown state --}}
 <script>
@@ -102,3 +101,4 @@
     });
 })();
 </script>
+</li>
