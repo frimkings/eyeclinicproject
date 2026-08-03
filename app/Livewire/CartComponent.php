@@ -70,7 +70,7 @@ class CartComponent extends Component
         $this->productQuantity = 1;
         $this->productPrice = 0;
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Product added to cart successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Product added to cart successfully.']);
     }
 
     public function removeFromCart($id)

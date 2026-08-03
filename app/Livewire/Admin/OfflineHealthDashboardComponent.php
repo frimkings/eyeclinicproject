@@ -18,7 +18,7 @@ class OfflineHealthDashboardComponent extends Component
             'checked_by' => auth()->id(),
         ]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Offline health checks refreshed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Offline health checks refreshed.']);
     }
 
     public function render()

@@ -56,7 +56,7 @@ class CategoryComponent extends Component
 
         $this->resetCategoryForm();
         $this->dispatch('hide-addCategoryModal-form');
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Category added successfully!']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Category added successfully!']);
     }
 
     public function editCategoryModal(Category $category)
@@ -86,7 +86,7 @@ class CategoryComponent extends Component
 
         $this->resetCategoryForm();
         $this->dispatch('hide-addCategoryModal-form');
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Category updated successfully!']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Category updated successfully!']);
     }
 
     public function toggleCategoryStatus($categoryId)
@@ -94,7 +94,7 @@ class CategoryComponent extends Component
         $category = Category::findOrFail($categoryId);
         $category->update(['is_active' => !$category->is_active]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => $category->is_active ? 'Category activated.' : 'Category deactivated.',
         ]);
@@ -105,7 +105,7 @@ class CategoryComponent extends Component
         $category = Category::withCount('products')->findOrFail($categoryId);
 
         if ($category->products_count > 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Cannot delete a category that has products. Move or reassign products first.',
             ]);
@@ -113,7 +113,7 @@ class CategoryComponent extends Component
         }
 
         $this->categoryIdBeingRemoved = $categoryId;
-        $this->dispatchBrowserEvent('show-category-delete-confirmation', [
+        $this->dispatch('show-category-delete-confirmation', ...[
             'message' => 'This will archive the category.',
         ]);
     }
@@ -128,7 +128,7 @@ class CategoryComponent extends Component
 
         if ($category->products_count > 0) {
             $this->categoryIdBeingRemoved = null;
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Cannot delete a category that has products.',
             ]);
@@ -138,7 +138,7 @@ class CategoryComponent extends Component
         $category->delete();
         $this->categoryIdBeingRemoved = null;
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Category deleted successfully!']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Category deleted successfully!']);
     }
 
     private function validateCategory($ignoreId = null): array

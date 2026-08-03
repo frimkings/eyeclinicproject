@@ -60,7 +60,7 @@ class ReportDeliveryComponent extends Component
             'report_time' => $this->time,
         ]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Report schedule saved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Report schedule saved.']);
     }
 
     public function addRecipient(): void
@@ -79,7 +79,7 @@ class ReportDeliveryComponent extends Component
         $this->recipients[] = $email;
         $this->persistRecipients();
         $this->newRecipient = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Recipient added.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Recipient added.']);
     }
 
     public function removeRecipient(int $index): void
@@ -87,13 +87,13 @@ class ReportDeliveryComponent extends Component
         unset($this->recipients[$index]);
         $this->recipients = array_values($this->recipients);
         $this->persistRecipients();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Recipient removed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Recipient removed.']);
     }
 
     public function sendNow(): void
     {
         if (empty($this->recipients)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Add at least one recipient before sending a report.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Add at least one recipient before sending a report.']);
             return;
         }
 
@@ -105,9 +105,9 @@ class ReportDeliveryComponent extends Component
             ]);
 
             $label = $this->frequency === 'weekly' ? 'this week\'s' : 'today\'s';
-            $this->dispatch('notify', ['type' => 'success', 'message' => "Current report queued with {$label} data. It will retry automatically if email is offline."]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => "Current report queued with {$label} data. It will retry automatically if email is offline."]);
         } catch (\Throwable $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Send failed: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Send failed: ' . $e->getMessage()]);
         }
     }
 
@@ -115,9 +115,9 @@ class ReportDeliveryComponent extends Component
     {
         try {
             Artisan::call('report:retry-financial');
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pending report deliveries checked.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Pending report deliveries checked.']);
         } catch (\Throwable $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Retry failed: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Retry failed: ' . $e->getMessage()]);
         }
     }
 

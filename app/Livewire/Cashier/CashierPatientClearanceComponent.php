@@ -103,7 +103,7 @@ class CashierPatientClearanceComponent extends Component
         $patient = Patient::find($patientId);
 
         if (!$patient) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Patient not found!']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Patient not found!']);
             return;
         }
 
@@ -112,7 +112,7 @@ class CashierPatientClearanceComponent extends Component
             ->exists();
 
         if ($existsToday) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'This patient already has a clearance record today!',
             ]);
@@ -177,7 +177,7 @@ class CashierPatientClearanceComponent extends Component
             if ($existsToday) {
                 DB::rollBack();
                 $this->dispatch('hide-addClearanceModal-modal');
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'warning',
                     'message' => 'Clearance already exists for this patient today!',
                 ]);
@@ -281,11 +281,11 @@ class CashierPatientClearanceComponent extends Component
             DB::commit();
 
             $this->dispatch('hide-addClearanceModal-modal');
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => "Patient {$this->patientName} cleared successfully!",
             ]);
-            $this->dispatchBrowserEvent('show-clearance-receipt-modal', [
+            $this->dispatch('show-clearance-receipt-modal', ...[
                 'patient'  => $clearance->patient->name ?? '',
                 'pxnumber' => $clearance->patient->pxnumber ?? '',
                 'txn'      => $clearance->sale?->transaction_id
@@ -315,7 +315,7 @@ class CashierPatientClearanceComponent extends Component
                 'patient_id' => $this->patientClearanceId,
                 'user_id'    => Auth::id(),
             ]);
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'An error occurred while processing clearance. Please try again.',
             ]);
@@ -355,7 +355,7 @@ class CashierPatientClearanceComponent extends Component
         $this->editingClearanceId   = null;
         $this->editingPaymentStatus = '';
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Payment status updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Payment status updated.']);
     }
 
     public function cancelEditStatus(): void
@@ -373,7 +373,7 @@ class CashierPatientClearanceComponent extends Component
         if (!$clearance) return;
 
         if ($clearance->consultation()->exists()) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Cannot request revoke — a consultation is already linked to this clearance.',
             ]);
@@ -385,7 +385,7 @@ class CashierPatientClearanceComponent extends Component
             ->exists();
 
         if ($alreadyPending) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'A revoke request for this clearance is already awaiting approval.',
             ]);
@@ -410,7 +410,7 @@ class CashierPatientClearanceComponent extends Component
         }
 
         if ($clearance->consultation()->exists()) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Cannot request revoke — a consultation is already linked to this clearance.',
             ]);
@@ -442,7 +442,7 @@ class CashierPatientClearanceComponent extends Component
 
         $name = $this->requestingRevokeName;
         $this->cancelRevokeRequest();
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "Revoke request for {$name} submitted. Awaiting manager approval.",
         ]);

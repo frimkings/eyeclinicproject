@@ -64,10 +64,10 @@ class SupplierComponent extends Component
 
         if ($this->isEditing) {
             Supplier::findOrFail($this->supplierId)->update($data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Supplier updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Supplier updated.']);
         } else {
             Supplier::create($data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Supplier added.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Supplier added.']);
         }
 
         $this->showModal = false;
@@ -78,7 +78,7 @@ class SupplierComponent extends Component
     {
         $supplier = Supplier::findOrFail($id);
         $supplier->update(['is_active' => !$supplier->is_active]);
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $supplier->is_active ? 'Supplier activated.' : 'Supplier deactivated.',
         ]);
@@ -86,7 +86,7 @@ class SupplierComponent extends Component
 
     public function confirmDelete($id)
     {
-        $this->dispatchBrowserEvent('show-delete-confirmation', [
+        $this->dispatch('show-delete-confirmation', ...[
             'id'     => $id,
             'method' => 'deleteSupplier',
         ]);
@@ -95,7 +95,7 @@ class SupplierComponent extends Component
     public function deleteSupplier($id)
     {
         Supplier::findOrFail($id)->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Supplier deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Supplier deleted.']);
     }
 
     private function validateForm(): array

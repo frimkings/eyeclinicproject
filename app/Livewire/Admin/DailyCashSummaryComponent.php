@@ -23,7 +23,7 @@ class DailyCashSummaryComponent extends Component
 
     public function updatedReportDate(): void
     {
-        $this->dispatch('update-payment-chart', $this->buildChartPayload());
+        $this->dispatch('update-payment-chart', ...$this->buildChartPayload());
     }
 
     protected function buildChartPayload(): array

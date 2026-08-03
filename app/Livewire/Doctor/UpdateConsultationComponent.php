@@ -72,7 +72,7 @@ class UpdateConsultationComponent extends Component
         Refractions::create($validatedData);
 
 
-        $this->dispatch('hide-addPatientModal-form', ['message' => 'Patient added']);
+        $this->dispatch('hide-addPatientModal-form', ...['message' => 'Patient added']);
         // return back();
     }
 
@@ -135,14 +135,14 @@ class UpdateConsultationComponent extends Component
 
         // return redirect()->route('doctor.edit-consultation', $consultations->id);
 
-        $this->dispatch('hide-addPatientModal-form', ['message' => 'Records Updated']);
+        $this->dispatch('hide-addPatientModal-form', ...['message' => 'Records Updated']);
 
 
 
         //    $updateClearanceStatus = CashierPatientClearance::findOrFail($this->demographics['id']);
         // $changeStatus = CashierPatientClearance::where('id', $id)->where('status', 'Unpaid');
         // $this->status->update($changeStatus);
-        // $this->dispatch('hide-addPatientModal-form', ['message' => 'Updated']);
+        // $this->dispatch('hide-addPatientModal-form', ...['message' => 'Updated']);
 
 
 

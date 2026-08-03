@@ -52,7 +52,7 @@ class PasswordResetApprovalsComponent extends Component
                 'admin_note'  => $this->noteInput ?: null,
                 'actioned_at' => now(),
             ]);
-            $this->dispatch('notify', ['type' => 'success', 'message' => "Reset request for {$req->email} has been approved."]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => "Reset request for {$req->email} has been approved."]);
         } else {
             $req->update([
                 'status'      => 'rejected',
@@ -60,7 +60,7 @@ class PasswordResetApprovalsComponent extends Component
                 'admin_note'  => $this->noteInput ?: null,
                 'actioned_at' => now(),
             ]);
-            $this->dispatch('notify', ['type' => 'error', 'message' => "Reset request for {$req->email} has been rejected."]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => "Reset request for {$req->email} has been rejected."]);
         }
 
         $this->cancelConfirm();

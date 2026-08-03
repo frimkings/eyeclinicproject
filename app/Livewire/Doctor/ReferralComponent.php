@@ -187,7 +187,7 @@ class ReferralComponent extends Component
         }
         $this->editingId  = null;
         $this->showModal  = true;
-        $this->dispatch('init-diagnosis-select2', ['selected' => []]);
+        $this->dispatch('init-diagnosis-select2', ...['selected' => []]);
     }
 
     public function openEdit($id)
@@ -236,7 +236,7 @@ class ReferralComponent extends Component
         $this->excuseNotes    = $r->excuse_notes ?? Referral::defaultExcuseNotes();
 
         $this->showModal = true;
-        $this->dispatch('init-diagnosis-select2', ['selected' => $this->selectedDiagnoses]);
+        $this->dispatch('init-diagnosis-select2', ...['selected' => $this->selectedDiagnoses]);
     }
 
     public function closeModal()
@@ -290,7 +290,7 @@ class ReferralComponent extends Component
         }
 
         $this->closeModal();
-        $this->dispatch('notify', ['type' => 'success', 'message' => $msg]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $msg]);
     }
 
     /* ── Delete ── */
@@ -307,7 +307,7 @@ class ReferralComponent extends Component
         Referral::findOrFail($this->confirmDeleteId)->delete();
         $this->confirmDeleteId = null;
         $this->dispatch('hide-delete-confirm');
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Letter deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Letter deleted.']);
     }
 
     public function cancelDelete()
@@ -320,7 +320,7 @@ class ReferralComponent extends Component
     public function updateStatus($id, $newStatus)
     {
         Referral::findOrFail($id)->update(['status' => $newStatus]);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Status updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Status updated.']);
     }
 
     /* ── Helpers ── */

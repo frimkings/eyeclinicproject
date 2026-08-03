@@ -66,7 +66,7 @@ class WhatsAppSettingsComponent extends Component
         Setting::getSettings()->update($data);
         $this->accessToken = '';
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'WhatsApp settings saved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'WhatsApp settings saved.']);
     }
 
     public function toggleWhatsApp(): void
@@ -74,7 +74,7 @@ class WhatsAppSettingsComponent extends Component
         $this->whatsappEnabled = !$this->whatsappEnabled;
         Setting::getSettings()->update(['whatsapp_enabled' => $this->whatsappEnabled]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $this->whatsappEnabled ? 'WhatsApp notifications enabled.' : 'WhatsApp notifications disabled.',
         ]);
@@ -90,9 +90,9 @@ class WhatsAppSettingsComponent extends Component
         $result = (new WhatsAppService)->sendText($this->testPhone, $msg);
 
         if ($result['success']) {
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Test message sent. Check your WhatsApp.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Test message sent. Check your WhatsApp.']);
         } else {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Test failed: ' . ($result['error'] ?? 'Unknown error')]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Test failed: ' . ($result['error'] ?? 'Unknown error')]);
         }
     }
 

@@ -104,7 +104,7 @@ class DiagnosisComponent extends Component
     {
         $this->validate();
         Diagnosis::create(['name' => $this->name]);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Diagnosis Created.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Diagnosis Created.']);
         $this->resetFields();
     }
 
@@ -152,7 +152,7 @@ class DiagnosisComponent extends Component
 
         Diagnosis::findOrFail($this->inlineEditingId)->update(['name' => $this->inlineName]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Diagnosis Updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Diagnosis Updated.']);
         $this->cancelInlineEdit();
     }
 
@@ -160,14 +160,14 @@ class DiagnosisComponent extends Component
     {
         $this->validate();
         Diagnosis::find($this->diagnosis_id)->update(['name' => $this->name]);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Diagnosis Updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Diagnosis Updated.']);
         $this->resetFields();
     }
 
     public function delete($id)
     {
         Diagnosis::find($id)->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Diagnosis Deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Diagnosis Deleted.']);
         $this->clearSelection();
     }
 
@@ -180,12 +180,12 @@ class DiagnosisComponent extends Component
             ->values();
 
         if ($ids->isEmpty()) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Select at least one diagnosis first.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Select at least one diagnosis first.']);
             return;
         }
 
         $deleted = Diagnosis::whereIn('id', $ids)->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => $deleted . ' diagnosis record(s) deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $deleted . ' diagnosis record(s) deleted.']);
         $this->clearSelection();
     }
 

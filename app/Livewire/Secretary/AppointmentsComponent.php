@@ -167,7 +167,7 @@ public $recallCategories = [
     public function bookOnCalendarDate(string $date): void
     {
         if (Carbon::parse($date)->isPast() && !Carbon::parse($date)->isToday()) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Cannot book an appointment on a past date.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Cannot book an appointment on a past date.']);
             return;
         }
 
@@ -183,7 +183,7 @@ public $recallCategories = [
         $scheduledAt = Carbon::parse($scheduledAt);
 
         if ($scheduledAt->isPast() && !$scheduledAt->isToday()) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Cannot reschedule to a past date.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Cannot reschedule to a past date.']);
             return;
         }
 
@@ -192,7 +192,7 @@ public $recallCategories = [
             'status' => 'Rescheduled',
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Appointment moved to ' . $scheduledAt->format('M d, Y h:i A') . '.',
         ]);
@@ -242,7 +242,7 @@ public $recallCategories = [
      */
     public function saveSettings()
     {
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Clinic settings updated successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Clinic settings updated successfully.']);
         $this->activeFilter = 'schedule';
     }
 
@@ -267,7 +267,7 @@ public $recallCategories = [
             return $todayAppointments->count();
         });
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Day Closed. $count unfinished appointments moved to tomorrow."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Day Closed. $count unfinished appointments moved to tomorrow."]);
     }
 
     /**
@@ -279,7 +279,7 @@ public $recallCategories = [
         Appointments::whereIn('id', $this->selectedAppointments)->update(['status' => 'Seen', 'completed_at' => now()]);
         $count = count($this->selectedAppointments);
         $this->resetSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Successfully moved $count records to History."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Successfully moved $count records to History."]);
     }
 
     public function bulkMarkRemindersSent()
@@ -292,7 +292,7 @@ public $recallCategories = [
 
         $count = count($this->selectedAppointments);
         $this->resetSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "$count reminder(s) marked as sent."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "$count reminder(s) marked as sent."]);
     }
 
     public function bulkDelete()
@@ -301,7 +301,7 @@ public $recallCategories = [
         Appointments::whereIn('id', $this->selectedAppointments)->delete();
         $count = count($this->selectedAppointments);
         $this->resetSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Successfully moved $count records to Trash."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Successfully moved $count records to Trash."]);
     }
 
     /**
@@ -419,7 +419,7 @@ public $recallCategories = [
         if (in_array($status, ['Done', 'Seen'], true)) $payload['completed_at'] = now();
 
         Appointments::findOrFail($id)->update($payload);
-        $this->dispatch('notify', ['type' => 'success', 'message' => ($status === 'Seen') ? "Moved to History." : "Status updated."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => ($status === 'Seen') ? "Moved to History." : "Status updated."]);
     }
 
     public function advanceQueueStatus($id, $status)
@@ -463,7 +463,7 @@ public $recallCategories = [
 
         $this->resetForm();
         $this->activeFilter = 'queue';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Walk-in booked and added to the waiting room.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Walk-in booked and added to the waiting room.']);
     }
 
     public function markReminderSent($id, $channel)
@@ -474,7 +474,7 @@ public $recallCategories = [
             'reminder_sent_at' => now(),
         ]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => ucfirst($channel) . ' reminder marked as sent.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => ucfirst($channel) . ' reminder marked as sent.']);
     }
 
     public function sendSmsNow($id): void
@@ -483,7 +483,7 @@ public $recallCategories = [
         $phone = $appointment->patient->contact ?? '';
 
         if (empty(trim($phone))) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'No contact number on record for this patient.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'No contact number on record for this patient.']);
             return;
         }
 
@@ -503,9 +503,9 @@ public $recallCategories = [
 
         if ($result['success']) {
             Appointments::findOrFail($id)->update(['reminder_status' => 'sent', 'reminder_sent_at' => now()]);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'SMS sent successfully.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'SMS sent successfully.']);
         } else {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'SMS failed: ' . ($result['error'] ?? 'Unknown error')]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'SMS failed: ' . ($result['error'] ?? 'Unknown error')]);
         }
     }
 
@@ -705,7 +705,7 @@ public $recallCategories = [
                 $apt->restore();
             }
             $apt->update($payload);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Record updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Record updated.']);
         } else {
             $this->flashDailyLimitWarning($scheduledAt);
 
@@ -714,7 +714,7 @@ public $recallCategories = [
                 'reminder_status' => 'not_sent',
                 'status' => $this->newAppointmentStatus ?: 'Pending'
             ]));
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Booking added.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Booking added.']);
 
             $patient = \App\Models\Patient::find($this->patient_id);
             if ($patient?->contact) {
@@ -758,7 +758,7 @@ public $recallCategories = [
         $this->isEditModalOpen = true;
     }
 
-    public function restoreAppointment($id) { Appointments::onlyTrashed()->findOrFail($id)->restore(); $this->dispatch('notify', ['type' => 'success', 'message' => 'Restored.']); }
+    public function restoreAppointment($id) { Appointments::onlyTrashed()->findOrFail($id)->restore(); $this->dispatch('notify', ...['type' => 'success', 'message' => 'Restored.']); }
 
     public function closeModal() 
     { 
@@ -810,7 +810,7 @@ public $recallCategories = [
         if ($bookedCount >= $limit) {
             $message = "Daily appointment limit reached for {$scheduledAt->format('M d, Y')} ({$bookedCount}/{$limit}).";
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => $message,
             ]);
@@ -849,7 +849,7 @@ public $recallCategories = [
     public function confirmAppointment(int $id): void
     {
         Appointments::findOrFail($id)->update(['status' => 'Confirmed']);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment confirmed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment confirmed.']);
     }
 
     public function openCancelModal(int $id): void
@@ -875,7 +875,7 @@ public $recallCategories = [
             'notes'  => trim($apt->notes . "\n[Cancelled: " . ($this->cancelReason ?: 'No reason given') . "]"),
         ]);
         $this->closeCancelModal();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment cancelled.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment cancelled.']);
     }
 
     public function dragDropReschedule(int $appointmentId, string $newDate): void
@@ -884,12 +884,12 @@ public $recallCategories = [
         $newScheduledAt = Carbon::parse($newDate . ' ' . Carbon::parse($apt->scheduled_at)->format('H:i'));
 
         if ($newScheduledAt->isPast() && !$newScheduledAt->isToday()) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Cannot reschedule to a past date.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Cannot reschedule to a past date.']);
             return;
         }
 
         $apt->update(['scheduled_at' => $newScheduledAt, 'status' => 'Rescheduled']);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Moved to ' . $newScheduledAt->format('M d, Y') . '.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Moved to ' . $newScheduledAt->format('M d, Y') . '.']);
     }
 
     public function openMissedAction(int $id): void
@@ -920,13 +920,13 @@ public $recallCategories = [
             'missed_at'    => null,
         ]);
         $this->closeMissedAction();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Rescheduled to ' . $newAt->format('M d, Y h:i A') . '.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Rescheduled to ' . $newAt->format('M d, Y h:i A') . '.']);
     }
 
     public function resolveMissed(int $id): void
     {
         Appointments::findOrFail($id)->update(['status' => 'Seen']);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Marked as resolved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Marked as resolved.']);
     }
 
     public function sendMissedFollowUpSms(int $id): void
@@ -934,15 +934,15 @@ public $recallCategories = [
         $apt   = Appointments::with('patient')->findOrFail($id);
         $phone = trim($apt->patient->contact ?? '');
         if (!$phone) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'No contact number for this patient.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'No contact number for this patient.']);
             return;
         }
         $msg    = "Hello {$apt->patient->name}, we noticed you missed your appointment on {$apt->scheduled_at->format('M d, Y')}. Please call us to reschedule.";
         $result = (new SmsService)->send($phone, $msg, $apt->patient->id);
         if ($result['success']) {
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Follow-up SMS sent.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Follow-up SMS sent.']);
         } else {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'SMS failed: ' . ($result['error'] ?? 'Unknown error')]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'SMS failed: ' . ($result['error'] ?? 'Unknown error')]);
         }
     }
 

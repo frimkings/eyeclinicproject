@@ -228,7 +228,7 @@ class PurchaseOrderComponent extends Component
         });
 
         $this->showModal = false;
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $this->isEditing ? 'Purchase order updated.' : 'Purchase order created.',
         ]);
@@ -318,13 +318,13 @@ class PurchaseOrderComponent extends Component
         });
 
         $this->showGrnModal = false;
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Goods received and stock updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Goods received and stock updated.']);
     }
 
     public function confirmCancel(int $id): void
     {
         $po = PurchaseOrder::findOrFail($id);
-        $this->dispatchBrowserEvent('show-po-confirm', [
+        $this->dispatch('show-po-confirm', ...[
             'id'      => $id,
             'action'  => 'cancelPo',
             'message' => "Cancel purchase order {$po->po_number}? This cannot be undone.",
@@ -337,7 +337,7 @@ class PurchaseOrderComponent extends Component
         abort_if($po->status === 'received', 403);
         $po->update(['status' => 'cancelled']);
         AuditTrail::record('purchase_order.cancelled', "Cancelled PO {$po->po_number}", $po, force: true);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Purchase order cancelled.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Purchase order cancelled.']);
     }
 
     // ── Invoice ───────────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ class PurchaseOrderComponent extends Component
         AuditTrail::record('purchase_order.invoice_recorded', "Invoice recorded for {$po->po_number}", $po, force: true);
 
         $this->showInvoiceModal = false;
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Invoice details saved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Invoice details saved.']);
     }
 
     // ── Payment ───────────────────────────────────────────────────────────────
@@ -419,7 +419,7 @@ class PurchaseOrderComponent extends Component
         AuditTrail::record('purchase_order.payment_recorded', "Payment of {$this->pay_amount} recorded for {$po->po_number}", $po, force: true);
 
         $this->showPaymentModal = false;
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Payment recorded.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Payment recorded.']);
     }
 
     public function render()

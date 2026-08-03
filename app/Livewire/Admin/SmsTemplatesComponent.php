@@ -66,7 +66,7 @@ class SmsTemplatesComponent extends Component
             'message' => trim($this->templates[$key]['message']),
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => '"' . $this->templates[$key]['label'] . '" template saved.',
         ]);
@@ -89,7 +89,7 @@ class SmsTemplatesComponent extends Component
 
         $tpl = SmsTemplate::where('key', 'custom_broadcast')->first();
         if (!$tpl || empty(trim($tpl->message))) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Please save a message before broadcasting.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Please save a message before broadcasting.']);
             return;
         }
 
@@ -106,7 +106,7 @@ class SmsTemplatesComponent extends Component
     {
         $tpl = SmsTemplate::where('key', 'custom_broadcast')->first();
         if (!$tpl || empty(trim($tpl->message))) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Broadcast message is empty.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Broadcast message is empty.']);
             $this->broadcastConfirmStep = false;
             return;
         }
@@ -127,7 +127,7 @@ class SmsTemplatesComponent extends Component
         }
 
         $this->broadcastConfirmStep = false;
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => $failed === 0 ? 'success' : 'warning',
             'message' => "Broadcast complete — Sent: {$sent}" . ($failed ? ", Failed: {$failed}" : '') . '.',
         ]);
@@ -165,7 +165,7 @@ class SmsTemplatesComponent extends Component
             'recall_months'      => $this->recallMonths,
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Patient recall settings saved.',
         ]);
@@ -188,7 +188,7 @@ class SmsTemplatesComponent extends Component
             'birthday_sms_custom_months' => $this->birthdayFilter === 'custom' ? $this->birthdayCustomMonths : null,
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Birthday SMS filter saved.',
         ]);

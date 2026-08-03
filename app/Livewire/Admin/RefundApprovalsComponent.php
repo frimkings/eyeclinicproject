@@ -94,7 +94,7 @@ class RefundApprovalsComponent extends Component
             );
         }
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "Refund request approved.",
         ]);
@@ -161,7 +161,7 @@ class RefundApprovalsComponent extends Component
         }
 
         $this->closeRejectModal();
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'info',
             'message' => "Refund request rejected.",
         ]);
@@ -181,7 +181,7 @@ class RefundApprovalsComponent extends Component
 
         if (!$sale) {
             $this->dispatch('close-processing-modal');
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sale record not found for this refund.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Sale record not found for this refund.']);
             return;
         }
 
@@ -306,7 +306,7 @@ class RefundApprovalsComponent extends Component
             });
         } catch (\RuntimeException $e) {
             $this->dispatch('close-processing-modal');
-            $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => $e->getMessage()]);
             return;
         }
 
@@ -323,12 +323,12 @@ class RefundApprovalsComponent extends Component
         }
 
         $this->dispatch('close-processing-modal');
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "Refund {$processedLog->refund_number} processed. Eligible stock restored.",
         ]);
 
-        $this->dispatchBrowserEvent('refund-receipt-ready', [
+        $this->dispatch('refund-receipt-ready', ...[
             'url' => route('refunds.receipt', $processedLog),
         ]);
     }

@@ -186,7 +186,7 @@ class SpectaclesComponent extends Component
     public function bulkUpdateStatus()
     {
         if (!$this->bulkStatus || empty($this->selectedOrders)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Select orders and a status first.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Select orders and a status first.']);
             return;
         }
 
@@ -202,7 +202,7 @@ class SpectaclesComponent extends Component
         $this->bulkStatus = '';
         $this->statusOverrideReason = '';
         $this->clearSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "{$updated} order(s) updated."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "{$updated} order(s) updated."]);
     }
 
     /* =================== INLINE EDITING =================== */
@@ -222,7 +222,7 @@ class SpectaclesComponent extends Component
         $this->recordOrderAudit('spectacles.field_edited', $order, [$field => $old], [$field => $order->{$field}]);
         $this->editingOrderId = null;
         $this->editField      = [];
-        $this->dispatch('notify', ['type' => 'success', 'message' => ucfirst($field) . ' updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => ucfirst($field) . ' updated.']);
     }
 
     public function cancelEdit()
@@ -265,7 +265,7 @@ class SpectaclesComponent extends Component
         $order->update($updateData);
         $this->statusOverrideReason = '';
         $this->recordOrderAudit('spectacles.status_changed', $order, ['status' => $oldStatus], ['status' => $newStatus]);
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Order marked as {$newStatus}."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Order marked as {$newStatus}."]);
 
         if ($newStatus === 'Ready') {
             $order->load('refraction.consultation.patient');
@@ -312,14 +312,14 @@ class SpectaclesComponent extends Component
         $authorizedOverride = Auth::user()?->hasAnyRole(['Manager', 'Super Admin']) && trim($this->statusOverrideReason) !== '';
 
         if ($override && !$authorizedOverride) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'Next required action: ' . ($expected ?? 'No further action') . '. Manager override requires a reason.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Next required action: ' . ($expected ?? 'No further action') . '. Manager override requires a reason.']);
             return false;
         }
 
         if ($newStatus === 'Collected') {
             $order->loadMissing('refraction.consultation.sale.items.product.category', 'refraction.consultation.cartItems.product.category');
             if (($this->posOrderSummary($order->refraction)['balance'] ?? 0) > 0 && !$authorizedOverride) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Collection blocked: outstanding balance remains.']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Collection blocked: outstanding balance remains.']);
                 return false;
             }
         }
@@ -347,7 +347,7 @@ class SpectaclesComponent extends Component
         ])->findOrFail($refractionId);
 
         if (!$this->canCreateOrderFromPos($this->posOrderSummary($refraction))) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Record a part or full payment at POS before creating a spectacle order.',
             ]);
@@ -392,13 +392,13 @@ class SpectaclesComponent extends Component
         $refraction   = Refractions::with(['consultation.patient', 'lensOrder'])->findOrFail($this->selectedRefractionId);
 
         if ($refraction->lensOrder) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'An order already exists for this refraction.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'An order already exists for this refraction.']);
             return;
         }
 
         $posSummary = $this->posOrderSummary($refraction);
         if (!$this->canCreateOrderFromPos($posSummary)) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Record a part or full payment at POS before creating a spectacle order.',
             ]);
@@ -441,7 +441,7 @@ class SpectaclesComponent extends Component
         ]);
 
         $this->closeOrderModal();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Order {$orderId} created for {$refraction->consultation->patient->name}!"]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Order {$orderId} created for {$refraction->consultation->patient->name}!"]);
     }
 
     /* =================== CANCEL ORDER =================== */
@@ -481,7 +481,7 @@ class SpectaclesComponent extends Component
         });
 
         $this->closeCancelConfirm();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Order cancelled and stock restored.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Order cancelled and stock restored.']);
     }
 
     /* =================== PRINT PREVIEW =================== */
@@ -585,7 +585,7 @@ class SpectaclesComponent extends Component
             $msg  = 'Reminder logged — no contact number on record.';
         }
 
-        $this->dispatch('notify', ['type' => $type, 'message' => $msg]);
+        $this->dispatch('notify', ...['type' => $type, 'message' => $msg]);
     }
 
     /* =================== RENEWAL DATE =================== */
@@ -610,7 +610,7 @@ class SpectaclesComponent extends Component
         $this->recordOrderAudit('spectacles.renewal_date_updated', $order, ['renewal_date' => $old], ['renewal_date' => $this->renewalEditDate]);
         $this->renewalEditOrderId = null;
         $this->renewalEditDate    = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Renewal date updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Renewal date updated.']);
     }
 
     public function cancelRenewalEdit(): void

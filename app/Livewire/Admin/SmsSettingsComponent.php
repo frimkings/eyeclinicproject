@@ -71,7 +71,7 @@ class SmsSettingsComponent extends Component
 
         $this->smsApiKey = '';
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'SMS settings saved.',
         ]);
@@ -82,7 +82,7 @@ class SmsSettingsComponent extends Component
         $this->smsEnabled = !$this->smsEnabled;
         Setting::getSettings()->update(['sms_enabled' => $this->smsEnabled]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $this->smsEnabled ? 'SMS notifications resumed.' : 'SMS notifications paused.',
         ]);
@@ -99,7 +99,7 @@ class SmsSettingsComponent extends Component
             'spectacle_renewal_reminder_days' => $this->spectacleRenewalReminderDays,
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Spectacle renewal settings saved.',
         ]);
@@ -118,12 +118,12 @@ class SmsSettingsComponent extends Component
         );
 
         if ($result['success']) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => 'Test SMS sent successfully.',
             ]);
         } else {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Test failed: ' . ($result['error'] ?? 'Unknown error'),
             ]);
@@ -136,7 +136,7 @@ class SmsSettingsComponent extends Component
         $this->balanceResult = $result;
 
         if (!$result['success']) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Balance check failed: ' . ($result['error'] ?? 'Unknown error'),
             ]);

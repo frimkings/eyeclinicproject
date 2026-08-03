@@ -178,7 +178,7 @@ class SalesRecordsComponent extends Component
             
         } catch (\Exception $e) {
             \Log::error('Error in viewSale: ' . $e->getMessage());
-            $this->dispatchBrowserEvent('alert', [
+            $this->dispatch('alert', ...[
                 'type' => 'error',
                 'message' => 'Error loading sale details'
             ]);
@@ -230,13 +230,13 @@ class SalesRecordsComponent extends Component
             
             \Log::info('Dispatching alert-receipt event with data');
             
-            $this->dispatchBrowserEvent('alert-receipt', [
+            $this->dispatch('alert-receipt', ...[
                 'sale' => $saleData
             ]);
             
         } catch (\Exception $e) {
             \Log::error('Error in printReceipt: ' . $e->getMessage());
-            $this->dispatchBrowserEvent('alert', [
+            $this->dispatch('alert', ...[
                 'type' => 'error',
                 'message' => 'Unable to print receipt. Please try again or contact support.',
             ]);
@@ -312,7 +312,7 @@ class SalesRecordsComponent extends Component
             ->exists();
 
         if ($alreadyPending) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'A refund request for this sale is already awaiting approval.',
             ]);
@@ -379,7 +379,7 @@ class SalesRecordsComponent extends Component
         $this->initiateRefundType = RefundLog::TYPE_REFUND;
         $this->resetErrorBag();
         $this->dispatch('hide-initiateRefundModal');
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "Refund request for #{$sale->transaction_id} submitted. Awaiting manager approval.",
         ]);

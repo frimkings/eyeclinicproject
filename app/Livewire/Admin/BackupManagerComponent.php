@@ -270,10 +270,10 @@ class BackupManagerComponent extends Component
                 $this->copyResults = cache('backup_copy_results', []);
             }
 
-            $this->dispatchBrowserEvent('notify', $success
+            $this->dispatch('notify', ...($success
                 ? ['type' => 'success', 'message' => $successMessage]
                 : ['type' => 'warning', 'message' => 'Backup finished but the output was unexpected. Check storage manually.']
-            );
+            ));
 
             if (!$success) {
                 cache()->put('backup_last_error', trim($output) ?: "Backup command exited with code {$exitCode}.", now()->addDays(7));
@@ -291,7 +291,7 @@ class BackupManagerComponent extends Component
             }
 
             cache()->put('backup_last_error', $message, now()->addDays(7));
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Backup failed. Check your database connection and mysqldump configuration.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Backup failed. Check your database connection and mysqldump configuration.']);
         }
 
         $this->isRunning = false;
@@ -369,13 +369,13 @@ class BackupManagerComponent extends Component
 
             $this->copyBackupFileToExtraPaths($absolutePath, $filename);
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'success',
                 'message' => 'Database SQL backup completed successfully. The .sql file appears in the list below.',
             ]);
         } catch (\Throwable $e) {
             cache()->put('backup_last_error', get_class($e) . ': ' . $e->getMessage(), now()->addDays(7));
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Database SQL backup failed. Check Backup Diagnostics.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Database SQL backup failed. Check Backup Diagnostics.']);
         } finally {
             if ($credentialsFile && is_file($credentialsFile)) {
                 @unlink($credentialsFile);
@@ -445,9 +445,9 @@ class BackupManagerComponent extends Component
     {
         try {
             Artisan::call('backup:prune-custom');
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Backups pruned — latest kept per day/week/month/year.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Backups pruned — latest kept per day/week/month/year.']);
         } catch (\Throwable $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Pruning failed: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Pruning failed: ' . $e->getMessage()]);
         }
     }
 
@@ -458,7 +458,7 @@ class BackupManagerComponent extends Component
     {
         $backup = $this->resolveBackupByIndex($index);
         if (!$backup) return;
-        $this->dispatchBrowserEvent('show-backup-delete-confirmation', [
+        $this->dispatch('show-backup-delete-confirmation', ...[
             'index' => $index,
             'name'  => $backup['name'],
         ]);
@@ -469,7 +469,7 @@ class BackupManagerComponent extends Component
         $backup = $this->resolveBackupByIndex($index);
         abort_unless($backup, 404);
         Storage::disk('backups')->delete($backup['path']);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Backup deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Backup deleted.']);
     }
 
     public function requestRestore(int $index): void
@@ -477,10 +477,10 @@ class BackupManagerComponent extends Component
         $backup = $this->resolveBackupByIndex($index);
         if (!$backup) return;
         if (($backup['extension'] ?? '') !== 'zip') {
-            $this->dispatch('notify', ['type' => 'info', 'message' => 'Only full ZIP backups can be restored from this button. SQL files are database-only exports.']);
+            $this->dispatch('notify', ...['type' => 'info', 'message' => 'Only full ZIP backups can be restored from this button. SQL files are database-only exports.']);
             return;
         }
-        $this->dispatchBrowserEvent('show-backup-restore-confirmation', [
+        $this->dispatch('show-backup-restore-confirmation', ...[
             'index' => $index,
             'name'  => $backup['name'],
         ]);
@@ -501,9 +501,9 @@ class BackupManagerComponent extends Component
         $this->isRestoring = false;
 
         if ($exitCode === 0) {
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Backup restored from ' . $backup['name'] . '. Refresh the page if the UI looks stale.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Backup restored from ' . $backup['name'] . '. Refresh the page if the UI looks stale.']);
         } else {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Restore failed. Output: ' . trim(Artisan::output())]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Restore failed. Output: ' . trim(Artisan::output())]);
         }
     }
 
@@ -537,7 +537,7 @@ class BackupManagerComponent extends Component
         $this->extraPaths[] = $path;
         $this->saveDestinations();
         $this->newPath = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Backup destination added.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Backup destination added.']);
     }
 
     public function removePath(int $index): void
@@ -545,7 +545,7 @@ class BackupManagerComponent extends Component
         unset($this->extraPaths[$index]);
         $this->extraPaths = array_values($this->extraPaths);
         $this->saveDestinations();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Destination removed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Destination removed.']);
     }
 
     private function saveDestinations(): void

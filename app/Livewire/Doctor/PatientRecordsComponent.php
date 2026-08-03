@@ -111,7 +111,7 @@ public $isEditingAppointment = false;
     public function addDiagnosis($id, $name)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -124,7 +124,7 @@ public $isEditingAppointment = false;
     public function removeDiagnosis($index)
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Diagnosis is locked for this consultation. Addenda remain available.']);
             return;
         }
 
@@ -242,7 +242,7 @@ public $isEditingAppointment = false;
 
         if ($tab === 'consultation') {
             $this->dispatch('init-odq-select');
-            $this->dispatchBrowserEvent('sync-odq-select', [
+            $this->dispatch('sync-odq-select', ...[
                 'values' => $this->normalizeOdq($this->state['odq'] ?? []),
             ]);
         }
@@ -341,7 +341,7 @@ public $isEditingAppointment = false;
         $this->documentUploadKey++;
         $this->resetValidation(['documentFiles', 'documentFiles.*', 'documentType', 'documentTitle', 'documentNotes', 'documentConsultationId']);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => $uploadedCount . ' document(s) uploaded successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $uploadedCount . ' document(s) uploaded successfully.']);
     }
 
     public function deletePatientDocument($documentId)
@@ -363,7 +363,7 @@ public $isEditingAppointment = false;
             $this->patient->id
         );
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Document deleted successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Document deleted successfully.']);
     }
 
     private function documentTypeLabel($type): string
@@ -424,7 +424,7 @@ public $isEditingAppointment = false;
         ]);
 
         // SUCCESS - Show notification
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment scheduled for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment scheduled for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
 
         // Reset ONLY appointment form fields (NOT entire form)
         $this->appointmentTitle = null;
@@ -450,7 +450,7 @@ public $isEditingAppointment = false;
         ]);
 
     } catch (\Exception $e) {
-        $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
+        $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
         \Log::error('Appointment Booking Error', [
             'error' => $e->getMessage(),
         ]);
@@ -493,7 +493,7 @@ public function updateAppointment()
         ]);
 
         // SUCCESS - Show notification
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment updated for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment updated for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
 
         // Reset ONLY appointment form fields (NOT entire form)
         $this->appointmentTitle = null;
@@ -518,7 +518,7 @@ public function updateAppointment()
         ]);
 
     } catch (\Exception $e) {
-        $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to update appointment: ' . $e->getMessage()]);
+        $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to update appointment: ' . $e->getMessage()]);
         \Log::error('Appointment Update Error', [
             'error' => $e->getMessage(),
         ]);
@@ -598,7 +598,7 @@ public function deleteAppointment($appointmentId)
         $this->cancelAppointmentEdit();
     }
 
-    $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment deleted successfully.']);
+    $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment deleted successfully.']);
 }
 
 
@@ -631,7 +631,7 @@ public function deleteAppointment($appointmentId)
         }
 
         if ($product->quantity <= 0) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Product out of stock']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Product out of stock']);
             return;
         }
 
@@ -646,21 +646,21 @@ public function deleteAppointment($appointmentId)
                 $availableQuantity = $this->availableQuantityForPrescriptionItem($this->productsList[$existingIndex]);
                 
                 if ($newQty > $availableQuantity) {
-                    $this->dispatch('notify', ['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
+                    $this->dispatch('notify', ...['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
                     return;
                 }
 
                 $this->productsList[$existingIndex]['quantity'] = $newQty;
                 $this->productsList[$existingIndex]['total'] = $newQty * $this->productsList[$existingIndex]['price'];
             } else {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Product already sold or dispensed. Cannot modify.']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Product already sold or dispensed. Cannot modify.']);
             }
         } else {
             $isDrug = $this->isDrugProduct($product);
             $availableQuantity = $this->availableQuantityForPrescriptionItem(['product_id' => $product->id]);
 
             if ($availableQuantity < 1) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
                 return;
             }
 
@@ -702,23 +702,23 @@ public function deleteAppointment($appointmentId)
         if (!isset($this->productsList[$index])) return;
 
         if ($this->isLockedPrescriptionItem($this->productsList[$index])) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This item has already been sold or dispensed.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This item has already been sold or dispensed.']);
             return;
         }
 
         if (!$this->isDrugPrescriptionItem($this->productsList[$index])) {
             $this->productsList[$index]['eye'] = null;
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Eye selection is only required for drug prescriptions.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Eye selection is only required for drug prescriptions.']);
             return;
         }
 
         try {
             $this->productsList[$index]['eye'] = $value;
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Eye updated!']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Eye updated!']);
 
         } catch (\Exception $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Invalid selection.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Invalid selection.']);
         }
     }
 
@@ -726,12 +726,12 @@ public function deleteAppointment($appointmentId)
     {
         if (isset($this->productsList[$index])) {
             if ($this->isLockedPrescriptionItem($this->productsList[$index])) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Cannot edit sold or dispensed items']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Cannot edit sold or dispensed items']);
                 return;
             }
 
             if (!$this->isDrugPrescriptionItem($this->productsList[$index])) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Eye and frequency are only required for drug prescriptions.']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Eye and frequency are only required for drug prescriptions.']);
                 return;
             }
             
@@ -744,13 +744,13 @@ public function deleteAppointment($appointmentId)
         if (!isset($this->productsList[$index])) return;
 
         if ($this->isLockedPrescriptionItem($this->productsList[$index])) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This item has already been sold or dispensed.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This item has already been sold or dispensed.']);
             return;
         }
 
         if (!$this->isDrugPrescriptionItem($this->productsList[$index])) {
             $this->productsList[$index]['frequency'] = null;
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Frequency is only required for drug prescriptions.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Frequency is only required for drug prescriptions.']);
             return;
         }
 
@@ -758,10 +758,10 @@ public function deleteAppointment($appointmentId)
             $this->productsList[$index]['frequency'] = $value;
             $this->editingFrequencyIndex = null;
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Frequency updated!']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Frequency updated!']);
 
         } catch (\Exception $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Invalid selection.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Invalid selection.']);
         }
     }
 
@@ -973,7 +973,7 @@ public function deleteAppointment($appointmentId)
         $reasons = $this->urgentReferralReasons;
 
         if (empty($reasons)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'No urgent referral red flag is currently detected.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'No urgent referral red flag is currently detected.']);
             return;
         }
 
@@ -1019,7 +1019,7 @@ public function deleteAppointment($appointmentId)
             $this->patient->id
         );
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Urgent referral draft created. Open Referrals to complete or print it.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Urgent referral draft created. Open Referrals to complete or print it.']);
     }
 
     private function clinicalTextForRisk($records): string
@@ -1063,7 +1063,7 @@ public function deleteAppointment($appointmentId)
     {
         if (isset($this->productsList[$index])) {
             if ($this->isLockedPrescriptionItem($this->productsList[$index])) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Cannot remove sold or dispensed items']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Cannot remove sold or dispensed items']);
                 return;
             }
             
@@ -1079,7 +1079,7 @@ public function deleteAppointment($appointmentId)
         }
 
         if ($this->isLockedPrescriptionItem($this->productsList[$index])) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Cannot edit sold or dispensed items']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Cannot edit sold or dispensed items']);
             return;
         }
 
@@ -1088,7 +1088,7 @@ public function deleteAppointment($appointmentId)
         $availableQuantity = $this->availableQuantityForPrescriptionItem($this->productsList[$index]);
 
         if ($newQuantity > $availableQuantity) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => "Only {$availableQuantity} units available in stock"]);
             return;
         }
 
@@ -1103,18 +1103,18 @@ public function deleteAppointment($appointmentId)
         );
         
         $this->resetProductForm();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Prescription cleared (dispensed items kept)']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Prescription cleared (dispensed items kept)']);
     }
 
     public function savePrescription()
     {
         if (!$this->consultationID) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Please create or select a consultation first before saving prescription']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Please create or select a consultation first before saving prescription']);
             return;
         }
 
         if (empty($this->productsList)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Please add at least one product to the prescription']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Please add at least one product to the prescription']);
             return;
         }
 
@@ -1194,14 +1194,14 @@ public function deleteAppointment($appointmentId)
             $msg = $dispensedCount > 0
                 ? 'Prescription saved. ' . $dispensedCount . ' item(s) already dispensed by pharmacy.'
                 : 'Prescription saved successfully to Consultation #' . $this->consultationID;
-            $this->dispatch('notify', ['type' => 'success', 'message' => $msg]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => $msg]);
 
             $this->resetProductForm();
             $this->activeTab = 'refraction';
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to save prescription: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to save prescription: ' . $e->getMessage()]);
         }
     }
 
@@ -1257,7 +1257,7 @@ public function deleteAppointment($appointmentId)
         $heldCount = collect($this->productsList)->where('purchased', true)->where('is_dispensed', false)->count();
         $pendingCount = collect($this->productsList)->where('is_dispensed', false)->where('purchased', false)->count();
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Status refreshed: {$dispensedCount} dispensed, {$heldCount} on hold, {$pendingCount} pending"]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Status refreshed: {$dispensedCount} dispensed, {$heldCount} on hold, {$pendingCount} pending"]);
     }
 
     public function calculateTotal()
@@ -1274,14 +1274,14 @@ public function deleteAppointment($appointmentId)
     public function startNewConsultation()
     {
         if (!$this->clearance || $this->clearance->payment_status !== 'Paid') {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Payment required before creating consultation']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Payment required before creating consultation']);
             return;
         }
 
         $this->resetForm();
         $this->activeTab = 'consultation';
         $this->dispatch('init-odq-select');
-        $this->dispatch('sync-odq-select', ['values' => []]);
+        $this->dispatch('sync-odq-select', ...['values' => []]);
     }
 
     public function editConsultation($consultationId)
@@ -1335,7 +1335,7 @@ public function deleteAppointment($appointmentId)
 
         $this->activeTab = 'consultation';
         $this->dispatch('init-odq-select');
-        $this->dispatchBrowserEvent('sync-odq-select', [
+        $this->dispatch('sync-odq-select', ...[
             'values' => $this->normalizeOdq($this->state['odq'] ?? []),
         ]);
     }
@@ -1402,7 +1402,7 @@ public function deleteAppointment($appointmentId)
         foreach ($this->productsList as $item) {
             if (!$this->isLockedPrescriptionItem($item) && $this->isDrugPrescriptionItem($item)) {
                 if (empty($item['frequency']) || empty($item['eye'])) {
-                    $this->dispatch('notify', ['type' => 'error', 'message' => 'Please set eye and frequency for all drug prescription items']);
+                    $this->dispatch('notify', ...['type' => 'error', 'message' => 'Please set eye and frequency for all drug prescription items']);
                     return false;
                 }
             }
@@ -1523,7 +1523,7 @@ public function deleteAppointment($appointmentId)
             DB::commit();
 
             $this->checkAndUpdateClearance();
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Consultation saved successfully.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Consultation saved successfully.']);
 
             $savedConsultationId = $consultation->id;
             $this->resetForm();
@@ -1532,7 +1532,7 @@ public function deleteAppointment($appointmentId)
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to create consultation: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to create consultation: ' . $e->getMessage()]);
             \Log::error('Consultation error: ' . $e->getMessage());
         }
     }
@@ -1640,7 +1640,7 @@ public function deleteAppointment($appointmentId)
 
             DB::commit();
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Consultation updated successfully.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Consultation updated successfully.']);
 
             $savedConsultationId = $this->consultation->id;
             $this->resetForm();
@@ -1649,7 +1649,7 @@ public function deleteAppointment($appointmentId)
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to update: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to update: ' . $e->getMessage()]);
             \Log::error('Consultation Update Error: ' . $e->getMessage());
         }
     }
@@ -1684,10 +1684,10 @@ public function deleteAppointment($appointmentId)
             $this->consultation->load('addenda.user');
             $this->clinicalAddendum = '';
             $this->resetValidation(['clinicalAddendum']);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Clinical addendum added successfully.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Clinical addendum added successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to add clinical addendum: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to add clinical addendum: ' . $e->getMessage()]);
         }
     }
     
@@ -1701,10 +1701,10 @@ public function deleteAppointment($appointmentId)
 
         if ($availableClearance) {
             $this->clearance = $availableClearance;
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Consultation saved. Switched to available clearance.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Consultation saved. Switched to available clearance.']);
         } else {
             $this->clearance->refresh();
-            $this->dispatch('notify', ['type' => 'info', 'message' => 'Consultation saved. No unused clearance available - tabs locked.']);
+            $this->dispatch('notify', ...['type' => 'info', 'message' => 'Consultation saved. No unused clearance available - tabs locked.']);
         }
     }
 
@@ -1734,7 +1734,7 @@ public function deleteAppointment($appointmentId)
     public function saveRefraction()
     {
         if ($this->consultationFieldsLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Only the doctor who created this consultation can edit refraction data.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Only the doctor who created this consultation can edit refraction data.']);
             return;
         }
 
@@ -1771,11 +1771,11 @@ public function deleteAppointment($appointmentId)
 
             DB::commit();
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Refraction data saved successfully']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Refraction data saved successfully']);
             $this->activeTab = 'history';
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to save refraction: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to save refraction: ' . $e->getMessage()]);
         }
     }
 
@@ -1784,7 +1784,7 @@ public function deleteAppointment($appointmentId)
         $consultation = Consultations::with(['refraction', 'patient'])->findOrFail($consultationId);
         
         if (!$consultation->refraction) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'No refraction data available']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'No refraction data available']);
             return;
         }
 
@@ -1794,7 +1794,7 @@ public function deleteAppointment($appointmentId)
             'patient' => $consultation->patient
         ])->render();
 
-        $this->dispatch('printRefraction', ['html' => $html]);
+        $this->dispatch('printRefraction', ...['html' => $html]);
     }
 
     public function updatedStateLensType($value)
@@ -1817,7 +1817,7 @@ public function deleteAppointment($appointmentId)
         
         if ($product) {
             $this->selectProduct($productId);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Lens product added to prescription list.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Lens product added to prescription list.']);
         }
     }
     

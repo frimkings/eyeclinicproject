@@ -60,7 +60,7 @@ class DiscountApprovalsComponent extends Component
         if (!$this->requestCartIsStillOpen($request)) {
             $request->delete();
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'This cart was already sold or removed, so the discount request was deleted.',
             ]);
@@ -75,7 +75,7 @@ class DiscountApprovalsComponent extends Component
                 'notes' => trim(($request->notes ? $request->notes . "\n" : '') . 'Auto-rejected: an approved discount already exists for the same patient/product.'),
             ]);
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'This duplicate request was rejected because the product already has an approved discount.',
             ]);
@@ -100,7 +100,7 @@ class DiscountApprovalsComponent extends Component
             route('cashier.seller-desk')
         );
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Discount request approved.' . ($rejectedDuplicates > 0 ? " {$rejectedDuplicates} duplicate request(s) rejected." : ' The cashier will be notified on POS.'),
         ]);
@@ -130,7 +130,7 @@ class DiscountApprovalsComponent extends Component
             route('cashier.seller-desk')
         );
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'info',
             'message' => 'Discount request rejected. The cashier will be notified on POS.',
         ]);

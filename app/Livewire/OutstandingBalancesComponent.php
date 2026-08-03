@@ -238,14 +238,14 @@ class OutstandingBalancesComponent extends Component
         });
 
         $this->closeModal();
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => $result['duplicate'] ? 'info' : 'success',
             'message' => 'Payment of ' . currency() . ' ' . number_format($result['amount'], 2)
                 . ($result['duplicate'] ? ' was already recorded.' : ' recorded successfully.'),
         ]);
 
         if ($result['fully_paid']) {
-            $this->dispatchBrowserEvent('print-released-receipt', [
+            $this->dispatch('print-released-receipt', ...[
                 'url' => route('cashier.receipt.show', $result['sale_id']),
             ]);
         }

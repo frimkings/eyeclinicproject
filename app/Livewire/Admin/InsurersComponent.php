@@ -72,11 +72,11 @@ class InsurersComponent extends Component
             $old = $insurer->only(array_keys($data));
             $insurer->update($data);
             AuditTrail::record('insurer.updated', "Updated insurer: {$insurer->name}", $insurer, $old, $data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Insurer updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Insurer updated.']);
         } else {
             $insurer = Insurer::create($data);
             AuditTrail::record('insurer.created', "Created insurer: {$insurer->name}", $insurer, [], $data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Insurer added.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Insurer added.']);
         }
 
         $this->showModal = false;
@@ -89,14 +89,14 @@ class InsurersComponent extends Component
         $insurer->update(['active' => !$insurer->active]);
         $status = $insurer->active ? 'activated' : 'deactivated';
         AuditTrail::record('insurer.toggled', "Insurer {$insurer->name} {$status}", $insurer);
-        $this->dispatch('notify', ['type' => 'info', 'message' => "Insurer {$status}."]);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => "Insurer {$status}."]);
     }
 
     public function delete(int $id): void
     {
         $insurer = Insurer::withCount('claims')->findOrFail($id);
         if ($insurer->claims_count > 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => "Cannot delete — {$insurer->claims_count} claim(s) exist for this insurer.",
             ]);
@@ -104,7 +104,7 @@ class InsurersComponent extends Component
         }
         AuditTrail::record('insurer.deleted', "Deleted insurer: {$insurer->name}", $insurer, $insurer->toArray(), []);
         $insurer->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Insurer deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Insurer deleted.']);
     }
 
     public function render()

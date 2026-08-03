@@ -94,7 +94,7 @@ class InsuranceClaimsComponent extends Component
     {
         $claim = InsuranceClaim::with(['patient', 'insurer'])->findOrFail($id);
         if ($claim->status !== 'draft') {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Only draft claims can be edited.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Only draft claims can be edited.']);
             return;
         }
 
@@ -201,7 +201,7 @@ class InsuranceClaimsComponent extends Component
             $sale = Sales::where('patient_id', $this->state['patient_id'])->find($this->state['sale_id']);
             if (!$sale) {
                 $this->state['sale_id'] = '';
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'error',
                     'message' => 'The selected sale does not belong to the selected patient.',
                 ]);
@@ -227,7 +227,7 @@ class InsuranceClaimsComponent extends Component
         if ($this->isEditing) {
             $claim = InsuranceClaim::findOrFail($this->claimId);
             if ($claim->status !== 'draft') {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Only draft claims can be edited.']);
+                $this->dispatch('notify', ...['type' => 'error', 'message' => 'Only draft claims can be edited.']);
                 return;
             }
 
@@ -239,7 +239,7 @@ class InsuranceClaimsComponent extends Component
                 "Updated claim #{$claim->id} for {$claim->patient->name}",
                 $claim, $old, $data, $claim->patient_id
             );
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Claim updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Claim updated.']);
         } else {
             $data['created_by'] = auth()->id();
             $claim = InsuranceClaim::create($data);
@@ -248,7 +248,7 @@ class InsuranceClaimsComponent extends Component
                 "Logged insurance claim #{$claim->id} for {$claim->patient->name}",
                 $claim, [], $data, $claim->patient_id
             );
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Claim logged.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Claim logged.']);
         }
 
         $this->showModal = false;
@@ -259,7 +259,7 @@ class InsuranceClaimsComponent extends Component
     {
         $claim = InsuranceClaim::findOrFail($id);
         if (!in_array($claim->status, ['draft', 'rejected'])) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Only draft or rejected claims can be deleted.',
             ]);
@@ -267,7 +267,7 @@ class InsuranceClaimsComponent extends Component
         }
         AuditTrail::record('insurance_claim.deleted', "Deleted claim #{$claim->id}", $claim, $claim->toArray(), [], $claim->patient_id);
         $claim->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Claim deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Claim deleted.']);
     }
 
     // ── Status workflow ───────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ class InsuranceClaimsComponent extends Component
     {
         $claim = InsuranceClaim::findOrFail($id);
         if (!$this->canTransition($claim->status, $newStatus)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Invalid claim status transition.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Invalid claim status transition.']);
             return;
         }
 
@@ -299,7 +299,7 @@ class InsuranceClaimsComponent extends Component
             $this->showStatusModal = false;
             $this->statusClaimId = null;
             $this->pendingStatus = '';
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Invalid claim status transition.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Invalid claim status transition.']);
             return;
         }
 
@@ -358,7 +358,7 @@ class InsuranceClaimsComponent extends Component
         $this->showStatusModal = false;
         $this->statusClaimId   = null;
         $this->pendingStatus   = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Claim status updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Claim status updated.']);
     }
 
     // ── Export ────────────────────────────────────────────────────────────────

@@ -162,7 +162,7 @@ class IncomeStatementComponent extends Component
     public function saveEntry()
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This period is locked. Unlock it before changing entries.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This period is locked. Unlock it before changing entries.']);
             return;
         }
 
@@ -206,26 +206,26 @@ class IncomeStatementComponent extends Component
 
         $this->removeDuplicateEntries($this->section, $this->name);
         $this->resetEntryForm();
-        $this->dispatch('notify', ['type' => 'success', 'message' => $entry ? 'Income statement line updated.' : 'Income statement line saved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $entry ? 'Income statement line updated.' : 'Income statement line saved.']);
     }
 
     public function deleteEntry($entryId)
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This period is locked. Unlock it before deleting entries.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This period is locked. Unlock it before deleting entries.']);
             return;
         }
 
         $entry = IncomeStatementEntry::findOrFail($entryId);
         $entry->update(['deleted_by' => auth()->id()]);
         $entry->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Income statement line deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Income statement line deleted.']);
     }
 
     public function editEntry($entryId)
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This period is locked. Unlock it before editing entries.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This period is locked. Unlock it before editing entries.']);
             return;
         }
 
@@ -252,7 +252,7 @@ class IncomeStatementComponent extends Component
     public function updateEntry()
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This period is locked. Unlock it before editing entries.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This period is locked. Unlock it before editing entries.']);
             return;
         }
 
@@ -281,7 +281,7 @@ class IncomeStatementComponent extends Component
 
         $this->removeDuplicateEntries($entry->section, $this->editingName);
         $this->cancelEdit();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Income statement line updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Income statement line updated.']);
     }
 
     public function saveTemplate()
@@ -314,13 +314,13 @@ class IncomeStatementComponent extends Component
         $this->templateAmount = '';
         $this->templatePercentage = '';
         $this->templateNotes = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Recurring template saved.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Recurring template saved.']);
     }
 
     public function applyTemplates()
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'This period is locked. Unlock it before applying templates.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'This period is locked. Unlock it before applying templates.']);
             return;
         }
 
@@ -350,7 +350,7 @@ class IncomeStatementComponent extends Component
             $this->removeDuplicateEntries($template->section, $template->name);
         }
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => "{$created} recurring template line(s) created, {$updated} updated."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "{$created} recurring template line(s) created, {$updated} updated."]);
     }
 
     protected function matchingEntryQuery($section, $name)
@@ -382,7 +382,7 @@ class IncomeStatementComponent extends Component
     public function deleteTemplate($templateId)
     {
         IncomeStatementTemplate::findOrFail($templateId)->update(['is_active' => false]);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Recurring template removed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Recurring template removed.']);
     }
 
     public function lockPeriod()
@@ -399,7 +399,7 @@ class IncomeStatementComponent extends Component
         );
 
         $this->lockNotes = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Income statement period locked.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Income statement period locked.']);
     }
 
     public function unlockPeriod()
@@ -408,7 +408,7 @@ class IncomeStatementComponent extends Component
             $this->periodLock->delete();
         }
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Income statement period unlocked.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Income statement period unlocked.']);
     }
 
     protected function resetEntryForm()
@@ -608,7 +608,7 @@ class IncomeStatementComponent extends Component
     public function previewExpenseImport(): void
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Period is locked. Unlock it before importing.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Period is locked. Unlock it before importing.']);
             return;
         }
 
@@ -621,7 +621,7 @@ class IncomeStatementComponent extends Component
             ->get();
 
         if ($grouped->isEmpty()) {
-            $this->dispatch('notify', ['type' => 'info', 'message' => 'No expenses recorded in this period.']);
+            $this->dispatch('notify', ...['type' => 'info', 'message' => 'No expenses recorded in this period.']);
             return;
         }
 
@@ -638,7 +638,7 @@ class IncomeStatementComponent extends Component
     public function confirmExpenseImport(): void
     {
         if ($this->isLocked) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Period is locked.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Period is locked.']);
             return;
         }
 
@@ -686,7 +686,7 @@ class IncomeStatementComponent extends Component
 
         AuditTrail::record('report.expense_import', "Imported {$created} new and {$updated} updated expense lines from Expense Tracker");
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "{$created} line(s) created, {$updated} updated from Expense Tracker.",
         ]);

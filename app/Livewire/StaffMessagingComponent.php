@@ -97,7 +97,7 @@ class StaffMessagingComponent extends Component
 
         $this->reset(['recipientId', 'composeSubject', 'composeBody']);
         $this->dispatch('close-compose-modal');
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Message sent.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Message sent.']);
     }
 
     public function sendReply(): void
@@ -131,7 +131,7 @@ class StaffMessagingComponent extends Component
         );
 
         $this->replyBody = '';
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Reply sent.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Reply sent.']);
     }
 
     public function deleteThread(int $threadId): void
@@ -147,7 +147,7 @@ class StaffMessagingComponent extends Component
             $this->activeThreadId = null;
         }
 
-        $this->dispatch('notify', ['type' => 'info', 'message' => 'Thread deleted.']);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => 'Thread deleted.']);
     }
 
     private function layoutForUser(): string

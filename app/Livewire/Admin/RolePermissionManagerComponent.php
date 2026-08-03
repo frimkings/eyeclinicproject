@@ -93,7 +93,7 @@ class RolePermissionManagerComponent extends Component
         $this->selectedPermissions  = [];
         $this->originalRolePermissions = [];
         $this->resetErrorBag();
-        $this->dispatch('show-roleModal', ['isEdit' => false]);
+        $this->dispatch('show-roleModal', ...['isEdit' => false]);
     }
 
     public function openEditRole(int $id): void
@@ -105,7 +105,7 @@ class RolePermissionManagerComponent extends Component
         $this->selectedPermissions  = $role->permissions->pluck('id')->map(fn ($i) => (string) $i)->toArray();
         $this->originalRolePermissions = $role->permissions->pluck('name')->sort()->values()->all();
         $this->resetErrorBag();
-        $this->dispatch('show-roleModal', ['isEdit' => true]);
+        $this->dispatch('show-roleModal', ...['isEdit' => true]);
     }
 
     public function applyRoleTemplate(string $template): void
@@ -113,7 +113,7 @@ class RolePermissionManagerComponent extends Component
         $this->authorizeRoleManagement();
 
         if (!array_key_exists($template, $this->roleTemplates)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Role template not found.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Role template not found.']);
             return;
         }
 
@@ -130,7 +130,7 @@ class RolePermissionManagerComponent extends Component
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         cache()->forget('role_permission_manager.permission_usage');
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => "{$template} template applied. Review and save the role."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "{$template} template applied. Review and save the role."]);
     }
 
     public function saveRole(): void
@@ -188,7 +188,7 @@ class RolePermissionManagerComponent extends Component
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->dispatch('hide-roleModal');
-        $this->dispatch('notify', ['type' => 'success', 'message' => $msg]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $msg]);
     }
 
     public function deleteRole(int $id): void
@@ -197,12 +197,12 @@ class RolePermissionManagerComponent extends Component
         $role = Role::withCount('users')->findOrFail($id);
 
         if (in_array($role->name, $this->protectedRoles)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => "\"{$role->name}\" is a protected role and cannot be deleted."]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => "\"{$role->name}\" is a protected role and cannot be deleted."]);
             return;
         }
 
         if ($role->users_count > 0) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => "Cannot delete \"{$role->name}\" — {$role->users_count} user(s) still assigned. Re-assign them first."]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => "Cannot delete \"{$role->name}\" — {$role->users_count} user(s) still assigned. Re-assign them first."]);
             return;
         }
 
@@ -210,7 +210,7 @@ class RolePermissionManagerComponent extends Component
         $role->delete();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         AuditTrail::record('role.deleted', "Deleted role \"{$name}\".");
-        $this->dispatch('notify', ['type' => 'info', 'message' => "Role \"{$name}\" deleted."]);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => "Role \"{$name}\" deleted."]);
     }
 
     public function openRoleUsers(int $id): void
@@ -243,7 +243,7 @@ class RolePermissionManagerComponent extends Component
         ]);
 
         $this->userToAssign = null;
-        $this->dispatch('notify', ['type' => 'success', 'message' => "{$user->name} assigned to {$role->name}."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "{$user->name} assigned to {$role->name}."]);
     }
 
     public function removeUserFromManagedRole(int $userId): void
@@ -256,7 +256,7 @@ class RolePermissionManagerComponent extends Component
         $user = User::findOrFail($userId);
 
         if ($role->name === 'Super Admin' && $user->id === auth()->id()) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'You cannot remove your own Super Admin role.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'You cannot remove your own Super Admin role.']);
             return;
         }
 
@@ -269,7 +269,7 @@ class RolePermissionManagerComponent extends Component
             'roles' => $user->fresh()->getRoleNames()->all(),
         ]);
 
-        $this->dispatch('notify', ['type' => 'info', 'message' => "{$user->name} removed from {$role->name}."]);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => "{$user->name} removed from {$role->name}."]);
     }
 
     // ── Permissions ────────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ class RolePermissionManagerComponent extends Component
         $this->editingPermissionId = null;
         $this->permissionName      = '';
         $this->resetErrorBag();
-        $this->dispatch('show-permissionModal', ['isEdit' => false]);
+        $this->dispatch('show-permissionModal', ...['isEdit' => false]);
     }
 
     public function openEditPermission(int $id): void
@@ -288,7 +288,7 @@ class RolePermissionManagerComponent extends Component
         $this->editingPermissionId = $id;
         $this->permissionName      = $perm->name;
         $this->resetErrorBag();
-        $this->dispatch('show-permissionModal', ['isEdit' => true]);
+        $this->dispatch('show-permissionModal', ...['isEdit' => true]);
     }
 
     public function savePermission(): void
@@ -323,7 +323,7 @@ class RolePermissionManagerComponent extends Component
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         cache()->forget('role_permission_manager.permission_usage');
         $this->dispatch('hide-permissionModal');
-        $this->dispatch('notify', ['type' => 'success', 'message' => $msg]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $msg]);
     }
 
     public function deletePermission(int $id): void
@@ -335,7 +335,7 @@ class RolePermissionManagerComponent extends Component
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         cache()->forget('role_permission_manager.permission_usage');
         AuditTrail::record('permission.deleted', "Deleted permission \"{$name}\".");
-        $this->dispatch('notify', ['type' => 'info', 'message' => "Permission \"{$name}\" deleted and removed from all roles."]);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => "Permission \"{$name}\" deleted and removed from all roles."]);
     }
 
     public function createPermissionPreset(string $group): void
@@ -343,7 +343,7 @@ class RolePermissionManagerComponent extends Component
         $this->authorizeRoleManagement();
 
         if (!array_key_exists($group, $this->permissionPresets)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Permission preset not found.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Permission preset not found.']);
             return;
         }
 
@@ -366,7 +366,7 @@ class RolePermissionManagerComponent extends Component
             'created' => $created,
         ]);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => $created > 0
                 ? "{$group} preset added {$created} new permission(s)."

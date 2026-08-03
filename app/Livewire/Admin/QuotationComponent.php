@@ -267,7 +267,7 @@ class QuotationComponent extends Component
         });
 
         $this->showModal = false;
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $this->isEditing ? 'Quotation updated.' : 'Quotation created.',
         ]);
@@ -289,14 +289,14 @@ class QuotationComponent extends Component
             force: true
         );
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Status updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Status updated.']);
     }
 
     public function confirmDelete(int $id): void
     {
         abort_unless(auth()->user()?->hasRole('Super Admin'), 403);
         $q = Quotation::findOrFail($id);
-        $this->dispatchBrowserEvent('show-confirm', [
+        $this->dispatch('show-confirm', ...[
             'id'      => $id,
             'action'  => 'deleteQuotation',
             'message' => "Delete quotation {$q->quotation_number}? It will be soft-deleted and can be recovered.",
@@ -309,7 +309,7 @@ class QuotationComponent extends Component
         $q = Quotation::findOrFail($id);
         AuditTrail::record('quotation.deleted', "Soft-deleted quotation {$q->quotation_number} for {$q->patient_name}", $q, force: true);
         $q->delete(); // soft delete — model uses SoftDeletes
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Quotation deleted.' ]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Quotation deleted.' ]);
     }
 
     public function render()

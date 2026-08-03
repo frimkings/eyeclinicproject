@@ -82,7 +82,7 @@ class SpectacleRenewalApprovalsComponent extends Component
             }
 
             $patientName = optional(optional($order->refraction)->consultation)->patient?->name ?? 'Patient';
-            $this->dispatch('notify', ['type' => 'success', 'message' => "Approved and SMS sent to {$patientName}."]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => "Approved and SMS sent to {$patientName}."]);
         } else {
             $order->update([
                 'renewal_approval_status' => 'rejected',
@@ -91,7 +91,7 @@ class SpectacleRenewalApprovalsComponent extends Component
             ]);
 
             $patientName = optional(optional($order->refraction)->consultation)->patient?->name ?? 'Patient';
-            $this->dispatch('notify', ['type' => 'warning', 'message' => "Reminder for {$patientName} rejected — no SMS will be sent."]);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => "Reminder for {$patientName} rejected — no SMS will be sent."]);
         }
 
         $this->cancelConfirm();
@@ -107,7 +107,7 @@ class SpectacleRenewalApprovalsComponent extends Component
             'renewal_actioned_at'     => null,
         ]);
 
-        $this->dispatch('notify', ['type' => 'info', 'message' => 'Reminder re-queued for approval.']);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => 'Reminder re-queued for approval.']);
     }
 
     public static function pendingCount(): int

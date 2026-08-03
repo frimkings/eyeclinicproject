@@ -86,7 +86,7 @@ class UserProfileComponent extends Component
         $user->save();
         $this->reset(['password', 'password_confirmation']);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Profile updated successfully!',
         ]);
@@ -101,7 +101,7 @@ class UserProfileComponent extends Component
             $user->save();
         }
         $this->avatar = null;
-        $this->dispatch('notify', ['type' => 'info', 'message' => 'Avatar removed.']);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => 'Avatar removed.']);
     }
 
     public function switchTab(string $tab): void

@@ -134,7 +134,7 @@ class StockMovementComponent extends Component
             );
         });
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Stock received and product quantity updated.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Stock received and product quantity updated.']);
         $this->resetReceiveForm();
         $this->resetPage();
     }

@@ -37,7 +37,7 @@ class PatientRecallComponent extends Component
         $s = Setting::getSettings();
 
         if (empty($s->sms_enabled) || !$s->sms_enabled) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'SMS is disabled in settings.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'SMS is disabled in settings.']);
             return;
         }
 
@@ -53,7 +53,7 @@ class PatientRecallComponent extends Component
         ]);
 
         if (!$msg) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Recall SMS template is empty. Please configure it in SMS Templates.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Recall SMS template is empty. Please configure it in SMS Templates.']);
             return;
         }
 
@@ -78,9 +78,9 @@ class PatientRecallComponent extends Component
         if ($sent) {
             $patient->update(['recall_sms_sent_at' => now()]);
             AuditTrail::record('recall.sent', "Manual recall sent to {$patient->name}", $patient, [], [], $patient->id);
-            $this->dispatch('notify', ['type' => 'success', 'message' => "Recall sent to {$patient->name}."]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => "Recall sent to {$patient->name}."]);
         } else {
-            $this->dispatch('notify', ['type' => 'error', 'message' => "Failed to send recall to {$patient->name}. Check SMS settings."]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => "Failed to send recall to {$patient->name}. Check SMS settings."]);
         }
     }
 
@@ -89,7 +89,7 @@ class PatientRecallComponent extends Component
         $s = Setting::getSettings();
 
         if (empty($s->sms_enabled) || !$s->sms_enabled) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'SMS is disabled in settings.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'SMS is disabled in settings.']);
             return;
         }
 
@@ -137,7 +137,7 @@ class PatientRecallComponent extends Component
 
         Log::info("PatientRecall bulk — sent: {$sent}, failed: {$failed}");
         AuditTrail::record('recall.bulk_sent', "Bulk recall: {$sent} sent, {$failed} failed");
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => $failed > 0 ? 'warning' : 'success',
             'message' => "Bulk recall done — {$sent} sent, {$failed} failed.",
         ]);
@@ -148,7 +148,7 @@ class PatientRecallComponent extends Component
         $patient = Patient::findOrFail($patientId);
         $patient->update(['recall_sms_sent_at' => null]);
         AuditTrail::record('recall.reset', "Recall cycle reset for {$patient->name}", $patient, [], [], $patient->id);
-        $this->dispatch('notify', ['type' => 'info', 'message' => "{$patient->name} moved back to due list."]);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => "{$patient->name} moved back to due list."]);
     }
 
     // ── Render ────────────────────────────────────────────────────────────────

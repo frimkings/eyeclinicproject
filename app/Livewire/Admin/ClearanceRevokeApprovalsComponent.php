@@ -55,7 +55,7 @@ class ClearanceRevokeApprovalsComponent extends Component
         $log = ClearanceRevokeLog::with('clearance')->findOrFail($id);
 
         if ($log->status !== ClearanceRevokeLog::STATUS_PENDING) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'This request is no longer pending.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'This request is no longer pending.']);
             return;
         }
 
@@ -67,12 +67,12 @@ class ClearanceRevokeApprovalsComponent extends Component
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
-            $this->dispatch('notify', ['type' => 'info', 'message' => 'Approved — clearance record no longer exists.']);
+            $this->dispatch('notify', ...['type' => 'info', 'message' => 'Approved — clearance record no longer exists.']);
             return;
         }
 
         if ($clearance->consultation()->exists()) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Cannot approve — a consultation has since been linked to this clearance.',
             ]);
@@ -101,7 +101,7 @@ class ClearanceRevokeApprovalsComponent extends Component
             );
         }
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Clearance revoked and requester notified.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Clearance revoked and requester notified.']);
     }
 
     public function openRejectModal(int $id): void
@@ -128,7 +128,7 @@ class ClearanceRevokeApprovalsComponent extends Component
 
         if ($log->status !== ClearanceRevokeLog::STATUS_PENDING) {
             $this->closeRejectModal();
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'This request is no longer pending.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'This request is no longer pending.']);
             return;
         }
 
@@ -152,7 +152,7 @@ class ClearanceRevokeApprovalsComponent extends Component
         }
 
         $this->closeRejectModal();
-        $this->dispatch('notify', ['type' => 'info', 'message' => 'Revoke request rejected and requester notified.']);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => 'Revoke request rejected and requester notified.']);
     }
 
     public function render()

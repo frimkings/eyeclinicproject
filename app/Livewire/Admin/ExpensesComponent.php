@@ -127,14 +127,14 @@ class ExpensesComponent extends Component
             $old = $expense->only(array_keys($data));
             $expense->update($data);
             AuditTrail::record('expense.updated', "Updated expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, $old, $data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Expense updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Expense updated.']);
         } else {
             if ($this->receiptFile) {
                 $data['receipt_path'] = $this->receiptFile->store('expense-receipts', 'public');
             }
             $expense = Expense::create($data);
             AuditTrail::record('expense.created', "Recorded expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, [], $data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Expense recorded.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Expense recorded.']);
         }
 
         $this->showModal = false;
@@ -149,14 +149,14 @@ class ExpensesComponent extends Component
         }
         $expense->update(['receipt_path' => null]);
         AuditTrail::record('expense.receipt_deleted', "Removed receipt from: {$expense->description}", $expense, force: true);
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Receipt removed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Receipt removed.']);
     }
 
     public function confirmDelete(int $id): void
     {
         abort_if(!auth()->user()?->hasAnyRole(['Manager', 'Super Admin']), 403);
 
-        $this->dispatchBrowserEvent('show-delete-confirmation', [
+        $this->dispatch('show-delete-confirmation', ...[
             'id'     => $id,
             'method' => 'deleteExpense',
         ]);
@@ -169,7 +169,7 @@ class ExpensesComponent extends Component
         $expense = Expense::findOrFail($id);
         AuditTrail::record('expense.deleted', "Deleted expense: {$expense->description} (" . currency() . " {$expense->amount})", $expense, $expense->toArray(), []);
         $expense->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Expense deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Expense deleted.']);
     }
 
     public function exportCsv()
@@ -264,10 +264,10 @@ class ExpensesComponent extends Component
 
         if ($this->isEditingCategory) {
             ExpenseCategory::findOrFail($this->categoryEditId)->update($data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Category updated.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Category updated.']);
         } else {
             ExpenseCategory::create($data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Category created.']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Category created.']);
         }
 
         $this->showCategoryModal = false;

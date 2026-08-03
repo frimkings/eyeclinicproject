@@ -93,7 +93,7 @@ class MailSettingsComponent extends Component
         Setting::getSettings()->update($data);
         $this->smtpPassword = '';
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Mail settings saved. Use Send Test to verify.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Mail settings saved. Use Send Test to verify.']);
     }
 
     public function sendTest(): void
@@ -101,7 +101,7 @@ class MailSettingsComponent extends Component
         $this->validateOnly('testRecipient', ['testRecipient' => 'required|email|max:255']);
 
         if (empty($this->smtpHost) || empty($this->smtpUsername)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Fill in and save SMTP settings before sending a test.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Fill in and save SMTP settings before sending a test.']);
             return;
         }
 
@@ -137,9 +137,9 @@ class MailSettingsComponent extends Component
                 fn ($m) => $m->to($to)->subject("Mail Test — {$fromName}")
             );
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => "Test email sent to {$to}. Check the inbox."]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => "Test email sent to {$to}. Check the inbox."]);
         } catch (\Throwable $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Send failed: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Send failed: ' . $e->getMessage()]);
         }
     }
 

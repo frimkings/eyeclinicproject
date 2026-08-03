@@ -92,7 +92,7 @@ use WithPagination;
             'password' => $this->password ? Hash::make($this->password) : User::find($this->userId)->password,
         ]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => $this->userId ? 'User Updated Successfully.' : 'User Created Successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $this->userId ? 'User Updated Successfully.' : 'User Created Successfully.']);
         $this->closeModal();
         $this->resetInputFields();
     }
@@ -116,11 +116,11 @@ use WithPagination;
     {
         // Only Super Admin can delete
         if (auth()->user()->role !== '0') {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Only Super Admins can delete users.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Only Super Admins can delete users.']);
             return;
         }
 
         User::find($id)->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'User Deleted Successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'User Deleted Successfully.']);
     }
 }

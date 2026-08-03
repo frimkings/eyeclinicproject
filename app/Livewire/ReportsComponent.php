@@ -419,7 +419,7 @@ class ReportsComponent extends Component
 
         $this->dispatchChart();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Filters reset successfully!',
         ]);
@@ -430,7 +430,7 @@ class ReportsComponent extends Component
         $this->resetPage();
         $this->dispatchChart();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Data refreshed successfully!',
         ]);
@@ -602,7 +602,7 @@ class ReportsComponent extends Component
 
     protected function dispatchChart(): void
     {
-        $this->dispatch('update-chart', $this->buildChartPayload());
+        $this->dispatch('update-chart', ...$this->buildChartPayload());
     }
 
 
@@ -631,7 +631,7 @@ class ReportsComponent extends Component
             ->exists();
 
         if ($alreadyPending) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'A refund request for this sale is already awaiting approval.',
             ]);
@@ -686,7 +686,7 @@ class ReportsComponent extends Component
         $this->resetErrorBag();
 
         $this->dispatch('hide-refundModal-modal');
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => "Refund request for #{$transactionId} submitted. Awaiting manager approval.",
         ]);

@@ -150,7 +150,7 @@ class ProductsComponent extends Component
         }
 
         $this->cancelLensOption();
-        $this->dispatch('notify', ['type' => 'success', 'message' => $message]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $message]);
     }
 
     public function editLensOption($id)
@@ -171,7 +171,7 @@ class ProductsComponent extends Component
     {
         LensOption::findOrFail($id)->delete();
         $this->cancelLensOption();
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Lens option removed. Existing refraction records are unchanged.',
         ]);
@@ -246,7 +246,7 @@ class ProductsComponent extends Component
 
         $this->cancelForm();
         
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Product added successfully!'
         ]);
@@ -276,7 +276,7 @@ class ProductsComponent extends Component
     public function updateProduct()
     {
         if (!$this->editingProduct) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'No product selected for update.'
             ]);
@@ -298,7 +298,7 @@ class ProductsComponent extends Component
 
         $this->cancelForm();
         
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Product updated successfully!'
         ]);
@@ -306,7 +306,7 @@ class ProductsComponent extends Component
 
     public function confirmDelete($id)
     {
-        $this->dispatchBrowserEvent('show-delete-confirmation', [
+        $this->dispatch('show-delete-confirmation', ...[
             'id' => $id,
             'method' => 'confirmProductDelete'
         ]);
@@ -318,7 +318,7 @@ class ProductsComponent extends Component
         $product->delete();
         $this->clearSelection();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Product deleted successfully!'
         ]);
@@ -333,7 +333,7 @@ class ProductsComponent extends Component
             ->values();
 
         if ($ids->isEmpty()) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'Select at least one product first.'
             ]);
@@ -343,7 +343,7 @@ class ProductsComponent extends Component
         $deleted = Product::whereIn('id', $ids)->delete();
         $this->clearSelection();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => $deleted . ' product(s) deleted successfully.'
         ]);

@@ -129,7 +129,7 @@ trait HasAppointmentBooking
             ]);
 
             // SUCCESS - Show notification
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment scheduled for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment scheduled for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y \a\t h:i A')]);
 
             // Reset form fields
             $this->resetAppointmentForm();
@@ -154,7 +154,7 @@ trait HasAppointmentBooking
             
         } catch (\Exception $e) {
             // ERROR - Show notification
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
             \Log::error('Appointment Booking Error', [
                 'patient_id' => $this->appointmentPatientId ?? 'null',
                 'title' => $this->appointmentTitle ?? 'null',
@@ -194,13 +194,13 @@ trait HasAppointmentBooking
                 'status' => 'Pending',
             ]);
 
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Appointment scheduled successfully for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y h:i A')]);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Appointment scheduled successfully for ' . Carbon::parse($this->appointmentScheduledAt)->format('M d, Y h:i A')]);
 
             $this->resetAppointmentForm();
             return true;
 
         } catch (\Exception $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Failed to create appointment: ' . $e->getMessage()]);
             \Log::error('Appointment creation failed: ' . $e->getMessage());
             return false;
         }
@@ -254,7 +254,7 @@ trait HasAppointmentBooking
         $consultation = \App\Models\Consultations::with('patient')->find($consultationId);
         
         if (!$consultation) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Consultation not found']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Consultation not found']);
             return;
         }
 
@@ -265,7 +265,7 @@ trait HasAppointmentBooking
             $consultation->nextvisit
         );
 
-        $this->dispatch('notify', ['type' => 'info', 'message' => 'Appointment form pre-filled. Please review and save.']);
+        $this->dispatch('notify', ...['type' => 'info', 'message' => 'Appointment form pre-filled. Please review and save.']);
     }
 
     /**

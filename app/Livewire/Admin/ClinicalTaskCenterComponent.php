@@ -22,7 +22,7 @@ class ClinicalTaskCenterComponent extends Component
 {
     public function refreshTasks(): void
     {
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Task center refreshed.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Task center refreshed.']);
     }
 
     public function render()

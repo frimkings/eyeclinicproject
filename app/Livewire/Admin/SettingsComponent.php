@@ -86,7 +86,7 @@ class SettingsComponent extends Component
         $this->missingSetupFields  = $setting->missingSetupFields();
         $this->currency_symbol     = $setting->currency_symbol ?? \App\Models\Setting::DEFAULT_CURRENCY;
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => $setting->needsSetup()
                 ? 'Settings saved. Please complete the highlighted clinic details.'
@@ -110,7 +110,7 @@ class SettingsComponent extends Component
         $this->fillFromSetting($setting);
         $this->missingSetupFields = $setting->missingSetupFields();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Clinic logo removed.'
         ]);
@@ -134,7 +134,7 @@ class SettingsComponent extends Component
         $this->fillFromSetting($setting);
         $this->missingSetupFields = $setting->missingSetupFields();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Settings reset to default clinic details.'
         ]);

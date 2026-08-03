@@ -122,7 +122,7 @@ class POSComponent extends Component
     public function selectDirectPurchaseMode()
     {
         if ($this->patientId || $this->hasPrescriptionCart) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'Clear the selected patient or Doctor Cart before starting a direct purchase.',
             ]);
@@ -171,7 +171,7 @@ class POSComponent extends Component
         // This loads items if a Doctor already prescribed them
         $this->loadPatientCart();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'info',
             'message' => 'Patient selected. You can now add items to the cart.'
         ]);
@@ -195,7 +195,7 @@ class POSComponent extends Component
         $this->resetDiscountApproval();
         $this->calculateTotal();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'info',
             'message' => 'Patient cleared. Cart reset.'
         ]);
@@ -219,7 +219,7 @@ class POSComponent extends Component
                 ->get();
 
             if ($pendingCarts->isEmpty()) {
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'info',
                     'message' => 'No doctor prescription carts are waiting.'
                 ]);
@@ -270,7 +270,7 @@ class POSComponent extends Component
             });
 
             // Send the data to the Alpine.js modal
-            $this->dispatchBrowserEvent('show-pending-carts', [
+            $this->dispatch('show-pending-carts', ...[
                 'carts'         => $cartsData,
                 'totalCarts'    => count($cartsData),
                 'currentUserId' => Auth::id()
@@ -278,7 +278,7 @@ class POSComponent extends Component
 
         } catch (\Exception $e) {
             Log::error('loadAllPendingCarts ERROR: ' . $e->getMessage());
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Failed to load queue: ' . $e->getMessage()
             ]);
@@ -331,13 +331,13 @@ class POSComponent extends Component
             ->toArray();
 
         if (empty($approvedDiscounts)) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'info',
                 'message' => 'No approved discounts are waiting for you.',
             ]);
         }
 
-        $this->dispatchBrowserEvent('show-approved-discounts', [
+        $this->dispatch('show-approved-discounts', ...[
             'discounts' => $approvedDiscounts,
             'totalDiscounts' => count($approvedDiscounts),
         ]);
@@ -351,7 +351,7 @@ class POSComponent extends Component
             ->find($requestId);
 
         if (!$request) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Approved discount was not found or has already been used.',
             ]);
@@ -361,7 +361,7 @@ class POSComponent extends Component
         if (!$this->discountRequestCartIsStillOpen($request)) {
             $request->delete();
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'This approved discount was removed because the cart was already sold or deleted.',
             ]);
@@ -384,7 +384,7 @@ class POSComponent extends Component
         if (!$this->currentCartMatchesDiscountRequest($request)) {
             $this->resetDiscountApproval();
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'The current cart no longer matches this approved discount.',
             ]);
@@ -398,7 +398,7 @@ class POSComponent extends Component
         $discountEligibleSubtotal = $this->getDiscountEligibleSubtotal();
         if ($discountEligibleSubtotal <= 0) {
             $this->resetDiscountApproval();
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'Approved discounts can only be applied to Frames and Lenses.',
             ]);
@@ -417,7 +417,7 @@ class POSComponent extends Component
 
         $this->dispatch('close-approved-discounts-modal');
         $this->dispatch('pos-cart-loaded');
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Approved discount and cart loaded. Proceed with payment.',
         ]);
@@ -427,7 +427,7 @@ class POSComponent extends Component
     {
         $patient = Patient::find($patientId);
         if (!$patient) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Patient not found.'
             ]);
@@ -444,7 +444,7 @@ class POSComponent extends Component
 
         $this->dispatch('close-pending-carts-modal');
         $this->dispatch('pos-cart-loaded');
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => count($this->cart) . ' item(s) loaded for ' . $patient->name . '. Proceed with payment.'
         ]);
@@ -454,7 +454,7 @@ class POSComponent extends Component
     {
         try {
             if ($cashierId !== Auth::id()) {
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'error',
                     'message' => 'You can only delete your own carts.'
                 ]);
@@ -468,20 +468,20 @@ class POSComponent extends Component
                 ->delete();
 
             if ($deleted > 0) {
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'success',
                     'message' => 'Cart deleted successfully.'
                 ]);
                 $this->loadAllPendingCarts();
             } else {
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type'    => 'warning',
                     'message' => 'No items found to delete.'
                 ]);
             }
         } catch (\Exception $e) {
             Log::error('Delete pending cart error: ' . $e->getMessage());
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Failed to delete cart.'
             ]);
@@ -494,7 +494,7 @@ class POSComponent extends Component
     {
         $product = Product::with('category')->find($productId);
         if (!$product || $product->quantity <= 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Product not available or out of stock.'
             ]);
@@ -503,7 +503,7 @@ class POSComponent extends Component
 
         $currentQty = isset($this->cart[$productId]) ? $this->cart[$productId]['quantity'] : 0;
         if ($currentQty >= $product->quantity) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'Cannot add more. Maximum stock: ' . $product->quantity
             ]);
@@ -522,7 +522,7 @@ class POSComponent extends Component
         $this->calculateTotal();
         $this->persistCart($productId);
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => $product->name . ' added to cart.'
         ]);
@@ -563,7 +563,7 @@ class POSComponent extends Component
             ($cartItem['from_prescription'] ?? false) &&
             !($cartItem['is_frame'] ?? false)
         ) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Prescription items can only be removed if they belong to the Frame category.',
             ]);
@@ -590,7 +590,7 @@ class POSComponent extends Component
             }
         }
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'info',
             'message' => 'Item removed from cart.'
         ]);
@@ -620,7 +620,7 @@ class POSComponent extends Component
         $this->resetDiscountApproval();
         $this->calculateTotal();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'info',
             'message' => 'Cart cleared successfully.'
         ]);
@@ -667,17 +667,17 @@ class POSComponent extends Component
         $product = Product::with('category')->find($productId);
 
         if (!$product) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Product not found.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Product not found.']);
             return;
         }
 
         if (!$this->isFrameProduct($product)) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Only Frame category products can be added here.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Only Frame category products can be added here.']);
             return;
         }
 
         if ($product->quantity <= 0) {
-            $this->dispatch('notify', ['type' => 'warning', 'message' => 'This frame is out of stock.']);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => 'This frame is out of stock.']);
             return;
         }
 
@@ -687,7 +687,7 @@ class POSComponent extends Component
             if ($existingProductId === (int) $productId) {
                 $currentQty = is_array($cartItem) ? $cartItem['quantity'] : $cartItem;
                 if ($currentQty >= $product->quantity) {
-                    $this->dispatch('notify', ['type' => 'warning', 'message' => 'Maximum stock reached for this frame.']);
+                    $this->dispatch('notify', ...['type' => 'warning', 'message' => 'Maximum stock reached for this frame.']);
                     return;
                 }
                 if (is_array($this->cart[$cartKey])) {
@@ -700,7 +700,7 @@ class POSComponent extends Component
                 $this->persistCart($cartKey);
                 $this->frameSearchTerm    = '';
                 $this->frameSearchResults = [];
-                $this->dispatch('notify', ['type' => 'success', 'message' => $product->name . ' quantity updated.']);
+                $this->dispatch('notify', ...['type' => 'success', 'message' => $product->name . ' quantity updated.']);
                 return;
             }
         }
@@ -723,7 +723,7 @@ class POSComponent extends Component
         $this->frameSearchTerm    = '';
         $this->frameSearchResults = [];
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => $product->name . ' added to cart.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $product->name . ' added to cart.']);
     }
 
     /* ===================================================== */
@@ -763,7 +763,7 @@ class POSComponent extends Component
         $this->persistCart($cartKey);
 
         if ($product->isDrugCategory()) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => 'Frequency and eye information updated.'
             ]);
@@ -888,7 +888,7 @@ class POSComponent extends Component
     {
         if ($enabled && !$this->patientId) {
             $this->isPartPayment = false;
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'Part payment requires a registered patient.',
             ]);
@@ -900,7 +900,7 @@ class POSComponent extends Component
         $amount = round((float) ($this->newPaymentAmount ?? 0), 2);
 
         if ($amount <= 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Enter a valid payment amount.',
             ]);
@@ -984,7 +984,7 @@ class POSComponent extends Component
         $this->newPaymentAmount = max(0, round($this->finalAmount - $this->getTotalPaid(), 2));
         $this->updateChange();
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'info',
             'message' => 'Discount removed. You can sell at full price.',
         ]);
@@ -1003,7 +1003,7 @@ class POSComponent extends Component
             $request = $this->findPendingDiscountRequestForCurrentCart();
         }
 
-        $this->dispatchBrowserEvent('confirm-sell-without-pending-discount', [
+        $this->dispatch('confirm-sell-without-pending-discount', ...[
             'discountAmount' => number_format((float) ($request->discount_amount ?? $this->discountAmount), 2),
             'fullAmount' => number_format((float) $this->totalAmount, 2),
             'discountedAmount' => number_format((float) ($request->final_amount ?? $this->finalAmount), 2),
@@ -1016,7 +1016,7 @@ class POSComponent extends Component
     {
         if (!$this->hasFramesOrLenses || $this->getDiscountEligibleSubtotal() <= 0) {
             $this->removeDiscount();
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'Discounts can only be applied to Frames and Lenses.',
             ]);
@@ -1024,7 +1024,7 @@ class POSComponent extends Component
         }
 
         if ($this->discountAmount <= 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'Enter a discount amount first.',
             ]);
@@ -1038,7 +1038,7 @@ class POSComponent extends Component
             $this->pendingDiscountApprovalId = null;
             $this->pendingDiscountApprovalStatus = null;
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'success',
                 'message' => 'Discount approved.',
             ]);
@@ -1048,7 +1048,7 @@ class POSComponent extends Component
         if ($this->pendingDiscountApprovalId) {
             $request = DiscountApprovalRequest::find($this->pendingDiscountApprovalId);
             if ($request && $request->status === DiscountApprovalRequest::STATUS_PENDING) {
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type' => 'info',
                     'message' => 'Discount approval request is already pending.',
                 ]);
@@ -1063,7 +1063,7 @@ class POSComponent extends Component
             $this->pendingDiscountApprovalId = $duplicateRequest->id;
             $this->pendingDiscountApprovalStatus = $duplicateRequest->status;
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'warning',
                 'message' => 'A discount request already exists for one or more products in this cart.',
             ]);
@@ -1103,7 +1103,7 @@ class POSComponent extends Component
         $this->approvalPassword = '';
         $this->approvalError = '';
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type' => 'success',
             'message' => 'Discount approval request sent to Manager/Super Admin.',
         ]);
@@ -1131,7 +1131,7 @@ class POSComponent extends Component
             $this->discountApprovedBy = $request->approver->name ?? 'Manager';
             $this->discountApprovedById = $request->approved_by;
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'success',
                 'message' => 'Discount approved by ' . $this->discountApprovedBy . '. You can complete the sale now.',
             ]);
@@ -1144,7 +1144,7 @@ class POSComponent extends Component
             $this->discountValue = 0;
             $this->calculateTotal();
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Discount request was rejected.',
             ]);
@@ -1191,7 +1191,7 @@ class POSComponent extends Component
         $this->approvalEmail        = '';
         $this->approvalPassword     = '';
 
-        $this->dispatchBrowserEvent('notify', [
+        $this->dispatch('notify', ...[
             'type'    => 'success',
             'message' => 'Discount of ' . currency() . ' ' . number_format($this->discountAmount, 2) . ' approved by ' . $approver->name . '.',
         ]);
@@ -1525,7 +1525,7 @@ class POSComponent extends Component
                     ];
                 }
             }
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => count($this->cart) . ' prescribed items loaded.'
             ]);
@@ -1590,7 +1590,7 @@ class POSComponent extends Component
     public function initiateCheckout()
     {
         if (empty($this->cart)) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Please add items to cart before checkout.',
             ]);
@@ -1606,7 +1606,7 @@ class POSComponent extends Component
 
         if ($this->isPartPayment && !$this->patientId) {
             $this->isPartPayment = false;
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Part payment is not available for Walk-ins or Direct Purchases. Select a registered patient first.',
             ]);
@@ -1627,7 +1627,7 @@ class POSComponent extends Component
         $finalAmount = (float) ($this->finalAmount ?? 0);
 
         if ($amountPaid <= 0 && $finalAmount > 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Please add at least one payment before checkout.',
             ]);
@@ -1635,7 +1635,7 @@ class POSComponent extends Component
         }
 
         if (!$this->isPartPayment && $amountPaid < $finalAmount) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Total paid (' . currency() . ' ' . number_format($amountPaid, 2) . ') is less than total due (' . currency() . ' ' . number_format($finalAmount, 2) . ').',
             ]);
@@ -1649,7 +1649,7 @@ class POSComponent extends Component
 
         $balance = max(0, $finalAmount - $amountPaid);
 
-        $this->dispatchBrowserEvent('show-checkout-confirmation', [
+        $this->dispatch('show-checkout-confirmation', ...[
             'totalAmount'    => number_format($finalAmount, 2),
             'amountPaid'     => number_format($amountPaid, 2),
             'change'         => number_format($this->change, 2),
@@ -1680,14 +1680,14 @@ class POSComponent extends Component
 
         if (empty($this->cart)) {
             $this->checkoutProcessing = false;
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Cart is empty']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Cart is empty']);
             return;
         }
 
         if ($this->isPartPayment && !$this->patientId) {
             $this->checkoutProcessing = false;
             $this->isPartPayment = false;
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type' => 'error',
                 'message' => 'Part payment requires a registered patient.',
             ]);
@@ -1719,7 +1719,7 @@ class POSComponent extends Component
                 $this->checkoutProcessing = false;
                 $this->resetDiscountApproval();
 
-                $this->dispatchBrowserEvent('notify', [
+                $this->dispatch('notify', ...[
                     'type' => 'error',
                     'message' => 'Discount approval is no longer valid for this cart. Request approval again or remove the discount.',
                 ]);
@@ -1733,7 +1733,7 @@ class POSComponent extends Component
 
         if (!$isPartPayment && $amountPaid < $finalAmount) {
             $this->checkoutProcessing = false;
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Insufficient payment']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Insufficient payment']);
             return;
         }
 
@@ -2044,7 +2044,7 @@ class POSComponent extends Component
                 })->toArray(),
             ];
 
-            $this->dispatchBrowserEvent('receipt-data-ready', array_merge(
+            $this->dispatch('receipt-data-ready', ...array_merge(
                 $this->receiptData,
                 ['printed_at' => now()->format('M d, Y h:i A')]
             ));
@@ -2053,7 +2053,7 @@ class POSComponent extends Component
 
             $this->dispatch('close-processing-modal');
 
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => 'Transaction completed successfully!',
             ]);
@@ -2106,7 +2106,7 @@ class POSComponent extends Component
             $this->checkoutProcessing = false;
 
             $this->dispatch('close-processing-modal');
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'error',
                 'message' => 'Transaction failed: ' . $e->getMessage(),
             ]);

@@ -216,7 +216,7 @@ class UserRoleManagerComponent extends Component
         if (!$this->isEdit && !LicenseService::has(Feature::UNLIMITED_USERS)) {
             $count = User::count();
             if ($count >= 3) {
-                $this->dispatchBrowserEvent('show-alert', [
+                $this->dispatch('show-alert', ...[
                     'type'    => 'error',
                     'message' => 'Free tier is limited to 3 user accounts. Upgrade to Pro to add more users.',
                 ]);
@@ -239,20 +239,20 @@ class UserRoleManagerComponent extends Component
         ]);
 
         $user->syncRoles($this->selectedRoles);
-        $this->dispatch('notify', ['type' => 'success', 'message' => $this->userId ? 'Staff updated successfully.' : 'New staff member registered.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => $this->userId ? 'Staff updated successfully.' : 'New staff member registered.']);
         $this->closeModal();
     }
 
     public function toggleStatus($id)
     {
         if (auth()->id() === $id) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Security check: You cannot deactivate your own account.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Security check: You cannot deactivate your own account.']);
             return;
         }
         $user = User::findOrFail($id);
         $user->is_active = !$user->is_active;
         $user->save();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'User status updated successfully.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'User status updated successfully.']);
     }
 
     public function export()
@@ -331,11 +331,11 @@ class UserRoleManagerComponent extends Component
     {
         abort_if(!$this->canManageUsers(), 403);
         if (auth()->id() === $id) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Action denied: Cannot delete self.']);
+            $this->dispatch('notify', ...['type' => 'error', 'message' => 'Action denied: Cannot delete self.']);
             return;
         }
         User::findOrFail($id)->delete();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Staff member deleted.']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Staff member deleted.']);
     }
 
     public function closeModal() 
@@ -376,7 +376,7 @@ class UserRoleManagerComponent extends Component
             'password' => Hash::make($this->newPassword),
         ]);
 
-        $this->dispatch('notify', ['type' => 'success', 'message' => "Password for {$this->resetUserName} has been reset successfully."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "Password for {$this->resetUserName} has been reset successfully."]);
         $this->closeResetModal();
     }
 
@@ -501,13 +501,13 @@ class UserRoleManagerComponent extends Component
         $this->importResults = $results;
 
         if ($results['created'] > 0) {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'success',
                 'message' => "{$results['created']} staff member(s) imported successfully." .
                              ($results['skipped'] > 0 ? " {$results['skipped']} row(s) skipped." : ''),
             ]);
         } else {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', ...[
                 'type'    => 'warning',
                 'message' => 'No users were imported. Check the errors below.',
             ]);

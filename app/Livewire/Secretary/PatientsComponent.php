@@ -213,7 +213,7 @@ class PatientsComponent extends Component
         // Fix #8 force=true: bulk-delete must be logged even if license is downgraded
         AuditTrail::record('patient.archived', "Archived {$count} patient record(s).", null, [], [], null, true);
         $this->clearSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => 'Selected records archived!']);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => 'Selected records archived!']);
     }
 
     public function restoreSelected(): void
@@ -225,7 +225,7 @@ class PatientsComponent extends Component
         }
         $count = $patients->count();
         $this->clearSelection();
-        $this->dispatch('notify', ['type' => 'success', 'message' => "{$count} patient record(s) restored."]);
+        $this->dispatch('notify', ...['type' => 'success', 'message' => "{$count} patient record(s) restored."]);
     }
 
     // Fix #5: pass the query builder; downloadCSV streams with chunkById
@@ -502,7 +502,7 @@ class PatientsComponent extends Component
                 $this->isEditing = false;
                 $this->formMessageType = 'warning';
                 $this->formMessage = 'This patient record is no longer available. Please choose another record.';
-                $this->dispatch('notify', ['type' => 'warning', 'message' => $this->formMessage]);
+                $this->dispatch('notify', ...['type' => 'warning', 'message' => $this->formMessage]);
                 return;
             }
 
@@ -511,7 +511,7 @@ class PatientsComponent extends Component
             AuditTrail::record('patient.updated', "Updated patient profile: {$patient->name} ({$patient->pxnumber})", $patient, $old, $validatedData, $patient->id);
             $this->formMessageType = 'success';
             $this->formMessage = 'Patient profile updated successfully.';
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Profile Updated!']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'Profile Updated!']);
         } else {
             // Fix #4: random_int() instead of mt_rand()
             $validatedData['pxnumber'] = 'PX-' . random_int(1000, 9999) . '-' . date('y');
@@ -520,7 +520,7 @@ class PatientsComponent extends Component
             AuditTrail::record('patient.created', "Registered new patient: {$patient->name} ({$patient->pxnumber})", $patient, [], [], $patient->id);
             $this->formMessageType = 'success';
             $this->formMessage = "Registered {$patient->name}.";
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'New Patient Saved!']);
+            $this->dispatch('notify', ...['type' => 'success', 'message' => 'New Patient Saved!']);
         }
         $message = $this->formMessage;
         $messageType = $this->formMessageType;
@@ -623,7 +623,7 @@ class PatientsComponent extends Component
         if (!$patient) {
             $this->formMessageType = 'warning';
             $this->formMessage = 'This patient record is no longer available. Refresh the list and try again.';
-            $this->dispatch('notify', ['type' => 'warning', 'message' => $this->formMessage]);
+            $this->dispatch('notify', ...['type' => 'warning', 'message' => $this->formMessage]);
             return;
         }
 

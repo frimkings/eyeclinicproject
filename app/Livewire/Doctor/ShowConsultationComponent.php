@@ -58,7 +58,7 @@ class ShowConsultationComponent extends Component
         Refractions::create($validatedData);
 
 
-        $this->dispatch('hide-addPatientModal-form', ['message' => 'Patient added']);
+        $this->dispatch('hide-addPatientModal-form', ...['message' => 'Patient added']);
         // return back();
     }
 
