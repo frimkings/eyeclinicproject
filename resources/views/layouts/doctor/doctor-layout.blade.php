@@ -1,4 +1,8 @@
-@include('layouts.scripts')
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    @include('layouts.scripts')
+</head>
 
 <body class="hold-transition sidebar-mini">
     <div class="wrapper">
@@ -116,3 +120,5 @@
             })();
         </script>
     @endauth
+</body>
+</html>

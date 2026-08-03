@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
 class Patient extends Model
@@ -41,6 +42,28 @@ class Patient extends Model
         static::creating(function ($model) {
             $model->uuid ??= (string) Str::uuid();
         });
+    }
+
+    public static function createWithGeneratedPxNumber(array $attributes): self
+    {
+        unset($attributes['pxnumber']);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $attributes['pxnumber'] = 'PX-' . strtoupper(bin2hex(random_bytes(5))) . '-' . now()->format('y');
+
+            try {
+                return static::create($attributes);
+            } catch (QueryException $exception) {
+                $isPxNumberCollision = (int) ($exception->errorInfo[1] ?? 0) === 1062
+                    && str_contains(strtolower($exception->getMessage()), 'pxnumber');
+
+                if (! $isPxNumberCollision) {
+                    throw $exception;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Unable to allocate a unique patient number. Please try again.');
     }
 
     protected $casts = [

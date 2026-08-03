@@ -352,9 +352,7 @@ class PatientsComponent extends Component
                 continue;
             }
 
-            Patient::create(array_merge($validator->validated(), [
-                // Fix #4: random_int() is cryptographically secure; mt_rand() is not
-                'pxnumber' => 'PX-' . random_int(1000, 9999) . '-' . date('y'),
+            Patient::createWithGeneratedPxNumber(array_merge($validator->validated(), [
                 'user_id'  => Auth::id(),
             ]));
             $imported++;
@@ -513,10 +511,8 @@ class PatientsComponent extends Component
             $this->formMessage = 'Patient profile updated successfully.';
             $this->dispatch('notify', ...['type' => 'success', 'message' => 'Profile Updated!']);
         } else {
-            // Fix #4: random_int() instead of mt_rand()
-            $validatedData['pxnumber'] = 'PX-' . random_int(1000, 9999) . '-' . date('y');
             $validatedData['user_id']  = Auth::id();
-            $patient = Patient::create($validatedData);
+            $patient = Patient::createWithGeneratedPxNumber($validatedData);
             AuditTrail::record('patient.created', "Registered new patient: {$patient->name} ({$patient->pxnumber})", $patient, [], [], $patient->id);
             $this->formMessageType = 'success';
             $this->formMessage = "Registered {$patient->name}.";

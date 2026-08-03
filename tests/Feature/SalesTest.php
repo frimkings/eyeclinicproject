@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Cashier\SalesRecordsComponent;
 use App\Livewire\POSComponent;
 use App\Models\Patient;
+use App\Models\Product;
 use App\Models\RefundLog;
 use App\Models\Sales;
 use App\Models\User;
@@ -145,6 +146,62 @@ class SalesTest extends TestCase
             ->set('isPartPayment', true)
             ->assertSet('isPartPayment', false)
             ->assertDispatched('notify');
+    }
+
+    public function test_direct_checkout_persists_customer_and_decrements_stock_once(): void
+    {
+        $product = Product::factory()->create([
+            'user_id' => $this->cashier->id,
+            'quantity' => 10,
+            'cost_price' => 60,
+            'selling_price' => 100,
+        ]);
+
+        $component = Livewire::test(POSComponent::class)
+            ->call('selectDirectPurchaseMode')
+            ->set('directCustomerName', 'Direct Buyer')
+            ->call('addToCart', $product->id)
+            ->set('newPaymentMethod', 'cash')
+            ->set('newPaymentAmount', 100)
+            ->call('addPayment');
+
+        $idempotencyKey = $component->get('checkoutIdempotencyKey');
+
+        $component->call('checkout')->assertHasNoErrors();
+
+        $sale = Sales::where('idempotency_key', $idempotencyKey)->firstOrFail();
+
+        $this->assertSame('Direct Buyer', $sale->customer_name);
+        $this->assertSame(9, $product->fresh()->quantity);
+        $this->assertSame(1, $sale->items()->count());
+        $this->assertSame(1, $sale->paymentTransactions()->count());
+    }
+
+    public function test_retried_checkout_key_does_not_duplicate_sale_or_stock_decrement(): void
+    {
+        $product = Product::factory()->create([
+            'user_id' => $this->cashier->id,
+            'quantity' => 10,
+            'cost_price' => 60,
+            'selling_price' => 100,
+        ]);
+        $idempotencyKey = (string) \Illuminate\Support\Str::uuid();
+
+        $checkout = fn () => Livewire::test(POSComponent::class)
+            ->call('selectDirectPurchaseMode')
+            ->set('directCustomerName', 'Retry Buyer')
+            ->call('addToCart', $product->id)
+            ->set('newPaymentMethod', 'cash')
+            ->set('newPaymentAmount', 100)
+            ->call('addPayment')
+            ->set('checkoutIdempotencyKey', $idempotencyKey)
+            ->call('checkout');
+
+        $checkout()->assertHasNoErrors();
+        $checkout()->assertRedirect();
+
+        $this->assertSame(1, Sales::where('idempotency_key', $idempotencyKey)->count());
+        $this->assertSame(9, $product->fresh()->quantity);
     }
 
     public function test_registered_patient_can_enable_part_payment(): void
