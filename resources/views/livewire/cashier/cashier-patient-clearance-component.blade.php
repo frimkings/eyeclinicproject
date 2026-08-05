@@ -405,7 +405,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-money-check-alt mr-2"></i>Process Payment Clearance
                     </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close text-white" wire:click="closeModal">&times;</button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="text-center mb-4">
@@ -442,7 +442,7 @@
                         <select class="custom-select custom-select-lg"
                                 wire:model="selectedServiceId"
                                 id="selectedServiceId"
-                                onchange="toggleClearancePaymentMethod(this.value)">
+                                onchange="window.toggleClearancePaymentMethod(this.value)">
                             <option value="">Select service…</option>
                             @foreach($services as $svc)
                                 <option value="{{ $svc->id }}">{{ $svc->name }} — {{ currency() }} {{ number_format($svc->selling_price, 2) }}</option>
@@ -462,7 +462,7 @@
                                 <i class="fas fa-credit-card mr-1 text-primary"></i>Payment
                             </label>
                             <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    onclick="addClearancePaymentRow()">
+                                    onclick="window.addClearancePaymentRow()">
                                 <i class="fas fa-plus mr-1"></i>Split
                             </button>
                         </div>
@@ -487,13 +487,15 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <button type="button" class="btn btn-secondary" wire:click="closeModal">
                         <i class="fa fa-times mr-1"></i>Cancel
                     </button>
                     <button type="button" id="clearanceConfirmBtn"
-                            onclick="submitClearance()"
+                            onclick="window.submitClearance()"
+                            wire:loading.attr="disabled" wire:target="createClearance"
                             class="btn btn-success">
-                        <i class="fa fa-check mr-1"></i>Confirm & Save
+                        <span wire:loading.remove wire:target="createClearance"><i class="fa fa-check mr-1"></i>Confirm & Save</span>
+                        <span wire:loading wire:target="createClearance"><i class="fas fa-spinner fa-spin mr-1"></i>Saving...</span>
                     </button>
                 </div>
             </div>
@@ -515,7 +517,7 @@
                 <div class="modal-footer bg-light py-2 border-0">
                     <button type="button" class="btn btn-sm btn-secondary"
                             onclick="$('#clearanceReceiptModal').modal('hide')">Close</button>
-                    <button onclick="printClearanceReceipt()" class="btn btn-sm btn-primary px-4">
+                    <button onclick="window.printClearanceReceipt()" class="btn btn-sm btn-primary px-4">
                         <i class="fas fa-print mr-1"></i>Print Receipt
                     </button>
                 </div>
@@ -571,7 +573,15 @@
         .small-box-footer:hover { opacity:.8; }
     </style>
 
+    @script
     <script>
+        window.addEventListener('show-addClearanceModal-form', function () {
+            $('#addClearanceModal').modal('show');
+            window.toggleClearancePaymentMethod(document.getElementById('selectedServiceId')?.value || '');
+        });
+        window.addEventListener('hide-addClearanceModal-modal', function () {
+            $('#addClearanceModal').modal('hide');
+        });
         window.addEventListener('show-revokeRequestModal', () => $('#revokeRequestModal').modal('show'));
         window.addEventListener('hide-revokeRequestModal', () => $('#revokeRequestModal').modal('hide'));
 
@@ -634,12 +644,12 @@
             $('#clearanceReceiptModal').modal('show');
         });
 
-        function printClearanceReceipt() {
+        window.printClearanceReceipt = function () {
             var w = window.open(_clrPrintUrl, '_blank', 'width=302,height=600');
             if (!w) {
                 alert('Please allow popups for this site to print receipts.');
             }
-        }
+        };
 
         // Service price map (populated server-side)
         var _clrPrices = {
@@ -649,7 +659,7 @@
         };
         var _clrServiceTotal = 0;
 
-        function toggleClearancePaymentMethod(val) {
+        window.toggleClearancePaymentMethod = function (val) {
             var section = document.getElementById('clearancePaymentSection');
             if (!section) return;
             if (val && val !== '' && val !== 'unpaid') {
@@ -658,16 +668,21 @@
                 section.style.display = 'block';
                 // Reset rows and add one default row
                 document.getElementById('clearancePaymentRows').innerHTML = '';
-                addClearancePaymentRow();
-                updateClearanceTotals();
+                window.addClearancePaymentRow();
+                window.updateClearanceTotals();
             } else {
                 section.style.display = 'none';
                 document.getElementById('clearancePaymentRows').innerHTML = '';
             }
-        }
+            var error = document.getElementById('clr-payment-error');
+            if (error) {
+                error.textContent = '';
+                error.style.display = 'none';
+            }
+        };
 
         var _clrRowIdx = 0;
-        function addClearancePaymentRow() {
+        window.addClearancePaymentRow = function () {
             var idx = _clrRowIdx++;
             var remaining = _clrServiceTotal - getClearanceEntered();
             var amount = remaining > 0 ? remaining.toFixed(2) : '';
@@ -676,28 +691,28 @@
             row.style.gap = '6px';
             row.id = 'clr-row-' + idx;
             row.innerHTML =
-                '<select class="custom-select custom-select-sm clr-method" style="width:140px;" onchange="updateClearanceTotals()">' +
+                '<select class="custom-select custom-select-sm clr-method" style="width:140px;" onchange="window.updateClearanceTotals()">' +
                     '<option value="cash">Cash</option>' +
                     '<option value="momo">Mobile Money</option>' +
                     '<option value="card">Card</option>' +
                     '<option value="cheque">Cheque</option>' +
                 '</select>' +
                 '<input type="number" class="form-control form-control-sm clr-amount" min="0.01" step="0.01" ' +
-                       'placeholder="Amount" value="' + amount + '" oninput="updateClearanceTotals()" style="width:110px;">' +
-                '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeClearanceRow(' + idx + ')">' +
+                       'placeholder="Amount" value="' + amount + '" oninput="window.updateClearanceTotals()" style="width:110px;">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger" onclick="window.removeClearanceRow(' + idx + ')">' +
                     '<i class="fas fa-times"></i>' +
                 '</button>';
             document.getElementById('clearancePaymentRows').appendChild(row);
-            updateClearanceTotals();
-        }
+            window.updateClearanceTotals();
+        };
 
-        function removeClearanceRow(idx) {
+        window.removeClearanceRow = function (idx) {
             var rows = document.getElementById('clearancePaymentRows');
             if (rows.children.length <= 1) return; // keep at least one row
             var row = document.getElementById('clr-row-' + idx);
             if (row) rows.removeChild(row);
-            updateClearanceTotals();
-        }
+            window.updateClearanceTotals();
+        };
 
         function getClearanceEntered() {
             var total = 0;
@@ -707,51 +722,66 @@
             return total;
         }
 
-        function updateClearanceTotals() {
+        window.updateClearanceTotals = function () {
             var entered   = getClearanceEntered();
             var remaining = _clrServiceTotal - entered;
             document.getElementById('clr-entered').textContent   = entered.toFixed(2);
             document.getElementById('clr-remaining').textContent = Math.max(0, remaining).toFixed(2);
             document.getElementById('clr-balance-row').style.display = remaining > 0.005 ? 'flex' : 'none';
-        }
+        };
 
-        function submitClearance() {
+        window.submitClearance = function () {
             var svc = document.getElementById('selectedServiceId').value;
-            if (!svc) return;
+            var button = document.getElementById('clearanceConfirmBtn');
+            var error = document.getElementById('clr-payment-error');
+            var payments = [];
+
+            if (!svc) {
+                $wire.createClearance('', '[]');
+                return;
+            }
 
             if (svc !== 'unpaid') {
                 var entered   = getClearanceEntered();
                 var remaining = _clrServiceTotal - entered;
 
                 if (remaining > 0.005) {
-                    var err = document.getElementById('clr-payment-error');
-                    err.textContent = 'Total payments (' + entered.toFixed(2) + ') are less than the service amount (' + _clrServiceTotal.toFixed(2) + ').';
-                    err.style.display = 'block';
+                    error.textContent = 'Total payments (' + entered.toFixed(2) + ') are less than the service amount (' + _clrServiceTotal.toFixed(2) + ').';
+                    error.style.display = 'block';
                     return;
                 }
-                document.getElementById('clr-payment-error').style.display = 'none';
+                if (remaining < -0.005) {
+                    error.textContent = 'Total payments cannot exceed the service amount of ' + _clrServiceTotal.toFixed(2) + '.';
+                    error.style.display = 'block';
+                    return;
+                }
+                error.style.display = 'none';
 
                 // Collect payments
-                var payments = [];
                 document.querySelectorAll('#clearancePaymentRows > div').forEach(function(row) {
                     var method = row.querySelector('.clr-method').value;
                     var amount = parseFloat(row.querySelector('.clr-amount').value) || 0;
                     if (amount > 0) payments.push({method: method, amount: amount});
                 });
 
-                @this.call('createClearance', svc, JSON.stringify(payments));
-            } else {
-                @this.call('createClearance', svc, '[]');
             }
-        }
+
+            if (button) button.disabled = true;
+            Promise.resolve($wire.createClearance(svc, JSON.stringify(payments)))
+                .finally(function () {
+                    var currentButton = document.getElementById('clearanceConfirmBtn');
+                    if (currentButton) currentButton.disabled = false;
+                });
+        };
 
         // Reset when modal closes
         $('#addClearanceModal').on('hidden.bs.modal', function () {
-            document.getElementById('clearancePaymentSection').style.display = 'none';
-            document.getElementById('clearancePaymentRows').innerHTML = '';
-            document.getElementById('selectedServiceId').value = '';
-            document.getElementById('clr-payment-error').style.display = 'none';
+            document.getElementById('clearancePaymentSection')?.style.setProperty('display', 'none');
+            if (document.getElementById('clearancePaymentRows')) document.getElementById('clearancePaymentRows').innerHTML = '';
+            if (document.getElementById('selectedServiceId')) document.getElementById('selectedServiceId').value = '';
+            if (document.getElementById('clr-payment-error')) document.getElementById('clr-payment-error').style.display = 'none';
             _clrRowIdx = 0;
         });
     </script>
+    @endscript
 </div>

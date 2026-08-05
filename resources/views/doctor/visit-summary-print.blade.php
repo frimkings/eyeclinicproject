@@ -71,6 +71,7 @@
             <table>
                 <tr><th></th><th>OD</th><th>OS</th></tr>
                 <tr><td>Visual Acuity 6m</td><td>{{ $consultation->vaOD6m ?: 'N/A' }}</td><td>{{ $consultation->vaOS6m ?: 'N/A' }}</td></tr>
+                <tr><td>Anterior chamber</td><td>{{ $consultation->acOD ?: 'N/A' }}</td><td>{{ $consultation->acOS ?: 'N/A' }}</td></tr>
                 <tr><td>IOP</td><td>{{ $consultation->IOPOD ?: 'N/A' }}</td><td>{{ $consultation->IOPOS ?: 'N/A' }}</td></tr>
                 <tr><td>Fundus</td><td>{{ $consultation->fundusOD ?: 'N/A' }}</td><td>{{ $consultation->fundusOS ?: 'N/A' }}</td></tr>
             </table>

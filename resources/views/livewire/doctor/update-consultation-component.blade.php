@@ -299,15 +299,6 @@
 
                             </tr>
                             <tr>
-                                <th scope="row">AC</th>
-                                <td><input wire:model="state.acOD" type="text"
-                                        class=" form-control form-control-sm externals" list="distance"></td>
-                                <td><input wire:model="state.acOS" type="text"
-                                        class="form-control form-control-sm externals" list="near">
-                                </td>
-
-                            </tr>
-                            <tr>
                                 <th scope="row">Iris</th>
                                 <td><input wire:model="state.irisOD" type="text"
                                         class=" form-control form-control-sm externals" list="distance"></td>
@@ -324,6 +315,13 @@
                                         class="form-control form-control-sm externals" list="near">
                                 </td>
 
+                            </tr>
+                            <tr>
+                                <th scope="row">Anterior chamber</th>
+                                <td><input wire:model="state.acOD" type="text"
+                                        class="form-control form-control-sm externals" list="distance"></td>
+                                <td><input wire:model="state.acOS" type="text"
+                                        class="form-control form-control-sm externals" list="near"></td>
                             </tr>
                             <tr>
                                 <th scope="row">Lens</th>

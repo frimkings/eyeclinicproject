@@ -90,7 +90,7 @@ class CashierPatientClearanceComponent extends Component
 
     public function hydrate(): void
     {
-        if (!Auth::user()->hasAnyRole(['Cashier', 'Secretary', 'Manager', 'Super Admin'])) {
+        if (!Auth::user()?->hasAnyRole(['Cashier', 'Secretary', 'Manager', 'Super Admin'])) {
             redirect()->route('dashboard');
         }
     }
@@ -151,18 +151,61 @@ class CashierPatientClearanceComponent extends Component
         if ($serviceValue !== '') {
             $this->selectedServiceId = $serviceValue;
         }
-        $payments = collect(json_decode($paymentsJson, true) ?: [])
-            ->filter(fn($p) => isset($p['amount']) && (float) $p['amount'] > 0)
-            ->values()
-            ->toArray();
 
         $this->validate(['selectedServiceId' => 'required']);
 
+        $patient = Patient::find($this->patientClearanceId);
+        if (!$patient) {
+            $this->addError('selectedServiceId', 'The selected patient is no longer available. Close this window and try again.');
+            return;
+        }
+
         $isUnpaid  = $this->selectedServiceId === 'unpaid';
         $serviceId = $isUnpaid ? null : (int) $this->selectedServiceId;
+        $service = null;
 
-        if (!$isUnpaid && !Product::where('id', $serviceId)->exists()) {
-            $this->addError('selectedServiceId', 'Selected service is invalid.');
+        if (!$isUnpaid) {
+            $service = Product::whereKey($serviceId)
+                ->whereHas('category', fn ($query) => $query
+                    ->where('name', 'like', '%service%')
+                    ->orWhere('type', 'service'))
+                ->first();
+
+            if (!$service) {
+                $this->addError('selectedServiceId', 'Selected service is invalid.');
+                return;
+            }
+        }
+
+        $decodedPayments = json_decode($paymentsJson, true);
+        if (!is_array($decodedPayments)) {
+            $this->addError('selectedServiceId', 'Payment details are invalid. Please re-enter them.');
+            return;
+        }
+
+        $allowedMethods = ['cash', 'momo', 'card', 'cheque'];
+        $payments = collect($decodedPayments)->map(function ($payment) use ($allowedMethods) {
+            $method = strtolower(trim((string) ($payment['method'] ?? '')));
+            $amount = round((float) ($payment['amount'] ?? 0), 2);
+
+            return in_array($method, $allowedMethods, true) && $amount > 0
+                ? ['method' => $method, 'amount' => $amount]
+                : null;
+        })->filter()->values()->all();
+
+        if (!$isUnpaid) {
+            $totalAmount = round((float) $service->selling_price, 2);
+            $amountPaid = round((float) collect($payments)->sum('amount'), 2);
+
+            if (abs($amountPaid - $totalAmount) > 0.005) {
+                $this->addError(
+                    'selectedServiceId',
+                    'Payments must equal the service total of ' . currency() . ' ' . number_format($totalAmount, 2) . '.'
+                );
+                return;
+            }
+        } elseif ($payments !== []) {
+            $this->addError('selectedServiceId', 'An unpaid clearance cannot include payments.');
             return;
         }
 
@@ -215,14 +258,11 @@ class CashierPatientClearanceComponent extends Component
             // Record sale for paid clearances
             $receiptUrl = route('cashier.clearance-receipt', $clearance->id);
             if (!$isUnpaid && $serviceId) {
-                $service       = Product::findOrFail($serviceId);
                 $transactionId = now()->format('dmY') . '-' . strtoupper(Str::random(8));
                 $totalAmount   = (float) $service->selling_price;
                 $amountPaid    = collect($payments)->sum('amount');
-                $paymentStatus = $amountPaid >= $totalAmount ? 'paid' : 'partial';
-                $profit        = $paymentStatus === 'paid'
-                    ? max(0, $totalAmount - (float) ($service->cost_price ?? 0))
-                    : 0;
+                $paymentStatus = 'paid';
+                $profit        = max(0, $totalAmount - (float) ($service->cost_price ?? 0));
 
                 $sale = Sales::create([
                     'user_id'        => Auth::id(),
@@ -324,7 +364,7 @@ class CashierPatientClearanceComponent extends Component
 
     public function closeModal(): void
     {
-        $this->reset(['patientClearanceId', 'selectedServiceId', 'patientName']);
+        $this->reset(['patientClearanceId', 'selectedServiceId', 'patientName', 'clearancePayments', 'outstandingBalance', 'insuranceSummary']);
         $this->resetValidation();
         $this->dispatch('hide-addClearanceModal-modal');
     }
@@ -462,7 +502,7 @@ class CashierPatientClearanceComponent extends Component
     // ---------------------------------------------------------------
     public function render()
     {
-        if (!Auth::user()->hasAnyRole(['Secretary', 'Super Admin', 'Manager', 'Cashier'])) {
+        if (!Auth::user()?->hasAnyRole(['Secretary', 'Super Admin', 'Manager', 'Cashier'])) {
             return redirect()->route('dashboard');
         }
 

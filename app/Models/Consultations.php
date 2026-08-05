@@ -28,6 +28,8 @@ class Consultations extends Model
         'irisOS',
         'pupilOD',
         'pupilOS',
+        'acOD',
+        'acOS',
         'lensOD',
         'lensOS',
         'vitreousOD',

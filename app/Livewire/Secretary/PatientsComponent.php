@@ -689,6 +689,12 @@ class PatientsComponent extends Component
                 return null;
             }
 
+            // PHP expands years 00-69 into 2000-2069. For a date of birth,
+            // a resulting future date belongs to the previous century.
+            if ($date->isFuture()) {
+                $date->subCentury();
+            }
+
             return $date->toDateString();
         } catch (\Throwable $exception) {
             return null;

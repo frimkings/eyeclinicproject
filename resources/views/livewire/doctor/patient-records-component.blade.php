@@ -558,13 +558,37 @@
 
                         {{-- Examination --}}
                         <div class="card border mb-3 {{ $consultationFieldsLocked ? 'consultation-section-locked' : '' }}">
-                            <div class="card-header bg-light">
+                            <div class="card-header bg-light d-flex align-items-center justify-content-between flex-wrap">
                                 <h6 class="mb-0 font-weight-bold">
                                     Examination
                                     @if($consultationFieldsLocked)
                                         <span class="badge badge-secondary ml-2"><i class="fas fa-lock"></i> Locked</span>
                                     @endif
                                 </h6>
+                                @unless($consultationFieldsLocked)
+                                    <div class="d-flex flex-wrap mt-1 mt-sm-0" style="gap:.5rem;">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Fill normal examination findings">
+                                            <button type="button" class="btn btn-outline-success"
+                                                wire:click="fillNormalExamination('both')" title="Fill empty normal findings for both eyes">
+                                                <i class="fas fa-check-double mr-1"></i> Fill Normal
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success"
+                                                wire:click="fillNormalExamination('od')" title="Fill empty normal findings for the right eye">OD</button>
+                                            <button type="button" class="btn btn-outline-success"
+                                                wire:click="fillNormalExamination('os')" title="Fill empty normal findings for the left eye">OS</button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Clear examination findings">
+                                            <button type="button" class="btn btn-outline-danger"
+                                                wire:click="clearExaminationFindings('both')" title="Clear descriptive findings for both eyes">
+                                                <i class="fas fa-eraser mr-1"></i> Clear
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger"
+                                                wire:click="clearExaminationFindings('od')" title="Clear descriptive findings for the right eye">OD</button>
+                                            <button type="button" class="btn btn-outline-danger"
+                                                wire:click="clearExaminationFindings('os')" title="Clear descriptive findings for the left eye">OS</button>
+                                        </div>
+                                    </div>
+                                @endunless
                             </div>
                             <div class="card-body">
                                 <div class="row mb-2 font-weight-bold border-bottom pb-2">
@@ -581,6 +605,7 @@
                                         'corneaOD' => 'corneaOS',
                                         'irisOD' => 'irisOS',
                                         'pupilOD' => 'pupilOS',
+                                        'acOD' => 'acOS',
                                         'lensOD' => 'lensOS',
                                         'vitreousOD' => 'vitreousOS',
                                         'fundusOD' => 'fundusOS',
@@ -594,6 +619,7 @@
                                         'corneaOD' => 'Cornea',
                                         'irisOD' => 'Iris',
                                         'pupilOD' => 'Pupil',
+                                        'acOD' => 'Anterior chamber',
                                         'lensOD' => 'Lens',
                                         'vitreousOD' => 'Vitreous',
                                         'fundusOD' => 'Fundus',

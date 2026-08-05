@@ -95,6 +95,18 @@ public $isEditingAppointment = false;
     // VA notation preference loaded from clinic settings ('6m' or '20ft')
     public string $vaNotation = '6m';
 
+    private const NORMAL_EXAM_FINDINGS = [
+        'lids' => 'Normal',
+        'conjunctiva' => 'White and quiet',
+        'cornea' => 'Clear',
+        'iris' => 'Normal pattern',
+        'pupil' => 'Round, regular and reactive',
+        'ac' => 'Deep and quiet',
+        'lens' => 'Clear',
+        'vitreous' => 'Clear',
+        'fundus' => 'Normal',
+    ];
+
     // ===================================
     // DIAGNOSIS METHODS
     // ===================================
@@ -1271,6 +1283,48 @@ public function deleteAppointment($appointmentId)
     // CONSULTATION MANAGEMENT
     // ===================================
 
+    public function fillNormalExamination(string $eye = 'both'): void
+    {
+        if ($this->getConsultationFieldsLockedProperty()) {
+            return;
+        }
+
+        $suffixes = match ($eye) {
+            'od' => ['OD'],
+            'os' => ['OS'],
+            default => ['OD', 'OS'],
+        };
+
+        foreach (self::NORMAL_EXAM_FINDINGS as $field => $normalFinding) {
+            foreach ($suffixes as $suffix) {
+                $key = $field . $suffix;
+
+                if (trim((string) ($this->state[$key] ?? '')) === '') {
+                    $this->state[$key] = $normalFinding;
+                }
+            }
+        }
+    }
+
+    public function clearExaminationFindings(string $eye = 'both'): void
+    {
+        if ($this->getConsultationFieldsLockedProperty()) {
+            return;
+        }
+
+        $suffixes = match ($eye) {
+            'od' => ['OD'],
+            'os' => ['OS'],
+            default => ['OD', 'OS'],
+        };
+
+        foreach (array_keys(self::NORMAL_EXAM_FINDINGS) as $field) {
+            foreach ($suffixes as $suffix) {
+                $this->state[$field . $suffix] = '';
+            }
+        }
+    }
+
     public function startNewConsultation()
     {
         if (!$this->clearance || $this->clearance->payment_status !== 'Paid') {
@@ -1461,6 +1515,8 @@ public function deleteAppointment($appointmentId)
                 'irisOS'        => $this->state['irisOS'] ?? null,
                 'pupilOD'       => $this->state['pupilOD'] ?? null,
                 'pupilOS'       => $this->state['pupilOS'] ?? null,
+                'acOD'          => $this->state['acOD'] ?? null,
+                'acOS'          => $this->state['acOS'] ?? null,
                 'lensOD'        => $this->state['lensOD'] ?? null,
                 'lensOS'        => $this->state['lensOS'] ?? null,
                 'vitreousOD'    => $this->state['vitreousOD'] ?? null,

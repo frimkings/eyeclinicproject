@@ -536,6 +536,37 @@
 
 <script>
     (function () {
+        function parseRegistryDate(value, isBirthday) {
+            var match = /^(\d{2})\/(\d{2})\/(\d{2})$/.exec(value.trim());
+            if (!match) {
+                return new Date(NaN);
+            }
+
+            var day = Number(match[1]);
+            var month = Number(match[2]);
+            var year = 2000 + Number(match[3]);
+            var date = new Date(year, month - 1, day);
+
+            if (
+                date.getFullYear() !== year
+                || date.getMonth() !== month - 1
+                || date.getDate() !== day
+            ) {
+                return new Date(NaN);
+            }
+
+            if (isBirthday && date > new Date()) {
+                date.setFullYear(year - 100);
+            }
+
+            return date;
+        }
+
+        function formatRegistryDate(date) {
+            var pad = function (value) { return String(value).padStart(2, '0'); };
+            return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + pad(date.getFullYear() % 100);
+        }
+
         function initializeRegistryDatePickers() {
             if (typeof Pikaday === 'undefined') {
                 return;
@@ -555,14 +586,21 @@
                 }
 
                 var trigger = document.getElementById(field.dataset.trigger);
+                var isBirthday = field.id === 'registry-dob';
                 field._registryDatePicker = new Pikaday({
                     field: field,
                     trigger: trigger || field,
                     format: 'DD/MM/YY',
+                    parse: function (value) {
+                        return parseRegistryDate(value, isBirthday);
+                    },
+                    toString: function (date) {
+                        return formatRegistryDate(date);
+                    },
                     maxDate: new Date(),
                     yearRange: [1900, new Date().getFullYear()],
                     onSelect: function () {
-                        field.value = this.toString('DD/MM/YY');
+                        field.value = formatRegistryDate(this.getDate());
                         field.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 });
