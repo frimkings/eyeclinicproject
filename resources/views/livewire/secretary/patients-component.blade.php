@@ -181,7 +181,7 @@
                             <div class="col-6 form-group">
                                 <label class="small font-weight-bold text-muted">BIRTHDAY</label>
                                 <div class="input-group">
-                                    <input id="registry-dob" type="text" wire:model.blur="dobDisplay"
+                                    <input id="registry-dob" type="text" wire:model.change="dobDisplay"
                                            class="form-control bg-light border-0 registry-date-picker @error('dob') is-invalid @enderror"
                                            data-trigger="registry-dob-trigger" placeholder="dd/mm/yy" inputmode="numeric" maxlength="8" autocomplete="off">
                                     <div class="input-group-append">

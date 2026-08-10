@@ -75,6 +75,7 @@ DB_PORT=3306
 DB_USERNAME=yigarblqay1wiwjv
 DB_PASSWORD=G9tt2QaZY0h07jReFcJq
 
+
  192.168.8.2
 
  <VirtualHost *:80 192.168.8.2:80>
@@ -96,6 +97,8 @@ DB_PASSWORD=G9tt2QaZY0h07jReFcJq
         Require all granted
     </Directory>
 </VirtualHost>
+
+
 
 
 icacls "storage" /grant "Everyone:(OI)(CI)F" /T
