@@ -35,8 +35,8 @@ php artisan migrate
 
 cd eyeclinicproject
 
-<VirtualHost *:80>
-    ServerName 192.168.100.26
+<VirtualHost 192.168.1.72*:80>
+    ServerName 192.168.1.72
     DocumentRoot "C:/laragon/www/eyeclinicproject/public"
 
     <Directory "C:/laragon/www/eyeclinicproject/public">
@@ -67,4 +67,41 @@ zxcv#234QWERTY
  192.168.100.5
 
 
- 
+ mkdir bootstrap/cache
+mkdir storage/framework/cache/data storage/framework/sessions storage/framework/views
+DB_CONNECTION=mysql
+DB_HOST=db-a268d5f9-5a9c-4b3f-91ff-3981a182ac8e.eu-west-2.public.db.laravel.cloud
+DB_PORT=3306
+DB_USERNAME=yigarblqay1wiwjv
+DB_PASSWORD=G9tt2QaZY0h07jReFcJq
+
+ 192.168.8.2
+
+ <VirtualHost *:80 192.168.8.2:80>
+    DocumentRoot "C:/laragon/www/eyeclinicproject/public"
+    ServerName eyeclinicproject.test
+    ServerAlias *.eyeclinicproject.test 192.168.8.2
+    <Directory "C:/laragon/www/eyeclinicproject/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+<VirtualHost 192.168.1.72:80>
+    DocumentRoot "C:/laragon/www/eyeclinicproject/public"
+    ServerName 192.168.1.72
+    ServerAlias eyeclinicproject.test *.eyeclinicproject.test
+    <Directory "C:/laragon/www/eyeclinicproject/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+
+icacls "storage" /grant "Everyone:(OI)(CI)F" /T
+icacls "bootstrap\cache" /grant "Everyone:(OI)(CI)F" /T
+
+php artisan cache:clear
+Remove-Item -Path "storage\framework\cache\data\*" -Recurse -Force
+Remove-Item -Path "storage\framework\cache\data\*" -Recurse -Force
+php artisan optimize:clear
