@@ -108,3 +108,7 @@ php artisan cache:clear
 Remove-Item -Path "storage\framework\cache\data\*" -Recurse -Force
 Remove-Item -Path "storage\framework\cache\data\*" -Recurse -Force
 php artisan optimize:clear
+
+php artisan migrate:fresh --seed --seeder=UserSeeder --force
+
+php artisan migrate:fresh --seed --seeder=UserSeeder --force && php artisan db:seed --class=DiagnosisSeeder --force && php artisan db:seed --class=CategorySeeder --force
